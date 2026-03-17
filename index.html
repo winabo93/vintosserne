@@ -213,42 +213,6 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.65rem;letter-spacing:.
 <body>
 <div class="app">
 
-<!-- ══════════ FIREBASE CONFIG OVERLAY ══════════ -->
-<div id="config-overlay" style="display:none;position:fixed;inset:0;z-index:9999;
-  background:radial-gradient(ellipse at 30% 20%,rgba(107,30,46,.6) 0%,rgba(26,10,14,.97) 65%);
-  backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:1.5rem;">
-  <div style="max-width:500px;width:100%;background:linear-gradient(135deg,rgba(26,10,14,.99),rgba(61,10,20,.9));
-    border:1px solid rgba(201,168,76,.45);border-radius:16px;padding:2rem;
-    box-shadow:0 24px 80px rgba(0,0,0,.8),inset 0 1px 0 rgba(201,168,76,.12);">
-    <div style="text-align:center;margin-bottom:1.6rem;">
-      <div style="font-size:2.2rem;margin-bottom:.4rem;">🍷</div>
-      <div style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:var(--cream);">
-        Vino <span style="color:var(--gold);font-style:italic;">Society</span>
-      </div>
-      <p style="font-family:'Josefin Sans',sans-serif;font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;color:var(--smoke);margin-top:.35rem;">Database Setup</p>
-    </div>
-    <div style="background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.15);border-radius:8px;padding:1rem 1.1rem;margin-bottom:1.2rem;">
-      <div style="font-family:'Josefin Sans',sans-serif;font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:.55rem;">To enable real-time sync across devices:</div>
-      <ol style="font-family:'Cormorant Garamond',serif;font-size:.92rem;color:var(--pale-gold);padding-left:1.1rem;line-height:1.9;">
-        <li>Go to <strong style="color:var(--gold)">console.firebase.google.com</strong></li>
-        <li>Create a project → Build → <strong style="color:var(--gold)">Realtime Database</strong></li>
-        <li>Create database → test mode → copy the URL</li>
-      </ol>
-    </div>
-    <div class="field" style="margin-bottom:.9rem;">
-      <label>Firebase Realtime Database URL</label>
-      <input type="url" id="cfg-db-url" placeholder="https://your-project-default-rtdb.firebaseio.com"
-        style="font-size:.88rem;" onkeydown="if(event.key==='Enter')saveFirebaseConfig()">
-    </div>
-    <div id="cfg-alert" class="alert"></div>
-    <div style="display:flex;gap:.6rem;margin-top:.4rem;">
-      <button class="btn btn-primary" style="flex:1;" onclick="saveFirebaseConfig()">🔥 Connect Firebase</button>
-      <button class="btn btn-outline" onclick="useLocalOnlyMode()" title="All data stays on this device">📴 Local Only</button>
-    </div>
-    <p style="font-family:'Josefin Sans',sans-serif;font-size:.54rem;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke);text-align:center;margin-top:.9rem;opacity:.7;">Your URL is stored in this browser only</p>
-  </div>
-</div>
-
 <!-- CONNECTION BAR -->
 <div id="conn-bar">
   <span class="conn-dot"></span>
@@ -593,37 +557,8 @@ function setConnBar(mode) {
 }
 
 // ── Config screen (shown on first run or when no URL saved) ──
-function showConfigScreen() {
-  document.getElementById('config-overlay').style.display = 'flex';
-}
-function hideConfigScreen() {
-  document.getElementById('config-overlay').style.display = 'none';
-}
 
-function saveFirebaseConfig() {
-  let url = (document.getElementById('cfg-db-url').value || '').trim().replace(/\/+$/, '');
-  if (!url) { showAlert('cfg-alert', 'error', 'Please enter your Database URL.'); return; }
-  if (!url.startsWith('https://')) url = 'https://' + url;
-  if (!url.includes('firebaseio.com') && !url.includes('firebasedatabase.app')) {
-    showAlert('cfg-alert', 'error', 'URL should end in .firebaseio.com or .firebasedatabase.app');
-    return;
-  }
-  try { localStorage.setItem('vino_fb_url', url); } catch(e) {}
-  FB_URL = url;
-  useCloud = true;
-  hideConfigScreen();
-  setConnBar('online');
-  renderHostPanel();
-}
 
-function useLocalOnlyMode() {
-  try { localStorage.removeItem('vino_fb_url'); } catch(e) {}
-  FB_URL = '';
-  useCloud = false;
-  hideConfigScreen();
-  setConnBar('local');
-  renderHostPanel();
-}
 
 // ═══════════════════════════════════════
 //  AUTOCOMPLETE
@@ -1414,21 +1349,10 @@ function showAlert(id, type, msg) {
 }
 
 // ── BOOT ──
-(function() {
-  try {
-    const saved = localStorage.getItem('vino_fb_url');
-    if (saved) {
-      FB_URL = saved;
-      useCloud = true;
-      setConnBar('online');
-      renderHostPanel();
-      return;
-    }
-  } catch(e) {}
-  showConfigScreen();
-  setConnBar('local');
-  renderHostPanel();
-})();
+FB_URL = 'https://vintosserv2-default-rtdb.europe-west1.firebasedatabase.app';
+useCloud = true;
+setConnBar('online');
+renderHostPanel();
 
 // Auto-unlock from QR URL param
 (function() {
