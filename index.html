@@ -213,6 +213,36 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.65rem;letter-spacing:.
 <body>
 <div class="app">
 
+<!-- ══════════ HOST AUTH OVERLAY ══════════ -->
+<div id="host-auth-overlay" style="display:none;position:fixed;inset:0;z-index:9998;
+  background:rgba(10,4,8,.88);backdrop-filter:blur(6px);
+  align-items:center;justify-content:center;padding:1.5rem;">
+  <div style="max-width:380px;width:100%;
+    background:linear-gradient(135deg,rgba(26,10,14,.99),rgba(61,10,20,.92));
+    border:1px solid rgba(201,168,76,.4);border-radius:14px;padding:1.8rem;
+    box-shadow:0 20px 60px rgba(0,0,0,.8),inset 0 1px 0 rgba(201,168,76,.1);">
+    <div style="text-align:center;margin-bottom:1.4rem;">
+      <div style="font-size:1.8rem;margin-bottom:.35rem;">🔐</div>
+      <div style="font-family:'Playfair Display',serif;font-size:1.25rem;color:var(--cream);">Host Access</div>
+      <p style="font-family:'Josefin Sans',sans-serif;font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:var(--smoke);margin-top:.3rem;" id="host-auth-sess-name">—</p>
+    </div>
+    <div class="field" style="margin-bottom:.9rem;">
+      <label>Host Password</label>
+      <div style="position:relative;">
+        <input type="password" id="host-auth-pass" placeholder="Enter host password…"
+          style="padding-right:2.8rem;"
+          onkeydown="if(event.key==='Enter')submitHostAuth()">
+        <button onclick="togglePassVis('host-auth-pass','host-auth-eye')" style="position:absolute;right:.6rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--smoke);font-size:1rem;padding:0;" id="host-auth-eye">👁</button>
+      </div>
+    </div>
+    <div id="host-auth-alert" class="alert"></div>
+    <div style="display:flex;gap:.6rem;margin-top:.4rem;">
+      <button class="btn btn-primary" style="flex:1;" onclick="submitHostAuth()">🔓 Unlock</button>
+      <button class="btn btn-outline" onclick="cancelHostAuth()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- CONNECTION BAR -->
 <div id="conn-bar">
   <span class="conn-dot"></span>
@@ -238,9 +268,18 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.65rem;letter-spacing:.
   <div id="host-new">
     <div class="card">
       <div class="card-title">🍾 Create Tasting Session</div>
-      <div class="field">
+      <div class="form-grid">
+        <div class="field full">
         <label>Session Name</label>
         <input type="text" id="sess-name-inp" placeholder="e.g. Bordeaux Evening, Club Night #12…">
+        </div>
+        <div class="field full">
+          <label>Host Password <span style="color:var(--smoke);font-weight:300;letter-spacing:.05em;text-transform:none;font-size:.75rem;">— protects session controls from tasters</span></label>
+          <div style="position:relative;">
+            <input type="password" id="sess-pass-inp" placeholder="Choose a password…" style="padding-right:2.8rem;">
+            <button onclick="togglePassVis('sess-pass-inp','sess-pass-eye')" style="position:absolute;right:.6rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--smoke);font-size:1rem;padding:0;" id="sess-pass-eye">👁</button>
+          </div>
+        </div>
       </div>
       <div class="btn-row">
         <button class="btn btn-primary" onclick="createSession()">✨ Create Session</button>
@@ -689,13 +728,32 @@ function showTab(n) {
 // ═══════════════════════════════════════
 //  HOST
 // ═══════════════════════════════════════
+async function hashPassword(pw) {
+  // Simple SHA-256 via Web Crypto — built into every modern browser, no CDN needed
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function togglePassVis(inputId, btnId) {
+  const inp = document.getElementById(inputId);
+  const btn = document.getElementById(btnId);
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+  else { inp.type = 'password'; btn.textContent = '👁'; }
+}
+
 async function createSession() {
   const name = document.getElementById('sess-name-inp').value.trim() || 'Wine Evening';
+  const pw   = document.getElementById('sess-pass-inp').value.trim();
+  if (!pw) { showAlert('host-alert', 'error', 'Please set a host password.'); return; }
+  const passwordHash = await hashPassword(pw);
   const code = String(Math.floor(1000 + Math.random() * 9000));
-  const sess = {name, code, wines: [], created: new Date().toLocaleDateString(), archived: false};
+  const sess = {name, code, passwordHash, wines: [], created: new Date().toLocaleDateString(), archived: false};
   await dbSet('sessions/' + code, sess);
   activeCode = code;
+  // Cache auth for this session so host isn't prompted immediately
+  sessionStorage.setItem('host_auth_' + code, '1');
   showAlert('host-alert', 'success', `Session "${name}" created! Code: ${code}`);
+  document.getElementById('sess-pass-inp').value = '';
   renderHostPanel();
 }
 
@@ -712,7 +770,7 @@ async function renderHostPanel() {
         <div class="wine-row-top">
           <div class="wnum">${sessions[c].wines ? sessions[c].wines.length : 0}</div>
           <div>
-            <div class="wrow-name">${sessions[c].name}</div>
+            <div class="wrow-name">${sessions[c].passwordHash ? '🔐 ' : ''}${sessions[c].name}</div>
             <div class="wrow-meta">Code ${c} · ${sessions[c].created}</div>
           </div>
           <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openSess('${c}')">Open</button>
@@ -732,8 +790,54 @@ async function renderHostPanel() {
   }
 }
 
-function openSess(c) { activeCode = c; renderHostPanel(); }
-function closeSession() { activeCode = null; renderHostPanel(); }
+// Pending code waiting for auth
+let _pendingAuthCode = null;
+
+function openSess(c) {
+  // Check if already authenticated this browser session
+  if (sessionStorage.getItem('host_auth_' + c)) {
+    activeCode = c; renderHostPanel(); return;
+  }
+  // Show password prompt
+  _pendingAuthCode = c;
+  const sessName = document.getElementById('prev-sess-list')
+    .querySelector(`[onclick="openSess('${c}')"] .wrow-name`);
+  document.getElementById('host-auth-sess-name').textContent =
+    sessName ? sessName.textContent : 'Session ' + c;
+  document.getElementById('host-auth-pass').value = '';
+  document.getElementById('host-auth-alert').className = 'alert';
+  document.getElementById('host-auth-overlay').style.display = 'flex';
+  setTimeout(() => document.getElementById('host-auth-pass').focus(), 100);
+}
+
+async function submitHostAuth() {
+  const pw = document.getElementById('host-auth-pass').value.trim();
+  if (!pw) { showAlert('host-auth-alert', 'error', 'Enter the host password.'); return; }
+  const sess = await dbGet('sessions/' + _pendingAuthCode);
+  if (!sess) { showAlert('host-auth-alert', 'error', 'Session not found.'); return; }
+  const hash = await hashPassword(pw);
+  if (hash !== sess.passwordHash) {
+    showAlert('host-auth-alert', 'error', 'Incorrect password.');
+    document.getElementById('host-auth-pass').value = '';
+    return;
+  }
+  // Auth success
+  sessionStorage.setItem('host_auth_' + _pendingAuthCode, '1');
+  document.getElementById('host-auth-overlay').style.display = 'none';
+  activeCode = _pendingAuthCode;
+  _pendingAuthCode = null;
+  renderHostPanel();
+}
+
+function cancelHostAuth() {
+  _pendingAuthCode = null;
+  document.getElementById('host-auth-overlay').style.display = 'none';
+}
+function closeSession() {
+  // Keep auth cached in sessionStorage so re-opening doesn't re-prompt
+  activeCode = null;
+  renderHostPanel();
+}
 
 function renderOverview(s) {
   document.getElementById('ov-name').textContent = s.name;
@@ -824,6 +928,7 @@ async function removeWine(i) {
 async function deleteSession() {
   if (!confirm('Delete this session and all data?')) return;
   await dbDelete('sessions/' + activeCode);
+  sessionStorage.removeItem('host_auth_' + activeCode);
   activeCode = null;
   renderHostPanel();
 }
@@ -835,6 +940,7 @@ async function archiveSession() {
   s.archivedAt = new Date().toLocaleString();
   await dbSet('sessions/' + activeCode, s);
   await dbSet('archive/' + activeCode, s);
+  sessionStorage.removeItem('host_auth_' + activeCode);
   activeCode = null;
   renderHostPanel();
   showTab('history');
