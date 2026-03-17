@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vino Society — Wine Tasting Club</title>
+<title>Vintosserne — Wine Tasting Club</title>
 <style>
 /* Attempt to load Google Fonts — silently ignored if offline/file:// */
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Josefin+Sans:wght@200;300;400;600&display=swap');
@@ -222,7 +222,7 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.65rem;letter-spacing:.
 
 <header>
   <div class="logo-mark">🍷</div>
-  <h1>Vino <span>Society</span></h1>
+  <h1>Vin<span>Tosserne</span></h1>
   <p>Wine Tasting Club · Member Rating System</p>
 </header>
 
@@ -326,7 +326,17 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.65rem;letter-spacing:.
       </div>
       <div class="field" style="margin-bottom:1rem;">
         <label>Your Name</label>
-        <input type="text" id="taster-name" placeholder="e.g. Marie" oninput="refreshWineSelector()">
+        <select id="taster-name" onchange="refreshWineSelector()">
+          <option value="">Select your name…</option>
+          <option>Nichlas</option>
+          <option>William</option>
+          <option>Nikoline</option>
+          <option>Mathilde</option>
+          <option>Mathilda</option>
+          <option>Carl Christian</option>
+          <option>Sylvester</option>
+          <option>Karoline</option>
+        </select>
       </div>
       <div style="font-family:'Josefin Sans',sans-serif;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--smoke);margin-bottom:.6rem;">Select a wine to rate:</div>
       <div id="wine-selector" class="wine-selector"></div>
@@ -338,8 +348,8 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.65rem;letter-spacing:.
         <div style="font-family:'Josefin Sans',sans-serif;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--smoke);">Rating System</div>
         <div class="sys-tabs" style="margin-bottom:0;">
           <button class="sys-tab active" onclick="setSys('100')" id="sys-100">100pt</button>
-          <button class="sys-tab" onclick="setSys('20')" id="sys-20">20pt</button>
-          <button class="sys-tab" onclick="setSys('5star')" id="sys-5star">5★</button>
+          <!-- <button class="sys-tab" onclick="setSys('20')" id="sys-20">20pt</button>
+          <button class="sys-tab" onclick="setSys('5star')" id="sys-5star">5★</button> -->
         </div>
       </div>
       <div class="crit-grid" id="crit-grid"></div>
@@ -630,7 +640,7 @@ function wineFormHTML() {
     <div class="field full"><label>Appellation / AOC / DOC / AVA</label><input type="text" id="wf-appel" placeholder="Start typing…" autocomplete="off"></div>
     <div class="field full"><label>Grape Variety / Blend</label><input type="text" id="wf-grapes" placeholder="e.g. Cabernet Sauvignon 75%, Merlot 25%"></div>
     <div class="field"><label>Alcohol (%)</label><input type="text" id="wf-abv" placeholder="e.g. 13.5"></div>
-    <div class="field"><label>Price Range</label><select id="wf-price"><option value="">Hidden</option><option>Under €15</option><option>€15–€30</option><option>€30–€60</option><option>€60–€120</option><option>€120–€300</option><option>€300+</option></select></div>
+    <div class="field"><label>Price (DKK)</label><input type="number" id="wf-price" placeholder="e.g. 250.00" min="0" step="0.01"></div>
     <div class="field full"><label>Host Notes (revealed after tasting)</label><textarea id="wf-notes" placeholder="Winemaker story, food pairing, impressions…"></textarea></div>
   </div>`;
 }
@@ -961,11 +971,10 @@ const SYS = {
   '100': {
     lbl: '100pt (Parker / Wine Spectator)', max: 100, base: 50,
     crit: [
-      {id:'app',    name:'Appearance', desc:'Color, clarity, intensity',     max:5,  def:3},
-      {id:'nose',   name:'Nose / Aroma', desc:'Bouquet complexity',           max:15, def:10},
-      {id:'palate', name:'Palate',      desc:'Flavor, structure, balance',    max:20, def:14},
-      {id:'finish', name:'Finish',      desc:'Length & persistence',          max:10, def:7},
-      {id:'overall',name:'Overall Quality', desc:'Harmony, typicity, complexity', max:50, def:36}
+      {id:'app',    name:'Udseende', desc:'Color, clarity, intensity',     max:5,  def:3},
+      {id:'nose',   name:'Duft', desc:'Bouquet complexity',           max:15, def:10},
+      {id:'palate', name:'Smag',      desc:'Flavor, structure, balance',    max:20, def:14},
+      {id:'finish', name:'Overordnet indtryk',      desc:'Length & persistence',          max:10, def:7}
     ],
     badges: [
       {m:95, l:'Classic 🏆',       c:'#C9A84C'},
@@ -975,40 +984,41 @@ const SYS = {
       {m:70, l:'Average',          c:'#8B7D7B'},
       {m:0,  l:'Below Average',    c:'#996666'}
     ]
-  },
-  '20': {
-    lbl: '20pt (WSET / Jancis Robinson)', max: 20, base: 0,
-    crit: [
-      {id:'app',    name:'Appearance', desc:'Color, clarity',           max:3, def:2},
-      {id:'nose',   name:'Nose',       desc:'Bouquet & aroma',          max:7, def:5},
-      {id:'palate', name:'Palate',     desc:'Flavor, structure',        max:7, def:5},
-      {id:'overall',name:'Overall',    desc:'Overall impression',       max:3, def:2}
-    ],
-    badges: [
-      {m:19, l:'Exceptional 🏆',   c:'#C9A84C'},
-      {m:17, l:'Very Fine ⭐',     c:'#C9A84C'},
-      {m:15, l:'Good 👍',          c:'#A8C490'},
-      {m:12, l:'Acceptable 🙂',    c:'#A8C490'},
-      {m:0,  l:'Poor',             c:'#996666'}
-    ]
-  },
-  '5star': {
-    lbl: '5-Star Scale', max: 5, base: 0,
-    crit: [
-      {id:'app',    name:'Appearance', max:1, def:.5, step:.5},
-      {id:'aroma',  name:'Aroma',      max:1, def:.5, step:.5},
-      {id:'taste',  name:'Taste',      max:1, def:.5, step:.5},
-      {id:'finish', name:'Finish',     max:1, def:.5, step:.5},
-      {id:'overall',name:'Overall',    max:1, def:.5, step:.5}
-    ],
-    badges: [
-      {m:4.5, l:'Extraordinary 🏆', c:'#C9A84C'},
-      {m:4,   l:'Excellent ⭐',     c:'#C9A84C'},
-      {m:3,   l:'Good 👍',          c:'#A8C490'},
-      {m:2,   l:'Fair 🙂',          c:'#A8C490'},
-      {m:0,   l:'Poor',             c:'#996666'}
-    ]
   }
+  // ,
+  // '20': {
+  //   lbl: '20pt (WSET / Jancis Robinson)', max: 20, base: 0,
+  //   crit: [
+  //     {id:'app',    name:'Appearance', desc:'Color, clarity',           max:3, def:2},
+  //     {id:'nose',   name:'Nose',       desc:'Bouquet & aroma',          max:7, def:5},
+  //     {id:'palate', name:'Palate',     desc:'Flavor, structure',        max:7, def:5},
+  //     {id:'overall',name:'Overall',    desc:'Overall impression',       max:3, def:2}
+  //   ],
+  //   badges: [
+  //     {m:19, l:'Exceptional 🏆',   c:'#C9A84C'},
+  //     {m:17, l:'Very Fine ⭐',     c:'#C9A84C'},
+  //     {m:15, l:'Good 👍',          c:'#A8C490'},
+  //     {m:12, l:'Acceptable 🙂',    c:'#A8C490'},
+  //     {m:0,  l:'Poor',             c:'#996666'}
+  //   ]
+  // },
+  // '5star': {
+  //   lbl: '5-Star Scale', max: 5, base: 0,
+  //   crit: [
+  //     {id:'app',    name:'Appearance', max:1, def:.5, step:.5},
+  //     {id:'aroma',  name:'Aroma',      max:1, def:.5, step:.5},
+  //     {id:'taste',  name:'Taste',      max:1, def:.5, step:.5},
+  //     {id:'finish', name:'Finish',     max:1, def:.5, step:.5},
+  //     {id:'overall',name:'Overall',    max:1, def:.5, step:.5}
+  //   ],
+  //   badges: [
+  //     {m:4.5, l:'Extraordinary 🏆', c:'#C9A84C'},
+  //     {m:4,   l:'Excellent ⭐',     c:'#C9A84C'},
+  //     {m:3,   l:'Good 👍',          c:'#A8C490'},
+  //     {m:2,   l:'Fair 🙂',          c:'#A8C490'},
+  //     {m:0,   l:'Poor',             c:'#996666'}
+  //   ]
+  // }
 };
 
 function setSys(s) {
@@ -1153,7 +1163,7 @@ async function exportResults() {
   const c = document.getElementById('res-code-inp').value.trim();
   const s = await dbGet('sessions/' + c) || await dbGet('archive/' + c);
   if (!s) return;
-  let txt = `VINO SOCIETY — TASTING RESULTS\n${'='.repeat(46)}\nSession: ${s.name}  Code: ${c}  Date: ${s.created}\n\n`;
+  let txt = `Vintosserne — TASTING RESULTS\n${'='.repeat(46)}\nSession: ${s.name}  Code: ${c}  Date: ${s.created}\n\n`;
   (s.wines || []).forEach((w, i) => {
     txt += `WINE #${i + 1}: ${w.name} ${w.vintage || ''}\n${'-'.repeat(40)}\n`;
     txt += `Type: ${w.type} | Country: ${w.country} | Region: ${w.region}\n`;
