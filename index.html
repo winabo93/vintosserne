@@ -506,193 +506,54 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.65rem;letter-spacing:.
 
 
 // ═══════════════════════════════════════
-//  INLINE QR — qrcode-generator (MIT) minimal build
+//  QR CODE — via QRious (loaded from CDN)
+//  QRious is a complete, well-tested QR library (MIT)
 // ═══════════════════════════════════════
-var qrcodegen=(function(){
-"use strict";
-// --- Minimal QR encoder returning module matrix ---
-function QRC(text,ecl){
-  // ecl: 0=L,1=M,2=Q,3=H
-  var segs=[QRC.makeBytes(QRC.toUtf8(text))];
-  return QRC.encodeSegments(segs,ecl||1);
-}
-QRC.toUtf8=function(s){
-  var r=[],i=0;
-  for(;i<s.length;){
-    var c=s.charCodeAt(i++);
-    if(c<0x80)r.push(c);
-    else if(c<0x800){r.push(0xC0|(c>>6));r.push(0x80|(c&63));}
-    else if(c>=0xD800&&c<0xDC00&&i<s.length){
-      var d=s.charCodeAt(i++);
-      c=0x10000+((c&0x3FF)<<10)+(d&0x3FF);
-      r.push(0xF0|(c>>18));r.push(0x80|((c>>12)&63));r.push(0x80|((c>>6)&63));r.push(0x80|(c&63));
-    }else{r.push(0xE0|(c>>12));r.push(0x80|((c>>6)&63));r.push(0x80|(c&63));}
-  }
-  return r;
-};
-QRC.makeBytes=function(data){return{mode:4,getData:function(){return data;}};};
-// Minimal encode — wraps the full encoder below
-QRC.encodeSegments=function(segs,ecl){
-  // Find minimum version
-  for(var ver=1;ver<=40;ver++){
-    var cap=QRC.getCapacity(ver,ecl);
-    var bits=0;for(var s=0;s<segs.length;s++)bits+=4+QRC.getCharCountBits(segs[s].mode,ver)+segs[s].getData().length*8;
-    if(bits<=cap*8){return QRC.build(segs,ver,ecl);}
-  }
-  throw new Error("Data too long");
-};
-QRC.getCapacity=function(v,e){return [[19,16,13,9],[34,28,22,16],[55,44,34,26],[80,64,48,36],[108,86,62,46],[136,108,76,60],[156,124,88,66],[194,154,110,86],[232,182,132,100],[274,216,154,122],[324,254,180,140],[370,290,206,158],[428,334,244,180],[461,365,261,197],[523,415,295,223],[589,453,325,253],[647,507,367,283],[721,563,397,313],[795,627,445,341],[861,669,485,385],[932,714,512,406],[1006,782,568,442],[1094,860,614,464],[1174,914,664,514],[1276,1000,718,538],[1370,1062,754,596],[1468,1128,808,628],[1531,1193,871,661],[1631,1267,911,701],[1735,1373,985,745],[1843,1455,1033,793],[1955,1541,1115,845],[2071,1631,1171,901],[2191,1725,1231,961],[2306,1812,1286,986],[2434,1914,1354,1054],[2566,1992,1426,1096],[2702,2102,1502,1142],[2812,2216,1582,1222],[2956,2334,1666,1276]][v-1][e];};
-QRC.getCharCountBits=function(mode,v){if(v<10)return[10,9,8,8][Math.log2(mode)];if(v<27)return[12,11,16,10][Math.log2(mode)];return[14,13,16,12][Math.log2(mode)];};
-QRC.build=function(segs,ver,ecl){
-  var size=ver*4+17;
-  // allocate modules: null=unset, true=dark, false=light
-  var mod=[];for(var i=0;i<size;i++){mod.push(new Array(size).fill(null));}
-  var isFunc=[];for(var i=0;i<size;i++){isFunc.push(new Array(size).fill(false));}
-  function setF(r,c,v){mod[r][c]=v;isFunc[r][c]=true;}
-  // Finder patterns
-  function finder(r,c){for(var dr=-1;dr<=7;dr++)for(var dc=-1;dc<=7;dc++){if(r+dr<0||r+dr>=size||c+dc<0||c+dc>=size)continue;setF(r+dr,c+dc,(dr>=0&&dr<=6&&(dc==0||dc==6))||(dc>=0&&dc<=6&&(dr==0||dr==6))||(dr>=2&&dr<=4&&dc>=2&&dc<=4));}}
-  finder(0,0);finder(0,size-7);finder(size-7,0);
-  // Separators
-  for(var i=0;i<8;i++){setF(7,i,false);setF(i,7,false);setF(7,size-1-i,false);setF(i,size-8,false);setF(size-8,i,false);setF(size-1-i,7,false);}
-  // Timing
-  for(var i=8;i<size-8;i++){setF(6,i,i%2==0);setF(i,6,i%2==0);}
-  // Dark module
-  setF(size-8,8,true);
-  // Alignment patterns
-  var apos=[[],[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]][ver-1];
-  for(var i=0;i<apos.length;i++)for(var j=0;j<apos.length;j++){var r=apos[i],c=apos[j];if(mod[r][c]!==null)continue;for(var dr=-2;dr<=2;dr++)for(var dc=-2;dc<=2;dc++)setF(r+dr,c+dc,(Math.abs(dr)==2||Math.abs(dc)==2)||(dr==0&&dc==0));}
-  // Build data bits
-  var data=[];
-  for(var si=0;si<segs.length;si++){
-    var seg=segs[si],bytes=seg.getData();
-    data.push(1,0,0,0); // mode=byte
-    // char count bits
-    var ccb=QRC.getCharCountBits(seg.mode,ver);
-    for(var k=ccb-1;k>=0;k--)data.push((bytes.length>>k)&1);
-    for(var bi=0;bi<bytes.length;bi++)for(var k=7;k>=0;k--)data.push((bytes[bi]>>k)&1);
-  }
-  data.push(0,0,0,0); // terminator
-  while(data.length%8)data.push(0);
-  var cap=QRC.getCapacity(ver,ecl);
-  for(var pad=0;data.length<cap*8;)data.push(...[1,1,1,0,1,1,0,0,0,0,0,1,0,0,0,1][pad++%2==0?'slice':[]]||pad%2==0?[1,1,1,0,1,1,0,0]:[0,0,0,1,0,0,0,1]);
-  // EC codewords (simplified - skip for brevity, use L level with low EC)
-  // For a working implementation use the full RS encoder; here we rely on the
-  // data-only path which works for version <=5 with ECL=L (URLs up to ~100 chars)
-  // Full RS below:
-  var dc2=QRC.getDataCodewords(ver,ecl,data);
-  // Format & mask
-  var best=-1,bestLoss=Infinity;
-  for(var mask=0;mask<8;mask++){
-    QRC.applyMask(mod,isFunc,mask);
-    QRC.setFormat(mod,ecl,mask,size);
-    var loss=QRC.penalty(mod,size);
-    if(loss<bestLoss){bestLoss=loss;best=mask;}
-    QRC.applyMask(mod,isFunc,mask); // undo
-  }
-  QRC.placeData(mod,isFunc,dc2,size);
-  QRC.applyMask(mod,isFunc,best);
-  QRC.setFormat(mod,ecl,best,size);
-  return mod;
-};
-// ---- helper stubs to keep it concise ----
-QRC.getDataCodewords=function(ver,ecl,bits){
-  var bytes=[];for(var i=0;i<bits.length;i+=8){var b=0;for(var k=0;k<8;k++)b=(b<<1)|(bits[i+k]||0);bytes.push(b);}
-  // Full RS encoding
-  var blocks=QRC.rsBlocks(ver,ecl),res=[],pos=0;
-  var allDC=[],allEC=[];
-  for(var bi=0;bi<blocks.length;bi++){
-    var dc=blocks[bi][1],ec=blocks[bi][0]-dc;
-    var d=bytes.slice(pos,pos+dc);pos+=dc;
-    allDC.push(d);allEC.push(QRC.rsEncode(d,ec));
-  }
-  var mx=Math.max(...allDC.map(function(d){return d.length;}));
-  for(var i=0;i<mx;i++)for(var bi=0;bi<allDC.length;bi++)if(i<allDC[bi].length)res.push(allDC[bi][i]);
-  var me=allEC[0].length;
-  for(var i=0;i<me;i++)for(var bi=0;bi<allEC.length;bi++)res.push(allEC[bi][i]);
-  return res;
-};
-QRC.rsBlocks=function(v,e){
-  var t=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,151,121,7,152,122],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,151,121,14,152,122],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]][((v-1)*4)+e];
-  var r=[];for(var i=0;i<t.length;i+=3)for(var j=0;j<t[i];j++)r.push([t[i+1],t[i+2]]);return r;
-};
-QRC.rsEncode=function(data,ecLen){
-  var gen=QRC.rsGenerator(ecLen);
-  var rem=new Array(ecLen).fill(0);
-  for(var i=0;i<data.length;i++){
-    var factor=data[i]^rem.shift();rem.push(0);
-    for(var j=0;j<ecLen;j++)rem[j]^=QRC.gfMul(gen[j],factor);
-  }
-  return rem;
-};
-QRC.rsGenerator=function(deg){
-  var r=new Array(deg).fill(0);r[deg-1]=1;
-  var root=1;
-  for(var i=0;i<deg;i++){for(var j=0;j<deg-1;j++)r[j]=QRC.gfMul(r[j],root)^r[j+1];r[deg-1]=QRC.gfMul(r[deg-1],root);root=QRC.gfMul(root,2);}
-  return r;
-};
-QRC.gfMul=function(x,y){if(x==0||y==0)return 0;return QRC.EXP[(QRC.LOG[x]+QRC.LOG[y])%255];};
-(function(){QRC.EXP=new Array(256);QRC.LOG=new Array(256);var x=1;for(var i=0;i<255;i++){QRC.EXP[i]=x;QRC.LOG[x]=i;x=(x<<1)^(x>=128?0x11D:0);}QRC.EXP[255]=QRC.EXP[0];})();
-QRC.placeData=function(mod,isFunc,data,size){
-  var di=0,total=data.length*8;
-  for(var right=size-1;right>=1;right-=2){
-    if(right==6)right=5;
-    for(var vert=0;vert<size;vert++){
-      for(var j=0;j<2;j++){
-        var x=right-j,upward=((right+1)&2)==0,y=upward?size-1-vert:vert;
-        if(!isFunc[y][x]&&di<total){mod[y][x]=((data[di>>3]>>(7-(di&7)))&1)==1;di++;}
-      }
-    }
-  }
-};
-QRC.applyMask=function(mod,isFunc,mask){
-  var fn=[function(r,c){return(r+c)%2==0;},function(r,c){return r%2==0;},function(r,c){return c%3==0;},function(r,c){return(r+c)%3==0;},function(r,c){return(Math.floor(r/2)+Math.floor(c/3))%2==0;},function(r,c){return(r*c)%2+(r*c)%3==0;},function(r,c){return((r*c)%2+(r*c)%3)%2==0;},function(r,c){return((r+c)%2+(r*c)%3)%2==0;}];
-  for(var r=0;r<mod.length;r++)for(var c=0;c<mod[r].length;c++)if(!isFunc[r][c])mod[r][c]^=fn[mask](r,c);
-};
-QRC.setFormat=function(mod,ecl,mask,size){
-  var data=(ecl<<3)|mask;
-  var rem=data;for(var i=0;i<10;i++)rem=(rem<<1)^((rem>>9)*0x537);
-  var b=((data<<10)|rem)^0x5412;
-  for(var i=0;i<=5;i++)mod[8][i]=((b>>(14-i))&1)==1;
-  mod[8][7]=((b>>8)&1)==1;mod[8][8]=((b>>7)&1)==1;mod[7][8]=((b>>6)&1)==1;
-  for(var i=9;i<=14;i++)mod[14-i+8][8]=((b>>(14-i))&1)==1;
-  for(var i=0;i<=7;i++)mod[size-1-i][8]=((b>>i)&1)==1;
-  mod[8][size-8]=((b>>8)&1)==1;
-};
-QRC.penalty=function(mod,size){
-  var p=0;
-  for(var r=0;r<size;r++){var run=0,prev=null;for(var c=0;c<size;c++){var v=mod[r][c];if(v===prev)run++;else{run=1;prev=v;}if(run==5)p+=3;else if(run>5)p++;}}
-  for(var c=0;c<size;c++){var run=0,prev=null;for(var r=0;r<size;r++){var v=mod[r][c];if(v===prev)run++;else{run=1;prev=v;}if(run==5)p+=3;else if(run>5)p++;}}
-  for(var r=0;r<size-1;r++)for(var c=0;c<size-1;c++){var v=mod[r][c];if(v==mod[r][c+1]&&v==mod[r+1][c]&&v==mod[r+1][c+1])p+=3;}
-  var dark=0;for(var r=0;r<size;r++)for(var c=0;c<size;c++)if(mod[r][c])dark++;
-  p+=Math.floor(Math.abs(dark*20-size*size*10)/(size*size))*10;
-  return p;
-};
-return QRC;
-})();
 
+// renderQR is called by toggleQR() — wraps QRious with a graceful fallback
 function renderQR(canvasEl, text, size, darkColor, lightColor) {
-  try {
-    var mod = qrcodegen(text, 1); // ECL M
-    var n = mod.length;
-    canvasEl.width = size; canvasEl.height = size;
-    var ctx = canvasEl.getContext('2d');
-    var cell = size / n;
-    ctx.fillStyle = lightColor || '#ffffff';
-    ctx.fillRect(0, 0, size, size);
-    ctx.fillStyle = darkColor || '#000000';
-    for (var r = 0; r < n; r++)
-      for (var c = 0; c < n; c++)
-        if (mod[r][c]) ctx.fillRect(Math.floor(c*cell), Math.floor(r*cell), Math.ceil(cell), Math.ceil(cell));
-  } catch(e) {
-    console.warn('QR generation failed:', e.message);
-    var ctx = canvasEl.getContext('2d');
-    ctx.fillStyle = '#1a0a0e';
-    ctx.fillRect(0,0,canvasEl.width,canvasEl.height);
-    ctx.fillStyle = '#C9A84C';
-    ctx.font = '11px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('QR unavailable', canvasEl.width/2, canvasEl.height/2);
+  if (typeof QRious !== 'undefined') {
+    // QRious already loaded
+    _doRenderQR(canvasEl, text, size, darkColor, lightColor);
+  } else {
+    // Load QRious from CDN, then render
+    var script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js';
+    script.onload = function() { _doRenderQR(canvasEl, text, size, darkColor, lightColor); };
+    script.onerror = function() { _qrFallback(canvasEl, text, size); };
+    document.head.appendChild(script);
   }
+}
+
+function _doRenderQR(canvasEl, text, size, darkColor, lightColor) {
+  try {
+    new QRious({
+      element:    canvasEl,
+      value:      text,
+      size:       size || 220,
+      foreground: darkColor  || '#000000',
+      background: lightColor || '#ffffff',
+      level:      'M'   // error correction level M — good balance of density vs robustness
+    });
+  } catch(e) {
+    console.warn('QRious failed:', e.message);
+    _qrFallback(canvasEl, text, size);
+  }
+}
+
+function _qrFallback(canvasEl, text, size) {
+  // Show the URL as text so host can at least copy/share it manually
+    var ctx = canvasEl.getContext('2d');
+  canvasEl.width = size || 220; canvasEl.height = size || 220;
+    ctx.fillStyle = '#1a0a0e';
+  ctx.fillRect(0, 0, canvasEl.width, canvasEl.height);
+    ctx.fillStyle = '#C9A84C';
+  ctx.font = '12px sans-serif';
+    ctx.textAlign = 'center';
+  ctx.fillText('QR unavailable', canvasEl.width / 2, canvasEl.height / 2 - 8);
+  ctx.fillStyle = '#8B7D7B';
+  ctx.font = '9px sans-serif';
+  ctx.fillText('Use the URL below', canvasEl.width / 2, canvasEl.height / 2 + 10);
 }
 
 // ═══════════════════════════════════════
@@ -1447,7 +1308,7 @@ function renderRevealArea(idx, data) {
         </div>
       </div>
       <div class="wine-meta">
-        ${[{l:'Country',v:w.country},{l:'Region',v:w.region},{l:'Appellation',v:w.appellation},{l:'Grape(s)',v:w.grapes},{l:'Alcohol',v:w.abv}]
+        ${[{l:'Classification',v:w.classification},{l:'Country',v:w.country},{l:'Region',v:w.region},{l:'Appellation',v:w.appellation},{l:'Grape(s)',v:w.grapes},{l:'Alcohol',v:w.abv}]
           .filter(m => m.v)
           .map(m => `<div class="meta-item"><div class="meta-lbl">${m.l}</div><div class="meta-val">${m.v}</div></div>`)
           .join('')}
