@@ -301,6 +301,7 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.65rem;letter-spacing:.
   <button class="tab-btn active" onclick="showTab('taste')"><span>🥂 Taste</span></button>
   <button class="tab-btn" onclick="showTab('results')"><span>📊 Results</span></button>
   <button class="tab-btn" onclick="showTab('history')"><span>📚 History</span></button>
+  <button class="tab-btn" onclick="showTab('map')"><span>🗺 Map</span></button>
 </div>
 
 <!-- ══════════ HOST ══════════ -->
@@ -539,12 +540,6 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.65rem;letter-spacing:.
     <div id="club-stats-content"></div>
   </div>
 
-  <div id="wines-map-card" class="card hidden">
-    <div class="card-title">🗺 All-Time Wine Origins Map</div>
-    <p style="font-family:'Josefin Sans',sans-serif;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke);margin-bottom:.6rem;">Wineries &amp; vineyards from all archived sessions</p>
-    <div class="map-container" id="global-map-container"></div>
-    <div class="map-legend" id="global-map-legend"></div>
-  </div>
 </div>
 
   <div id="ai-stats-card" class="card">
@@ -572,9 +567,38 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.65rem;letter-spacing:.
         <button class="ai-send-btn" id="ai-send-btn" onclick="sendAIQuery()" title="Send">➤</button>
       </div>
     </div>
-    <div style="font-family:'Josefin Sans',sans-serif;font-size:.52rem;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke);margin-top:.7rem;opacity:.6;">Powered by Claude · Reads your archived session data</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;margin-top:.7rem;">
+      <div style="font-family:'Josefin Sans',sans-serif;font-size:.52rem;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke);opacity:.6;">Powered by Claude · Reads your archived session data</div>
+      <button class="btn btn-outline btn-sm" onclick="clearAIKey()" style="font-size:.52rem;padding:.22rem .6rem;opacity:.6;">🔑 Change API Key</button>
+    </div>
 </div>
 
+
+<!-- ══════════ MAP ══════════ -->
+<div id="tab-map" class="panel">
+  <div class="card">
+    <div class="card-title">🗺 Wine Origins Map
+      <span style="font-family:'Josefin Sans',sans-serif;font-size:.58rem;font-style:normal;color:var(--smoke);margin-left:.3rem;">all archived sessions</span>
+    </div>
+    <div id="map-tab-empty" style="text-align:center;padding:2rem 1rem;color:var(--smoke);font-style:italic;">
+      <div style="font-size:2rem;margin-bottom:.5rem;opacity:.4;">🗺</div>
+      No geo-tagged wines yet. Add winery locations when entering wines to see them here.
+    </div>
+    <div id="map-tab-content" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;margin-bottom:.8rem;">
+        <div style="font-family:'Josefin Sans',sans-serif;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--smoke);">
+          <span id="map-tab-count">0</span> wineries plotted across all sessions
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="loadMapTab()">🔄 Refresh</button>
+      </div>
+      <div class="map-container" id="map-tab-container" style="height:480px;"></div>
+      <div class="map-legend" id="map-tab-legend" style="margin-top:.75rem;"></div>
+    </div>
+  </div>
+
+  <!-- Per-session breakdown -->
+  <div id="map-sessions-list"></div>
+</div>
 <div class="ornament">✦ ✦ ✦</div>
 </div><!-- /.app -->
 
@@ -1027,13 +1051,14 @@ function clearWineForm() {
 function showTab(n) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  ['host','taste','results','history'].forEach((t, i) => {
+  ['host','taste','results','history','map'].forEach((t, i) => {
     if (t === n) {
       document.querySelectorAll('.tab-btn')[i].classList.add('active');
       document.getElementById('tab-' + t).classList.add('active');
     }
   });
   if (n === 'history') loadHistory();
+  if (n === 'map')     loadMapTab();
 }
 
 // ═══════════════════════════════════════
@@ -1822,32 +1847,8 @@ async function loadHistory() {
         </div>`).join('')}
     </div>` : ''}`;
 
-  // ── Global map: all geo-tagged wines across all sessions ──
-  const allGeoWines = allWines.filter(w => w.location && w.location.lat);
-  const winesMapCard = document.getElementById('wines-map-card');
-  if (allGeoWines.length) {
-    winesMapCard.classList.remove('hidden');
-    const globalPins = allGeoWines.map(w => ({
-      lat: w.location.lat, lng: w.location.lng,
-      label: w.location.label || w.name,
-      name: w.name, vintage: w.vintage,
-      score: (() => {
-        const r = w.ratings || [];
-        if (!r.length) return null;
-        const norm = r.map(x => x.system==='100'?x.score:x.system==='20'?(x.score/20)*100:(x.score/5)*100);
-        return Math.round(norm.reduce((a,b)=>a+b)/norm.length*10)/10;
-      })()
-    }));
-    setTimeout(() => {
-      renderMap('global-map-container', globalPins);
-      document.getElementById('global-map-legend').innerHTML = allGeoWines.map((w, i) =>
-        `<div class="map-pin"><div class="pin-num">${i+1}</div>${w.name}${w.vintage?' '+w.vintage:''}</div>`
-      ).join('');
-    }, 80);
-  } else {
-    winesMapCard.classList.add('hidden');
-  }
 }
+
 
 async function showHistDetail(c) {
   const el = document.getElementById('hist-detail-' + c);
@@ -2524,6 +2525,89 @@ function renderAIMarkdown(md) {
     .replace(/\n/g, '<br>');
 
   return html;
+}
+
+// ═══════════════════════════════════════
+//  MAP TAB
+// ═══════════════════════════════════════
+async function loadMapTab() {
+  const archive = await dbGet('archive') || {};
+  const sessions = Object.values(archive);
+  const allWines = sessions.flatMap(s => s.wines || []);
+  const geoWines = allWines.filter(w => w.location && w.location.lat);
+
+  const empty   = document.getElementById('map-tab-empty');
+  const mapCont = document.getElementById('map-tab-content');
+  const sessListEl = document.getElementById('map-sessions-list');
+
+  if (!geoWines.length) {
+    empty.style.display   = 'block';
+    mapCont.style.display = 'none';
+    sessListEl.innerHTML  = '';
+    return;
+  }
+
+  empty.style.display   = 'none';
+  mapCont.style.display = 'block';
+  document.getElementById('map-tab-count').textContent = geoWines.length;
+
+  // Build global pins with score
+  const globalPins = geoWines.map(w => {
+    const r = w.ratings || [];
+    const norm = r.map(x => x.system==='100'?x.score:x.system==='20'?(x.score/20)*100:(x.score/5)*100);
+    const avg = norm.length ? Math.round(norm.reduce((a,b)=>a+b)/norm.length*10)/10 : null;
+    return {
+      lat:   w.location.lat,
+      lng:   w.location.lng,
+      label: w.location.label || w.name,
+      name:  w.name,
+      vintage: w.vintage || '',
+      score: avg
+    };
+  });
+
+  setTimeout(() => {
+    renderMap('map-tab-container', globalPins);
+    document.getElementById('map-tab-legend').innerHTML = geoWines.map((w, i) => {
+      const r = w.ratings || [];
+      const norm = r.map(x => x.system==='100'?x.score:x.system==='20'?(x.score/20)*100:(x.score/5)*100);
+      const avg = norm.length ? Math.round(norm.reduce((a,b)=>a+b)/norm.length*10)/10 : null;
+      return `<div class="map-pin">
+        <div class="pin-num">${i+1}</div>
+        ${w.name}${w.vintage?' '+w.vintage:''}
+        ${avg!==null?`<span style="color:var(--gold);margin-left:.3rem;">${avg}</span>`:''}
+      </div>`;
+    }).join('');
+  }, 80);
+
+  // Per-session breakdown cards
+  const sessCodes = Object.keys(archive).filter(code =>
+    (archive[code].wines||[]).some(w => w.location && w.location.lat)
+  );
+
+  sessListEl.innerHTML = sessCodes.map(code => {
+    const s = archive[code];
+    const sessGeoWines = (s.wines||[]).filter(w => w.location && w.location.lat);
+    if (!sessGeoWines.length) return '';
+    const mapId    = 'sess-map-mini-' + code;
+    const legendId = 'sess-map-mini-leg-' + code;
+    return `<div class="card" style="margin-bottom:1rem;">
+      <div class="card-title" style="font-size:.95rem;">
+        📍 ${s.name}
+        <span style="font-family:'Josefin Sans',sans-serif;font-size:.56rem;font-style:normal;color:var(--smoke);">${sessGeoWines.length} location${sessGeoWines.length!==1?'s':''}</span>
+      </div>
+      <div class="map-container" id="${mapId}" style="height:280px;"></div>
+      <div class="map-legend" id="${legendId}" style="margin-top:.55rem;"></div>
+    </div>`;
+  }).join('');
+
+  // Render each session mini-map
+  sessCodes.forEach(code => {
+    const s = archive[code];
+    const el = document.getElementById('sess-map-mini-' + code);
+    if (!el) return;
+    setTimeout(() => renderSessionMap('sess-map-mini-' + code, 'sess-map-mini-leg-' + code, s), 120);
+  });
 }
 
 // ── BOOT ──
