@@ -2210,47 +2210,89 @@ async function buildWineDataContext() {
   const sessions = Object.values(archive);
   if (!sessions.length) return null;
 
-  const allWines = sessions.flatMap(s => s.wines || []);
+  // --- Helpers ----------------------------------------------------
 
-  // Normalise a score to 100pt scale
   const norm100 = r =>
     r.system === '100' ? r.score
     : r.system === '20' ? (r.score / 20) * 100
     : (r.score / 5) * 100;
 
-  // Per-wine stats
+  const parseDate = str => {
+    if (!str) return null;
+
+    const parts = str.split(/[\/, ]+/);
+    if (parts.length >= 3) {
+      const [d, m, y] = parts;
+      return new Date(`${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`);
+    }
+    return null;
+  };
+
+  // --- Flatten wines with session context -------------------------
+
+  const allWines = sessions.flatMap(s =>
+    (s.wines || []).map(w => ({
+      ...w,
+      sessionName: s.name,
+      sessionHost: s.host || '',
+      sessionDate: parseDate(s.created)
+    }))
+  );
+
+  // --- Wine-level stats ------------------------------------------
+
   const wineRows = allWines.map(w => {
-    const ratings = w.ratings || [];
-    const scores  = ratings.map(norm100);
-    const avg     = scores.length
+    const ratings = (w.ratings || []).map(r => ({
+      ...r,
+      score100: norm100(r)
+    }));
+
+    const scores = ratings.map(r => r.score100);
+
+    const avg = scores.length
       ? Math.round(scores.reduce((a,b)=>a+b,0) / scores.length * 10) / 10
       : null;
+
     return {
-      name:           w.name           || '',
-      vintage:        w.vintage        || '',
-      type:           w.type           || '',
-      grapes:         w.grapes         || '',
-      country:        w.country        || '',
-      region:         w.region         || '',
-      appellation:    w.appellation    || '',
+      key: `${w.name || ''}__${w.vintage || ''}`, // stable identity
+
+      name: w.name || '',
+      vintage: w.vintage || '',
+      type: w.type || '',
+      grapes: w.grapes || '',
+      country: w.country || '',
+      region: w.region || '',
+      appellation: w.appellation || '',
       classification: w.classification || '',
-      abv:            w.abv            || '',
-      ratingCount:    ratings.length,
-      avgScore:       avg,
-      scores:         scores,
-      tasters:        ratings.map(r => r.taster),
-      location:       w.location ? w.location.label || '' : ''
+      abv: w.abv || '',
+
+      locationLabel: w.location?.label || '',
+      locationLat: w.location?.lat || null,
+      locationLng: w.location?.lng || null,
+
+      sessionHost: w.sessionHost,
+      sessionName: w.sessionName,
+      sessionDate: w.sessionDate,
+
+      ratingCount: ratings.length,
+      avgScore: avg,
+      scores,
+
+      tasters: ratings.map(r => r.taster)
     };
   });
 
-  // Aggregate helpers
+  // --- Aggregation helper ----------------------------------------
+
   const groupAvg = (key) => {
     const map = {};
+
     wineRows.forEach(w => {
       if (!w[key] || w.avgScore === null) return;
       if (!map[w[key]]) map[w[key]] = [];
       map[w[key]].push(w.avgScore);
     });
+
     return Object.entries(map)
       .map(([k, arr]) => ({
         name: k,
@@ -2260,56 +2302,96 @@ async function buildWineDataContext() {
       .sort((a,b) => b.avg - a.avg);
   };
 
-  const allTasters = [...new Set(allWines.flatMap(w => (w.ratings||[]).map(r=>r.taster)))];
-  const tasterStats = allTasters.map(t => {
-    const scores = allWines.flatMap(w =>
-      (w.ratings||[]).filter(r=>r.taster===t).map(r=>norm100(r))
-    );
-    return {
-      name: t,
-      count: scores.length,
-      avg: scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length*10)/10 : null,
-      min: scores.length ? Math.round(Math.min(...scores)*10)/10 : null,
-      max: scores.length ? Math.round(Math.max(...scores)*10)/10 : null
-    };
-  }).sort((a,b) => b.count - a.count);
+  // --- Tasters ----------------------------------------------------
 
-  const allScores = wineRows.filter(w=>w.avgScore!==null).map(w=>w.avgScore);
+  const tasterMap = {};
+
+  allWines.forEach(w => {
+    (w.ratings || []).forEach(r => {
+      const t = r.taster;
+      const score = norm100(r);
+
+      if (!tasterMap[t]) tasterMap[t] = [];
+      tasterMap[t].push(score);
+    });
+  });
+
+  const tasterStats = Object.entries(tasterMap)
+    .map(([name, scores]) => ({
+      name,
+      count: scores.length,
+      avg: Math.round(scores.reduce((a,b)=>a+b,0)/scores.length*10)/10,
+      min: Math.min(...scores),
+      max: Math.max(...scores)
+    }))
+    .sort((a,b) => b.count - a.count);
+
+  // --- Hosts (important for your UI) -------------------------------
+
+  const hostMap = {};
+
+  wineRows.forEach(w => {
+    if (!w.sessionHost || w.avgScore === null) return;
+
+    if (!hostMap[w.sessionHost]) hostMap[w.sessionHost] = [];
+    hostMap[w.sessionHost].push(w.avgScore);
+  });
+
+  const hostStats = Object.entries(hostMap)
+    .map(([name, scores]) => ({
+      name,
+      sessionCount: sessions.filter(s => s.host === name).length,
+      wineCount: scores.length,
+      avgScore: Math.round(scores.reduce((a,b)=>a+b,0)/scores.length*10)/10
+    }))
+    .sort((a,b) => b.avgScore - a.avgScore);
+
+  // --- Summary ----------------------------------------------------
+
+  const allScores = wineRows
+    .filter(w => w.avgScore !== null)
+    .map(w => w.avgScore);
+
   const overallAvg = allScores.length
-    ? Math.round(allScores.reduce((a,b)=>a+b,0)/allScores.length*10)/10 : null;
+    ? Math.round(allScores.reduce((a,b)=>a+b,0)/allScores.length*10)/10
+    : null;
+
+  // --- Return -----------------------------------------------------
 
   return {
     summary: {
-      totalSessions:  sessions.length,
-      totalWines:     allWines.length,
-      totalRatings:   allWines.reduce((n,w)=>n+(w.ratings||[]).length,0),
-      totalTasters:   allTasters.length,
+      totalSessions: sessions.length,
+      totalWines: allWines.length,
+      totalRatings: allWines.reduce((n,w)=>n+(w.ratings||[]).length,0),
+      totalTasters: Object.keys(tasterMap).length,
+      totalHosts: Object.keys(hostMap).length,
+
       overallAvg,
-      highestScore:   allScores.length ? Math.max(...allScores) : null,
-      lowestScore:    allScores.length ? Math.min(...allScores) : null
+      highestScore: allScores.length ? Math.max(...allScores) : null,
+      lowestScore: allScores.length ? Math.min(...allScores) : null
     },
+
     byGrape:   groupAvg('grapes').slice(0, 20),
     byCountry: groupAvg('country').slice(0, 20),
     byRegion:  groupAvg('region').slice(0, 20),
     byType:    groupAvg('type').slice(0, 10),
     byClass:   groupAvg('classification').slice(0, 15),
-    tasters:   tasterStats,
-    topWines:  wineRows
+
+    tasters: tasterStats,
+    hosts: hostStats, // 🔥 use this for your dropdown
+
+    topWines: wineRows
       .filter(w => w.avgScore !== null)
       .sort((a,b) => b.avgScore - a.avgScore)
-      .slice(0, 20)
-      .map(w => ({
-        name: w.name, vintage: w.vintage, grapes: w.grapes,
-        country: w.country, type: w.type, classification: w.classification,
-        avgScore: w.avgScore, ratingCount: w.ratingCount
-      })),
-    allWines: wineRows.map(w => ({
-      name: w.name, vintage: w.vintage, grapes: w.grapes, type: w.type,
-      country: w.country, region: w.region, classification: w.classification,
-      avgScore: w.avgScore, ratingCount: w.ratingCount
-    })),
+      .slice(0, 20),
+
+    allWines: wineRows,
+
     sessions: sessions.map(s => ({
-      name: s.name, created: s.created,
+      name: s.name,
+      host: s.host,
+      created: parseDate(s.created),
+      archived: s.archived,
       wineCount: (s.wines||[]).length,
       ratingCount: (s.wines||[]).reduce((n,w)=>n+(w.ratings||[]).length,0)
     }))
