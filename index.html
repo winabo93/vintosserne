@@ -203,6 +203,20 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.65rem;letter-spacing:.
 .map-pin{display:inline-flex;align-items:center;gap:.35rem;padding:.22rem .65rem;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:20px;font-family:'Josefin Sans',sans-serif;font-size:.58rem;letter-spacing:.08em;color:var(--pale-gold);cursor:default;}
 .map-pin .pin-num{width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,var(--burgundy),var(--deep-wine));border:1px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:.55rem;color:var(--pale-gold);flex-shrink:0;}
 
+/* WINE IMAGE */
+.wine-img-upload{position:relative;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;}
+.wine-img-thumb{width:72px;height:72px;border-radius:8px;object-fit:cover;border:2px solid var(--gold);box-shadow:0 4px 16px rgba(0,0,0,.4);flex-shrink:0;display:none;}
+.wine-img-thumb.visible{display:block;}
+.wine-img-placeholder{width:72px;height:72px;border-radius:8px;border:2px dashed rgba(201,168,76,.3);display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:var(--smoke);flex-shrink:0;background:rgba(255,255,255,.02);}
+.wine-img-btn{font-family:'Josefin Sans',sans-serif;font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;padding:.35rem .75rem;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.25);border-radius:6px;color:var(--pale-gold);cursor:pointer;transition:all .2s;}
+.wine-img-btn:hover{background:rgba(201,168,76,.18);border-color:var(--gold);}
+.wine-img-remove{font-size:.75rem;color:#ff8888;cursor:pointer;text-decoration:underline;display:none;}
+.wine-img-remove.visible{display:inline;}
+
+/* REVEAL IMAGE */
+.wine-label-img{width:100%;max-width:240px;border-radius:10px;object-fit:cover;box-shadow:0 8px 32px rgba(0,0,0,.5);border:1px solid rgba(201,168,76,.3);display:block;margin:.75rem auto 0;}
+.wine-label-img-wrap{text-align:center;}
+
 /* EDIT INLINE */
 .edit-form-wrap{background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.2);
   border-radius:0 0 10px 10px;padding:1.1rem 1rem;margin-top:.5rem;}
@@ -992,6 +1006,20 @@ function wineFormHTML() {
     <div class="field"><label>Pris (DKK)</label><input type="number" id="wf-price" placeholder="e.g. 250.00" min="0" step="0.01"></div>
     <div class="field full"><label>Host Noter (revealed after tasting)</label><textarea id="wf-notes" placeholder="Winemaker story, food pairing, impressions…"></textarea></div>
     <div class="field full">
+      <label>Wine Label Photo <span style="color:var(--smoke);font-weight:300;text-transform:none;font-size:.75rem;">— shown when wine is revealed</span></label>
+      <div class="wine-img-upload">
+        <div class="wine-img-placeholder" id="wf-img-placeholder">📷</div>
+        <img id="wf-img-preview" class="wine-img-thumb" src="" alt="Wine label">
+        <div>
+          <label class="wine-img-btn" for="wf-img-input">📷 Upload photo</label>
+          <input type="file" id="wf-img-input" accept="image/*" style="display:none;" onchange="handleWineImage('wf-img-input','wf-img-preview','wf-img-placeholder','wf-img-remove','wf-img-data')">
+          <br>
+          <span class="wine-img-remove" id="wf-img-remove" onclick="clearWineImage('wf-img-input','wf-img-preview','wf-img-placeholder','wf-img-remove','wf-img-data')">✕ Remove</span>
+        </div>
+      </div>
+      <input type="hidden" id="wf-img-data" value="">
+    </div>
+    <div class="field full">
       <label>Winery / Vineyard Location <span style="color:var(--smoke);font-weight:300;text-transform:none;font-size:.75rem;">— shown on map in session archive</span></label>
       <div style="display:flex;gap:.5rem;align-items:flex-start;flex-wrap:wrap;">
         <div style="flex:1;min-width:180px;position:relative;">
@@ -1033,7 +1061,7 @@ function initFormAC() {
 }
 
 function clearWineForm() {
-  ['wf-name','wf-vintage','wf-country','wf-region','wf-appel','wf-classification','wf-grapes','wf-abv','wf-notes','wf-location-search','wf-lat','wf-lng'].forEach(id => {
+  ['wf-name','wf-vintage','wf-country','wf-region','wf-appel','wf-classification','wf-grapes','wf-abv','wf-notes','wf-location-search','wf-lat','wf-lng','wf-img-data'].forEach(id => {
     const e = document.getElementById(id); if (e) e.value = '';
   });
   ['wf-type','wf-price'].forEach(id => {
@@ -1043,6 +1071,7 @@ function clearWineForm() {
   if (gp) gp.style.display = 'none';
   const gb = document.getElementById('geo-clear-btn');
   if (gb) gb.style.display = 'none';
+  clearWineImage('wf-img-input','wf-img-preview','wf-img-placeholder','wf-img-remove','wf-img-data');
 }
 
 // ═══════════════════════════════════════
@@ -1237,7 +1266,10 @@ function renderOverview(s) {
         <div class="wine-row-top">
           <div class="wnum">${i + 1}</div>
           <div>
-            <div class="wrow-name">${TE[w.type] || '🍷'} ${w.name}${w.vintage ? ' ' + w.vintage : ''}</div>
+            <div class="wrow-name" style="display:flex;align-items:center;gap:.5rem;">
+              ${w.image ? `<img src="${w.image}" style="width:28px;height:28px;border-radius:4px;object-fit:cover;border:1px solid var(--gold);flex-shrink:0;">` : TE[w.type] || '🍷'}
+              ${w.name}${w.vintage ? ' ' + w.vintage : ''}
+            </div>
             <div class="wrow-meta">${[w.classification, w.type, w.country, w.region].filter(Boolean).join(' · ')}</div>
           </div>
           <div class="wine-row-actions">
@@ -1294,6 +1326,7 @@ async function addWine() {
     price: document.getElementById('wf-price').value,
     notes: document.getElementById('wf-notes').value.trim(),
     location: latVal && lngVal ? { lat: parseFloat(latVal), lng: parseFloat(lngVal), label: locLabel } : null,
+    image: document.getElementById('wf-img-data').value || null,
     revealed: false,
     ratings: []
   });
@@ -1440,13 +1473,16 @@ function renderRevealArea(idx, data) {
   } else {
     area.innerHTML = `<div class="reveal-anim">
       <div style="display:flex;align-items:flex-start;gap:1rem;">
-        <div class="wine-emblem">${TE[w.type] || '🍷'}</div>
+        ${w.image
+          ? `<img src="${w.image}" alt="${w.name}" style="width:72px;height:72px;border-radius:8px;object-fit:cover;border:2px solid var(--gold);box-shadow:0 4px 16px rgba(0,0,0,.4);flex-shrink:0;">`
+          : `<div class="wine-emblem">${TE[w.type] || '🍷'}</div>`}
         <div>
           <div style="font-family:'Josefin Sans',sans-serif;font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:#7dffb0;margin-bottom:.25rem;">✨ Revealed by host</div>
           <div style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;">${w.name}</div>
           <div style="font-style:italic;color:var(--gold);margin-top:.18rem;">${[w.vintage, w.type].filter(Boolean).join(' · ')}</div>
         </div>
       </div>
+      ${w.image ? `<div class="wine-label-img-wrap"><img src="${w.image}" alt="${w.name}" class="wine-label-img"></div>` : ''}
       <div class="wine-meta">
         ${[{l:'Classification',v:w.classification},{l:'Country',v:w.country},{l:'Region',v:w.region},{l:'Appellation',v:w.appellation},{l:'Grape(s)',v:w.grapes},{l:'Alcohol',v:w.abv}]
           .filter(m => m.v)
@@ -1681,7 +1717,8 @@ async function loadResults() {
 
     return '<div style="margin-bottom:1.4rem;">'
       + '<div class="res-wine-hdr">'
-      + '<span>' + emoji + ' Wine #' + (i+1) + ': ' + w.name + (w.vintage ? ' ' + w.vintage : '') + (w.classification ? ' <span style="font-family:Josefin Sans,sans-serif;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-left:.4rem;">' + w.classification + '</span>' : '') + '</span>'
+      + (w.image ? '<img src="' + w.image + '" style="width:28px;height:28px;border-radius:4px;object-fit:cover;border:1px solid var(--gold);vertical-align:middle;margin-right:.4rem;"> ' : emoji + ' ')
+      + 'Wine #' + (i+1) + ': ' + w.name + (w.vintage ? ' ' + w.vintage : '') + (w.classification ? ' <span style="font-family:Josefin Sans,sans-serif;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-left:.4rem;">' + w.classification + '</span>' : '') + '</span>'
       + (avg !== null
         ? '<span style="font-family:Josefin Sans,sans-serif;font-size:.68rem;color:var(--gold);">avg ' + avg + '/100</span>'
         : '<span style="color:var(--smoke);font-size:.68rem;">No ratings</span>')
@@ -2277,6 +2314,20 @@ async function openEditWine(idx) {
       <div class="field full"><label>Host Notes</label>
         <textarea id="ew-notes" style="min-height:65px;"></textarea>
       </div>
+      <div class="field full">
+        <label>Wine Label Photo <span style="color:var(--smoke);font-weight:300;text-transform:none;font-size:.75rem;">— shown when revealed</span></label>
+        <div class="wine-img-upload">
+          <div class="wine-img-placeholder" id="ew-img-placeholder">📷</div>
+          <img id="ew-img-preview" class="wine-img-thumb" src="" alt="Wine label">
+          <div>
+            <label class="wine-img-btn" for="ew-img-input">📷 Upload photo</label>
+            <input type="file" id="ew-img-input" accept="image/*" style="display:none;" onchange="handleWineImage(\'ew-img-input\',\'ew-img-preview\',\'ew-img-placeholder\',\'ew-img-remove\',\'ew-img-data\')">
+            <br>
+            <span class="wine-img-remove" id="ew-img-remove" onclick="clearWineImage(\'ew-img-input\',\'ew-img-preview\',\'ew-img-placeholder\',\'ew-img-remove\',\'ew-img-data\')">✕ Remove</span>
+          </div>
+        </div>
+        <input type="hidden" id="ew-img-data" value="">
+      </div>
     </div>
     <div id="ew-alert" class="alert"></div>
     <div class="btn-row">
@@ -2297,6 +2348,19 @@ async function openEditWine(idx) {
   document.getElementById('ew-abv').value     = w.abv        || '';
   document.getElementById('ew-price').value   = w.price      || '';
   document.getElementById('ew-notes').value   = w.notes      || '';
+  // Populate existing image
+  setTimeout(() => {
+    const imgData = document.getElementById('ew-img-data');
+    const imgPrev = document.getElementById('ew-img-preview');
+    const imgPlac = document.getElementById('ew-img-placeholder');
+    const imgRem  = document.getElementById('ew-img-remove');
+    if (imgData && w.image) {
+      imgData.value = w.image;
+      if (imgPrev) { imgPrev.src = w.image; imgPrev.classList.add('visible'); }
+      if (imgPlac) imgPlac.style.display = 'none';
+      if (imgRem)  imgRem.classList.add('visible');
+    }
+  }, 50);
 
   // Autocomplete on edit fields
   initEditAC();
@@ -2328,7 +2392,8 @@ async function saveEditWine(idx) {
     grapes:         document.getElementById('ew-grapes').value.trim(),
     abv:          document.getElementById('ew-abv').value.trim(),
     price:        document.getElementById('ew-price').value,
-    notes:        document.getElementById('ew-notes').value.trim()
+    notes:        document.getElementById('ew-notes').value.trim(),
+    image:        document.getElementById('ew-img-data').value || w.image || null
   });
   await dbSet('sessions/' + activeCode + '/wines', s.wines);
   closeEditWine(idx);
@@ -3040,6 +3105,62 @@ async function loadMapTab() {
     if (!el) return;
     setTimeout(() => renderSessionMap('sess-map-mini-' + code, 'sess-map-mini-leg-' + code, s), 120);
   });
+}
+
+// ═══════════════════════════════════════
+//  WINE IMAGE HELPERS
+// ═══════════════════════════════════════
+function handleWineImage(inputId, previewId, placeholderId, removeId, dataId) {
+  var input = document.getElementById(inputId);
+  if (!input || !input.files || !input.files[0]) return;
+  var file = input.files[0];
+  // Limit to 1MB to keep Firebase storage manageable
+  if (file.size > 1.2 * 1024 * 1024) {
+    alert('Image is too large. Please use a photo under 1.2 MB.');
+    input.value = '';
+    return;
+  }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var dataURL = e.target.result;
+    // Resize to max 400px wide using a canvas to keep base64 compact
+    var img = new Image();
+    img.onload = function() {
+      var MAX = 400;
+      var ratio = Math.min(MAX / img.width, MAX / img.height, 1);
+      var w = Math.round(img.width  * ratio);
+      var h = Math.round(img.height * ratio);
+      var canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      var compressed = canvas.toDataURL('image/jpeg', 0.82);
+      // Store
+      var dataEl = document.getElementById(dataId);
+      if (dataEl) dataEl.value = compressed;
+      // Preview
+      var prev = document.getElementById(previewId);
+      if (prev) { prev.src = compressed; prev.classList.add('visible'); }
+      var plac = document.getElementById(placeholderId);
+      if (plac) plac.style.display = 'none';
+      var rem = document.getElementById(removeId);
+      if (rem) rem.classList.add('visible');
+    };
+    img.src = dataURL;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearWineImage(inputId, previewId, placeholderId, removeId, dataId) {
+  var input = document.getElementById(inputId);
+  if (input) input.value = '';
+  var dataEl = document.getElementById(dataId);
+  if (dataEl) dataEl.value = '';
+  var prev = document.getElementById(previewId);
+  if (prev) { prev.src = ''; prev.classList.remove('visible'); }
+  var plac = document.getElementById(placeholderId);
+  if (plac) plac.style.display = '';
+  var rem = document.getElementById(removeId);
+  if (rem) rem.classList.remove('visible');
 }
 
 // ── BOOT ──
