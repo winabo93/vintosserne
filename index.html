@@ -215,27 +215,66 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
 }
 
 /* ── WINE ROWS (host list) ── */
-.wine-list{display:grid;gap:.55rem;margin-bottom:.75rem;}
+.wine-list{display:grid;gap:.45rem;margin-bottom:.75rem;}
 .wine-row{
-  background:rgba(255,255,255,.03);border:1px solid var(--gb);
-  border-radius:12px;padding:.8rem .9rem;transition:border-color .2s;
+  background:rgba(255,255,255,.03);
+  border:1px solid var(--gb);
+  border-radius:14px;
+  overflow:hidden;
+  transition:border-color .2s;
 }
-.wine-row-top{display:grid;grid-template-columns:36px 1fr;gap:.75rem;align-items:start;}
-.wnum{width:36px;height:36px;background:linear-gradient(135deg,var(--burgundy),var(--deep-wine));
+.wine-row.revealed-row{border-color:rgba(80,200,120,.3);}
+/* Single-line compact row */
+.wine-row-top{
+  display:flex;align-items:center;gap:.65rem;
+  padding:.7rem .85rem;
+  min-height:60px;
+}
+.wnum{
+  width:32px;height:32px;
+  background:linear-gradient(135deg,var(--burgundy),var(--deep-wine));
   border:1px solid var(--gold);border-radius:50%;
   display:flex;align-items:center;justify-content:center;
-  font-family:'Josefin Sans',sans-serif;font-size:.7rem;color:var(--pale-gold);flex-shrink:0;}
-.wrow-name{font-family:'Playfair Display',serif;font-size:.95rem;line-height:1.3;}
-.wrow-meta{font-family:'Josefin Sans',sans-serif;font-size:.55rem;
-  letter-spacing:.08em;text-transform:uppercase;color:var(--smoke);margin-top:3px;}
-.wine-row-actions{
-  display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;
-  margin-top:.6rem;padding-top:.6rem;border-top:1px solid rgba(201,168,76,.08);
+  font-family:'Josefin Sans',sans-serif;font-size:.68rem;
+  color:var(--pale-gold);flex-shrink:0;
 }
+.wrow-body{flex:1;min-width:0;}
+.wrow-name{
+  font-family:'Playfair Display',serif;font-size:.97rem;line-height:1.25;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.wrow-meta{
+  font-family:'Josefin Sans',sans-serif;font-size:.52rem;
+  letter-spacing:.07em;text-transform:uppercase;color:var(--smoke);
+  margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+/* Right-side action strip — all inline */
+.wine-row-actions{
+  display:flex;gap:.35rem;align-items:center;flex-shrink:0;
+}
+/* Compact icon-only action buttons */
+.wbtn{
+  width:38px;height:38px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;cursor:pointer;border:1px solid;
+  transition:all .15s;flex-shrink:0;background:transparent;
+}
+.wbtn:active{transform:scale(.92);}
+.wbtn-reveal{border-color:rgba(80,200,120,.4);color:#7dffb0;background:rgba(20,60,30,.5);}
+.wbtn-hide{border-color:rgba(100,100,220,.4);color:#9090ff;background:rgba(20,20,60,.5);}
+.wbtn-edit{border-color:rgba(201,168,76,.25);color:var(--pale-gold);background:rgba(201,168,76,.05);}
+.wbtn-del{border-color:rgba(255,100,100,.25);color:#ff8888;background:rgba(255,50,50,.04);}
+/* Status dot only — no text pill */
+.status-dot{
+  width:8px;height:8px;border-radius:50%;flex-shrink:0;
+}
+.status-dot.blind{background:#9090ff;box-shadow:0 0 6px #9090ff;}
+.status-dot.revealed{background:#7dffb0;box-shadow:0 0 6px #7dffb0;animation:pdot 2s ease-in-out infinite;}
+/* keep old pill classes for other tabs */
 .vis-pill{
   display:inline-flex;align-items:center;gap:.3rem;
-  padding:.25rem .65rem;border-radius:20px;
-  font-family:'Josefin Sans',sans-serif;font-size:.56rem;
+  padding:.22rem .6rem;border-radius:20px;
+  font-family:'Josefin Sans',sans-serif;font-size:.54rem;
   letter-spacing:.08em;text-transform:uppercase;font-weight:600;
 }
 .vis-pill.blind{background:rgba(60,60,180,.15);border:1px solid rgba(100,100,220,.4);color:#9090ff;}
@@ -575,6 +614,124 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
   letter-spacing:.14em;text-transform:uppercase;color:var(--smoke);}
 .ai-divider::before,.ai-divider::after{content:'';flex:1;height:1px;background:var(--gb);}
 
+/* ── BLIND GAME ── */
+.game-card{
+  background:linear-gradient(135deg,rgba(20,20,60,.85),rgba(10,10,45,.75));
+  border:1px solid rgba(100,100,220,.4);
+  border-radius:14px;padding:1rem;margin-bottom:1rem;
+}
+.game-card-title{
+  font-family:'Josefin Sans',sans-serif;font-size:.6rem;
+  letter-spacing:.18em;text-transform:uppercase;color:#9090ff;
+  margin-bottom:.9rem;display:flex;align-items:center;gap:.5rem;
+}
+.game-card-title::after{content:'';flex:1;height:1px;background:rgba(100,100,220,.2);}
+.guess-row{display:grid;gap:.55rem;margin-bottom:.65rem;}
+.guess-field{display:grid;grid-template-columns:72px 1fr 28px;align-items:center;gap:.5rem;}
+.guess-label{
+  font-family:'Josefin Sans',sans-serif;font-size:.56rem;
+  letter-spacing:.1em;text-transform:uppercase;color:#7070bb;
+}
+.guess-pts{
+  font-family:'Josefin Sans',sans-serif;font-size:.6rem;
+  font-weight:700;color:#9090ff;text-align:right;
+}
+.guess-input{
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(100,100,220,.25);
+  border-radius:8px;padding:.6rem .8rem;
+  color:var(--cream);font-family:'Cormorant Garamond',serif;
+  font-size:1rem;outline:none;min-height:44px;width:100%;
+  transition:border-color .2s,background .2s;
+}
+.guess-input:focus{border-color:#9090ff;background:rgba(100,100,220,.08);}
+.guess-input:disabled{opacity:.5;cursor:not-allowed;}
+/* result row */
+.guess-result-row{
+  display:grid;grid-template-columns:72px 1fr 28px;
+  align-items:center;gap:.5rem;padding:.45rem 0;
+  border-bottom:1px solid rgba(100,100,220,.1);
+}
+.guess-result-row:last-child{border-bottom:none;}
+.guess-result-lbl{
+  font-family:'Josefin Sans',sans-serif;font-size:.54rem;
+  letter-spacing:.1em;text-transform:uppercase;color:#7070bb;
+}
+.guess-result-val{font-family:'Cormorant Garamond',serif;font-size:.95rem;}
+.guess-result-val.hit{color:#7dffb0;}
+.guess-result-val.miss{color:#ff8888;text-decoration:line-through;}
+.guess-result-val .correct{color:#7dffb0;font-size:.82rem;margin-left:.3rem;}
+.guess-pts-earned{
+  font-family:'Josefin Sans',sans-serif;font-size:.7rem;
+  font-weight:700;text-align:right;
+}
+.guess-pts-earned.hit{color:#7dffb0;}
+.guess-pts-earned.miss{color:rgba(255,255,255,.2);}
+.game-total-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(100,100,220,.12);border:1px solid rgba(100,100,220,.3);
+  border-radius:10px;padding:.7rem .9rem;margin-top:.75rem;
+}
+.game-total-label{
+  font-family:'Josefin Sans',sans-serif;font-size:.58rem;
+  letter-spacing:.14em;text-transform:uppercase;color:#9090ff;
+}
+.game-total-score{
+  font-family:'Playfair Display',serif;font-size:1.8rem;
+  font-weight:700;color:#c8c8ff;
+  text-shadow:0 0 20px rgba(150,150,255,.4);
+}
+.game-total-max{
+  font-family:'Josefin Sans',sans-serif;font-size:.6rem;
+  color:#7070bb;margin-top:1px;
+}
+.guess-locked-badge{
+  display:flex;align-items:center;justify-content:center;gap:.5rem;
+  font-family:'Josefin Sans',sans-serif;font-size:.58rem;
+  letter-spacing:.14em;text-transform:uppercase;color:#7070bb;
+  padding:.55rem;background:rgba(100,100,220,.07);
+  border-radius:8px;border:1px dashed rgba(100,100,220,.2);
+}
+.guess-input:focus{border-color:rgba(100,100,220,.6);background:rgba(100,100,220,.06);}
+.guess-input:disabled{opacity:.5;cursor:not-allowed;}
+/* result states after reveal */
+.guess-input.correct{
+  border-color:#7dffb0!important;background:rgba(40,160,80,.1)!important;color:#7dffb0!important;}
+.guess-input.partial{
+  border-color:#ffd080!important;background:rgba(200,140,20,.1)!important;color:#ffd080!important;}
+.guess-input.wrong{
+  border-color:rgba(255,100,100,.4)!important;background:rgba(180,30,30,.08)!important;color:#ff9999!important;}
+/* Points earned banner */
+.game-result{
+  border-radius:10px;padding:.8rem 1rem;margin-top:.75rem;
+  background:rgba(100,100,220,.1);border:1px solid rgba(100,100,220,.3);
+  text-align:center;
+}
+.game-result-pts{
+  font-family:'Playfair Display',serif;font-size:2.2rem;
+  font-weight:700;color:#9090ff;line-height:1;
+}
+.game-result-label{
+  font-family:'Josefin Sans',sans-serif;font-size:.58rem;
+  letter-spacing:.16em;text-transform:uppercase;color:#7070bb;
+  margin-top:.25rem;
+}
+.game-row-result{
+  display:flex;align-items:center;gap:.5rem;margin-top:.3rem;
+}
+.game-tick{font-size:1rem;}
+.game-answer{
+  font-family:'Josefin Sans',sans-serif;font-size:.6rem;
+  color:var(--smoke);letter-spacing:.06em;
+}
+.game-earned{
+  margin-left:auto;font-family:'Josefin Sans',sans-serif;
+  font-size:.62rem;font-weight:700;
+}
+.game-earned.got{color:#7dffb0;}
+.game-earned.partial{color:#ffd080;}
+.game-earned.miss{color:#ff9999;}
+
 /* ── MISC ── */
 .alert{padding:.7rem .9rem;border-radius:8px;font-size:.88rem;margin:.55rem 0;display:none;}
 .alert.error{background:rgba(180,30,30,.2);border:1px solid rgba(180,30,30,.4);color:#ffaaaa;display:block;}
@@ -752,9 +909,8 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
   <div id="host-overview" class="hidden">
     <div class="sess-header">
       <div>
-        <div style="font-family:'Josefin Sans',sans-serif;font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--smoke);margin-bottom:.22rem;">Active Session</div>
         <div class="sess-name" id="ov-name">—</div>
-        <div style="font-family:'Josefin Sans',sans-serif;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--smoke);margin-top:.2rem;">Host: <span id="ov-host" style="color:var(--pale-gold);">—</span></div>
+        <div style="font-family:'Josefin Sans',sans-serif;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke);margin-top:.18rem;">Host: <span id="ov-host" style="color:var(--pale-gold);">—</span></div>
       </div>
       <div style="display:flex;gap:.45rem;align-items:center;flex-wrap:wrap;">
         <div style="display:flex;align-items:center;gap:.45rem;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.35);border-radius:10px;padding:.35rem .8rem .35rem .6rem;">
@@ -783,14 +939,16 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
     <div class="card">
       <div class="card-title" style="flex-wrap:wrap;gap:.4rem;">
         🍾 Wine Line-up &amp; Reveal Control
-        <span style="font-family:'Josefin Sans',sans-serif;font-size:.58rem;font-style:normal;color:var(--smoke);margin-left:auto;align-self:center;">All wines start blind</span>
+
       </div>
       <div class="wine-list" id="wine-list-host"></div>
       <p id="no-wines" style="text-align:center;color:var(--smoke);padding:.7rem;font-style:italic;font-size:.93rem;">No wines yet. Add your first wine below.</p>
-      <div id="bulk-controls" class="hidden btn-row" style="margin-top:.65rem;padding-top:.65rem;border-top:1px solid var(--gb);">
-        <button class="btn btn-reveal btn-sm" onclick="bulkReveal(true)">👁 Reveal All</button>
-        <button class="btn btn-hide btn-sm" onclick="bulkReveal(false)">🙈 Hide All</button>
-        <button class="btn btn-outline btn-sm" onclick="archiveSession()">📦 Archive Session</button>
+      <div id="bulk-controls" class="hidden" style="display:none;margin-top:.55rem;padding-top:.55rem;border-top:1px solid var(--gb);">
+        <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
+          <button class="btn btn-reveal btn-sm" style="flex:1;" onclick="bulkReveal(true)">👁 Reveal All</button>
+          <button class="btn btn-hide btn-sm" style="flex:1;" onclick="bulkReveal(false)">🙈 Hide All</button>
+          <button class="btn btn-outline btn-sm" style="flex:1;" onclick="archiveSession()">📦 Archive</button>
+        </div>
       </div>
     </div>
     <div class="add-wine-wrap card">
@@ -855,6 +1013,45 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
     <div id="rating-card" class="card hidden">
       <div class="card-title" id="rating-title">🍾 Rating Wine</div>
       <div id="wine-reveal-area" style="margin-bottom:1.3rem;"></div>
+      <!-- Blind guessing game — only shown when wine is not yet revealed -->
+      <div id="blind-game-section" class="hidden">
+        <div class="game-card">
+          <div class="game-card-title">🕵️ Blind Guess</div>
+          <div class="guess-row" id="guess-inputs">
+            <div class="guess-field">
+              <span class="guess-label">Country</span>
+              <input class="guess-input" id="g-country" placeholder="France…" autocomplete="off">
+              <span class="guess-pts">2p</span>
+            </div>
+            <div class="guess-field">
+              <span class="guess-label">Region</span>
+              <input class="guess-input" id="g-region" placeholder="Burgundy…" autocomplete="off">
+              <span class="guess-pts">3p</span>
+            </div>
+            <div class="guess-field">
+              <span class="guess-label">Appellation</span>
+              <input class="guess-input" id="g-appel" placeholder="Gevrey…" autocomplete="off">
+              <span class="guess-pts">5p</span>
+            </div>
+            <div class="guess-field">
+              <span class="guess-label">Grape</span>
+              <input class="guess-input" id="g-grape" placeholder="Pinot Noir…" autocomplete="off">
+              <span class="guess-pts">8p</span>
+            </div>
+            <div class="guess-field">
+              <span class="guess-label">Vintage</span>
+              <input class="guess-input" id="g-vintage" placeholder="2019…" inputmode="numeric" autocomplete="off">
+              <span class="guess-pts">2p</span>
+            </div>
+          </div>
+          <div id="game-alert" class="alert"></div>
+          <div id="game-result-area"></div>
+          <div id="game-btn-row" style="margin-top:.65rem;">
+            <button class="btn btn-hide" style="width:100%;" onclick="submitGuess()">🔒 Lock In Guesses</button>
+          </div>
+        </div>
+      </div>
+
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.45rem;margin-bottom:.85rem;">
         <div style="font-family:'Josefin Sans',sans-serif;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--smoke);">Rating System</div>
         <div class="sys-tabs" style="margin-bottom:0;">
@@ -865,7 +1062,7 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
       </div>
       <div class="crit-grid" id="crit-grid"></div>
       <div class="total-row">
-        <div><div class="total-lbl">Total Score</div><div style="font-size:.75rem;color:var(--smoke);margin-top:.12rem;" id="sys-lbl">100-point</div></div>
+        <div><div class="total-lbl">Total Score</div><div style="font-size:.75rem;color:var(--smoke);margin-top:.12rem;" id="sys-lbl">100-point scale</div></div>
         <div class="total-num" id="total-num">—</div>
         <div id="badge-area"></div>
       </div>
@@ -943,18 +1140,18 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
       <span style="font-family:'Josefin Sans',sans-serif;font-size:.56rem;font-style:normal;color:var(--smoke);margin-left:.4rem;">Ask anything about your collection</span>
     </div>
     <div class="ai-chips" id="ai-chips">
-      <span class="ai-chip" onclick="askChip(this)">Best rated grape variety</span>
+      <!-- <span class="ai-chip" onclick="askChip(this)">Best rated grape variety</span>
       <span class="ai-chip" onclick="askChip(this)">Top 5 wines overall</span>
       <span class="ai-chip" onclick="askChip(this)">Which country scores highest?</span>
       <span class="ai-chip" onclick="askChip(this)">Most consistent taster</span>
       <span class="ai-chip" onclick="askChip(this)">Hidden gems under 90pts</span>
       <span class="ai-chip" onclick="askChip(this)">Red vs white comparison</span>
       <span class="ai-chip" onclick="askChip(this)">Score distribution</span>
-      <span class="ai-chip" onclick="askChip(this)">Most tasted producer</span>
+      <span class="ai-chip" onclick="askChip(this)">Most tasted producer</span> -->
     </div>
     <div class="ai-chat-wrap">
       <div class="ai-messages" id="ai-messages">
-        <div class="ai-msg assistant">Welcome to <strong>Vino Intelligence</strong> — I have access to your full wine archive including ratings, grape varieties, producers, regions and scores. Ask me anything about your collection.</div>
+        <div class="ai-msg assistant">Welcome to <strong>Vino Intelligence</strong> — I have access to your full wine archive data.</div>
       </div>
       <div class="ai-input-row">
         <textarea id="ai-input" placeholder="e.g. What's the average score for Pinot Noir?" rows="1"
@@ -1639,34 +1836,36 @@ function renderOverview(s) {
   if (!wines.length) {
     wl.innerHTML = '';
     nm.style.display = 'block';
-    bc.classList.add('hidden');
+    bc.classList.add('hidden'); bc.style.display = 'none';
   } else {
     nm.style.display = 'none';
-    bc.classList.remove('hidden');
-    wl.innerHTML = wines.map((w, i) => `
-      <div class="wine-row" id="wine-row-${i}">
+    bc.classList.remove('hidden'); bc.style.display = 'block';
+    wl.innerHTML = wines.map((w, i) => {
+      const thumb = w.image
+        ? `<img src="${w.image}" style="width:36px;height:36px;border-radius:8px;object-fit:cover;border:1px solid var(--gold);flex-shrink:0;">`
+        : `<div style="font-size:1.4rem;flex-shrink:0;line-height:1;">${TE[w.type] || '🍷'}</div>`;
+      const meta = [w.type, w.country].filter(Boolean).join(' · ');
+      const revBtn = w.revealed
+        ? `<button class="wbtn wbtn-hide" onclick="toggleReveal(${i},false)" title="Hide">🙈</button>`
+        : `<button class="wbtn wbtn-reveal" onclick="toggleReveal(${i},true)" title="Reveal">👁</button>`;
+      return `<div class="wine-row ${w.revealed ? 'revealed-row' : ''}" id="wine-row-${i}">
         <div class="wine-row-top">
           <div class="wnum">${i + 1}</div>
-          <div>
-            <div class="wrow-name" style="display:flex;align-items:center;gap:.5rem;">
-              ${w.image ? `<img src="${w.image}" style="width:28px;height:28px;border-radius:4px;object-fit:cover;border:1px solid var(--gold);flex-shrink:0;">` : TE[w.type] || '🍷'}
-              ${w.name}${w.vintage ? ' ' + w.vintage : ''}
+          ${thumb}
+          <div class="wrow-body">
+            <div class="wrow-name">${w.name}${w.vintage ? ' ' + w.vintage : ''}</div>
+            ${meta ? `<div class="wrow-meta">${meta}</div>` : ''}
             </div>
-            <div class="wrow-meta">${[w.classification, w.type, w.country, w.region].filter(Boolean).join(' · ')}</div>
-          </div>
+          <span class="status-dot ${w.revealed ? 'revealed' : 'blind'}"></span>
           <div class="wine-row-actions">
-            <span class="vis-pill ${w.revealed ? 'revealed' : 'blind'}">
-              <span class="dot"></span>${w.revealed ? 'Revealed' : 'Blind'}
-            </span>
-            ${w.revealed
-              ? `<button class="btn btn-hide btn-sm" onclick="toggleReveal(${i},false)">🙈 Hide</button>`
-              : `<button class="btn btn-reveal btn-sm" onclick="toggleReveal(${i},true)">👁 Reveal</button>`}
-            <button class="btn btn-outline btn-sm" onclick="openEditWine(${i})" title="Edit wine">✏️</button>
-            <button class="btn btn-danger btn-sm" onclick="removeWine(${i})">✕</button>
+            ${revBtn}
+            <button class="wbtn wbtn-edit" onclick="openEditWine(${i})" title="Edit">✏️</button>
+            <button class="wbtn wbtn-del" onclick="removeWine(${i})" title="Remove">✕</button>
           </div>
         </div>
         <div id="edit-inline-${i}" style="display:none;"></div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
   const fa = document.getElementById('wine-form');
   fa.innerHTML = wineFormHTML();
@@ -1831,13 +2030,43 @@ function refreshWineSelector(data) {
 
 async function openRating(idx) {
   tasteWineIdx = idx;
-  document.getElementById('rating-title').textContent = `🍾 Rating Wine #${idx + 1}`;
+  document.getElementById('rating-title').textContent = '🍾 Wine #' + (idx + 1);
   const data = await dbGet('sessions/' + tasteCode);
-  renderRevealArea(idx, data);
+  const w    = data.wines[idx];
   const taster = document.getElementById('taster-name').value.trim();
-  const ex = taster && ((data.wines[idx].ratings || []).find(r => r.taster === taster));
+  renderRevealArea(idx, data);
+
+  // Blind game section logic
+  const gameSection = document.getElementById('blind-game-section');
+  const existing = taster && (w.guesses || []).find(g => g.taster === taster);
+
+  if (existing && existing.scored) {
+    // Taster already has a scored result — always show it, even after reveal
+    gameSection.classList.remove('hidden');
+    resetGameUI();
+    showGameResult(existing, w);
+  } else if (existing && !existing.scored && w.revealed) {
+    // Guesses were locked but wine just got revealed — score and show
+    gameSection.classList.remove('hidden');
+    resetGameUI();
+    scoreAndShowGuess(existing, w);
+  } else if (existing && !existing.scored && !w.revealed) {
+    // Guesses locked, wine still blind — show locked state
+    gameSection.classList.remove('hidden');
+    resetGameUI();
+    populateGuessUI(existing, w);
+  } else if (!w.revealed) {
+    // No guesses yet, wine is blind — show empty input form
+    gameSection.classList.remove('hidden');
+    resetGameUI();
+  } else {
+    // Wine revealed, no guesses submitted — hide the game section
+    gameSection.classList.add('hidden');
+  }
+
+  const ex = taster && ((w.ratings || []).find(r => r.taster === taster));
   document.getElementById('rate-alert').className = 'alert';
-  if (ex) showAlert('rate-alert', 'success', `Previously rated ${ex.score}. Submit to update.`);
+  if (ex) showAlert('rate-alert', 'success', 'Previously rated ' + ex.score + '. Submit to update.');
   buildCritGrid(curSys);
   document.getElementById('rating-card').classList.remove('hidden');
   document.getElementById('rating-card').scrollIntoView({behavior: 'smooth', block: 'start'});
@@ -1853,6 +2082,19 @@ function renderRevealArea(idx, data) {
       <div class="blind-banner-sub">Wine identity hidden · Rate by what's in your glass</div>
     </div>`;
   } else {
+  // When wine is revealed, score any pending guesses and show result
+  if (w.revealed) {
+    const taster = document.getElementById('taster-name') && document.getElementById('taster-name').value.trim();
+    if (taster) {
+      const existing = (w.guesses || []).find(g => g.taster === taster);
+      if (existing && !existing.scored) {
+        scoreAndShowGuess(existing, w);
+      } else if (existing && existing.scored) {
+        showGameResult(existing, w);
+      }
+    }
+  }
+
     area.innerHTML = `<div class="reveal-anim">
       <div style="display:flex;align-items:flex-start;gap:1rem;">
         ${w.image
@@ -1953,10 +2195,10 @@ function setSys(s) {
 
 function buildCritGrid(s) {
   const sys = SYS[s];
-  document.getElementById('sys-lbl').textContent = sys.lbl;
+  // document.getElementById('sys-lbl').textContent = sys.lbl;
   document.getElementById('crit-grid').innerHTML = sys.crit.map(c => `
     <div class="crit">
-      <div class="crit-name">${c.name}${c.desc ? `<span class="crit-desc"> — ${c.desc} (max ${c.max})</span>` : ''}</div>
+      <div class="crit-name">${c.name}${c.desc ? `<span class="crit-desc"> — ${c.desc}</span>` : ''}</div>
       <div class="crit-row">
       <input type="range" class="slider" id="sl-${c.id}"
         min="0" max="${c.max}" step="${c.step || (c.max <= 5 ? .5 : 1)}" value="${c.def}"
@@ -3551,6 +3793,224 @@ function clearWineImage(inputId, previewId, placeholderId, removeId, dataId) {
   if (plac) plac.style.display = '';
   var rem = document.getElementById(removeId);
   if (rem) rem.classList.remove('visible');
+}
+
+// ═══════════════════════════════════════
+//  BLIND TASTING GAME
+// ═══════════════════════════════════════
+const GUESS_POINTS = { country:2, region:3, appellation:5, grape:8, vintage:2 };
+const GUESS_MAX    = Object.values(GUESS_POINTS).reduce((a,b)=>a+b, 0); // 20
+
+// Fuzzy match: case-insensitive, trimmed, ignore accents
+function fuzzyMatch(a, b) {
+  if (!a || !b) return false;
+  const norm = s => s.trim().toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+  const na = norm(a), nb = norm(b);
+  if (na === nb) return true;
+  // also accept if one contains the other (handles "Bourgogne" vs "Burgundy / Bourgogne")
+  return na.includes(nb) || nb.includes(na);
+}
+
+function resetGameUI() {
+  ['g-country','g-region','g-appel','g-grape','g-vintage'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.value = ''; el.disabled = false; }
+  });
+  // Re-show input grid (hidden after result display)
+  const inputs = document.getElementById('guess-inputs');
+  if (inputs) inputs.style.display = '';
+  const btnRow = document.getElementById('game-btn-row');
+  if (btnRow) btnRow.style.display = '';
+  const resultArea = document.getElementById('game-result-area');
+  if (resultArea) resultArea.innerHTML = '';
+  const gameAlert = document.getElementById('game-alert');
+  if (gameAlert) gameAlert.className = 'alert';
+  // Attach autocomplete (makeAC wraps inputs so only call once per fresh render)
+  const elCountry = document.getElementById('g-country');
+  if (elCountry && !elCountry.closest('.ac-wrap')) {
+    initGuessAC();
+  }
+}
+
+function populateGuessUI(guess, wine) {
+  // Attach AC first (in case inputs haven't been wired yet)
+  const elCountry = document.getElementById('g-country');
+  if (elCountry && !elCountry.closest('.ac-wrap')) initGuessAC();
+  // Fill inputs with locked guesses then disable
+  const map = {country:'g-country', region:'g-region', appellation:'g-appel', grape:'g-grape', vintage:'g-vintage'};
+  Object.entries(map).forEach(([k, id]) => {
+    const el = document.getElementById(id);
+    if (el) { el.value = guess[k] || ''; el.disabled = true; }
+  });
+  // Hide submit button — already locked
+  const btnRow = document.getElementById('game-btn-row');
+  if (btnRow) btnRow.style.display = 'none';
+  // Show locked badge
+  const resultArea = document.getElementById('game-result-area');
+  if (resultArea) {
+    resultArea.innerHTML = `<div class="guess-locked-badge" style="margin-top:.55rem;">
+      ✓ Guesses locked &nbsp;·&nbsp; waiting for reveal
+    </div>`;
+  }
+}
+
+async function submitGuess() {
+  const taster = document.getElementById('taster-name').value.trim();
+  if (!taster) {
+    showAlert('game-alert','error','Enter your name first (top of page).');
+    return;
+  }
+  const s = await dbGet('sessions/' + tasteCode);
+  const wine = s.wines[tasteWineIdx];
+  if (!wine) return;
+
+  const guess = {
+    taster,
+    country:     (document.getElementById('g-country').value  || '').trim(),
+    region:      (document.getElementById('g-region').value   || '').trim(),
+    appellation: (document.getElementById('g-appel').value    || '').trim(),
+    grape:       (document.getElementById('g-grape').value    || '').trim(),
+    vintage:     (document.getElementById('g-vintage').value  || '').trim(),
+    time:        schemaTime(),
+    scored:      false,
+    points:      0,
+    result:      {}
+  };
+
+  // Must guess at least one field
+  if (!guess.country && !guess.region && !guess.appellation && !guess.grape && !guess.vintage) {
+    showAlert('game-alert','error','Fill in at least one guess.');
+    return;
+  }
+
+  // Save/replace this taster's guess
+  if (!wine.guesses) wine.guesses = [];
+  const gi = wine.guesses.findIndex(g => g.taster === taster);
+  if (gi >= 0) wine.guesses[gi] = guess; else wine.guesses.push(guess);
+  await dbSet('sessions/' + tasteCode + '/wines', s.wines);
+
+  // Lock inputs and show badge
+  populateGuessUI(guess, wine);
+  showAlert('game-alert','success','Guesses locked in! Await the host reveal.');
+}
+
+function scoreGuess(guess, wine) {
+  const result = {};
+  let points = 0;
+
+  const check = (field, wineVal, pts) => {
+    const hit = fuzzyMatch(guess[field], wineVal);
+    result[field] = { guess: guess[field], correct: wineVal || '', hit };
+    if (hit) points += pts;
+  };
+
+  check('country',     wine.country,     GUESS_POINTS.country);
+  check('region',      wine.region,      GUESS_POINTS.region);
+  check('appellation', wine.appellation, GUESS_POINTS.appellation);
+  check('grape',       wine.grapes,      GUESS_POINTS.grape);     // note: stored as 'grapes'
+  check('vintage',     wine.vintage,     GUESS_POINTS.vintage);
+
+  return { ...guess, scored: true, points, result };
+}
+
+async function scoreAndShowGuess(guess, wine) {
+  // Score and persist
+  const scored = scoreGuess(guess, wine);
+  const s = await dbGet('sessions/' + tasteCode);
+  if (!s) return;
+  const gi = (s.wines[tasteWineIdx].guesses || []).findIndex(g => g.taster === guess.taster);
+  if (gi >= 0) s.wines[tasteWineIdx].guesses[gi] = scored;
+  await dbSet('sessions/' + tasteCode + '/wines', s.wines);
+  showGameResult(scored, wine);
+}
+
+function showGameResult(guess, wine) {
+  const resultArea = document.getElementById('game-result-area');
+  if (!resultArea) return;
+
+  // Hide inputs area and btn
+  const btnRow = document.getElementById('game-btn-row');
+  if (btnRow) btnRow.style.display = 'none';
+
+  const fields = [
+    { key:'country',     label:'Country',     pts: GUESS_POINTS.country     },
+    { key:'region',      label:'Region',      pts: GUESS_POINTS.region      },
+    { key:'appellation', label:'Appellation', pts: GUESS_POINTS.appellation },
+    { key:'grape',       label:'Grape',       pts: GUESS_POINTS.grape       },
+    { key:'vintage',     label:'Vintage',     pts: GUESS_POINTS.vintage     },
+  ];
+
+  const rows = fields.map(f => {
+    const r   = (guess.result || {})[f.key] || {};
+    const hit = r.hit;
+    const myGuess   = r.guess   || '—';
+    const correct   = r.correct || '—';
+    const ptsEarned = hit ? f.pts : 0;
+
+    return `<div class="guess-result-row">
+      <div class="guess-result-lbl">${f.label}</div>
+      <div class="guess-result-val ${hit ? 'hit' : 'miss'}">
+        ${myGuess}
+        ${!hit && r.correct ? `<span class="correct">→ ${correct}</span>` : ''}
+      </div>
+      <div class="guess-pts-earned ${hit ? 'hit' : 'miss'}">${hit ? '+'+ptsEarned : '—'}</div>
+    </div>`;
+  }).join('');
+
+  const pts   = guess.points || 0;
+  const pct   = Math.round(pts / GUESS_MAX * 100);
+  const grade = pts >= 18 ? '🏆 Perfect!'
+              : pts >= 14 ? '⭐ Excellent'
+              : pts >= 10 ? '👍 Good'
+              : pts >=  5 ? '🙂 Getting there'
+              :              '🍷 Keep tasting!';
+
+  resultArea.innerHTML = `
+    <div style="margin-bottom:.55rem;">
+      ${rows}
+    </div>
+    <div class="game-total-bar">
+      <div>
+        <div class="game-total-label">Points earned</div>
+        <div class="game-total-max">out of ${GUESS_MAX}</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="game-total-score">${pts}</div>
+        <div class="game-total-max">${grade}</div>
+      </div>
+    </div>`;
+
+  // Also update inputs to show locked state cleanly
+  const inputs = document.getElementById('guess-inputs');
+  if (inputs) inputs.style.display = 'none';
+}
+
+// Wire autocomplete to blind guess inputs — same data as host wine form
+function initGuessAC() {
+  const elCountry = document.getElementById('g-country');
+  const elRegion  = document.getElementById('g-region');
+  const elAppel   = document.getElementById('g-appel');
+  const elGrape   = document.getElementById('g-grape');
+  if (!elCountry) return; // not rendered yet
+
+  makeAC(elCountry, q => filt(COUNTRIES, q), () => {});
+
+  makeAC(elRegion, q => {
+    const c = elCountry ? elCountry.value : '';
+    return filt([...new Set([...(REGIONS[c] || []), ...Object.values(REGIONS).flat()])], q);
+  }, () => {});
+
+  makeAC(elAppel, q => {
+    const r = elRegion ? elRegion.value : '';
+    return filt([...new Set([...(APPELLATIONS[r] || []), ...Object.values(APPELLATIONS).flat()])], q);
+  }, () => {});
+
+  makeAC(elGrape, q => {
+    return filt([...new Set(Object.values(GRAPES).flat())], q);
+  }, () => {});
+  // Vintage is numeric — no autocomplete needed
 }
 
 // ── BOOT ──
