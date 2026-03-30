@@ -1099,6 +1099,7 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
         <div style="font-family:'Playfair Display',serif;font-size:1.15rem;font-style:italic;" id="res-sess-name">—</div>
         <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
           <span class="code-badge" id="res-code-badge">—</span>
+          <button class="btn btn-outline btn-sm" onclick="clearResults()" style="opacity:.75;">✕ Change</button>
           <button class="btn btn-primary btn-sm" onclick="exportResults()">📥 Export</button>
           <button class="btn btn-outline btn-sm" onclick="exportJSON()">💾 JSON Backup</button>
         </div>
@@ -1667,6 +1668,16 @@ function showTab(n) {
   });
   if (n === 'history') loadHistory();
   if (n === 'map')     loadMapTab();
+  if (n === 'results') {
+    var cached = localStorage.getItem('vino_last_res_code');
+    if (cached) {
+      var inp = document.getElementById('res-code-inp');
+      if (inp && !inp.value) inp.value = cached;
+      // Only auto-load if results aren't already showing
+      var resContent = document.getElementById('res-content');
+      if (resContent && resContent.classList.contains('hidden')) loadResults();
+    }
+  }
 }
 
 // ═══════════════════════════════════════
@@ -1988,6 +1999,7 @@ async function unlockSession() {
   if (!sess) { showAlert('unlock-alert', 'error', 'Invalid code. Please check and try again.'); return; }
   if (!(sess.wines || []).length) { showAlert('unlock-alert', 'error', 'No wines in this session yet.'); return; }
   tasteCode = c;
+  localStorage.setItem('vino_last_res_code', c);  // propagate to Results tab
   document.getElementById('taste-sess-name').textContent = sess.name;
   if (tasteListener) tasteListener();
   tasteListener = dbListen('sessions/' + c, data => {
@@ -2362,6 +2374,7 @@ async function loadResults() {
     }).join('');
   }
   document.getElementById('res-content').classList.remove('hidden');
+  localStorage.setItem('vino_last_res_code', c);
   showAlert('res-alert', 'success', 'Results loaded.');
 }
 function clearResults() {
@@ -2369,6 +2382,7 @@ function clearResults() {
   document.getElementById('res-code-inp').value = '';
   document.getElementById('res-alert').className = 'alert';
   document.getElementById('host-notes-sec').classList.add('hidden');
+  localStorage.removeItem('vino_last_res_code');
 }
 
 async function exportResults() {
