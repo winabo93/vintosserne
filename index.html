@@ -732,6 +732,63 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
 .game-earned.partial{color:#ffd080;}
 .game-earned.miss{color:#ff9999;}
 
+/* ── HOST GROUPS IN HISTORY ── */
+.host-group{margin-bottom:1.1rem;}
+.host-group-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.7rem .9rem;
+  background:linear-gradient(135deg,rgba(107,30,46,.45),rgba(61,10,20,.55));
+  border:1px solid rgba(201,168,76,.3);
+  border-radius:12px;
+  cursor:pointer;
+  transition:all .2s;
+  user-select:none;-webkit-user-select:none;
+}
+.host-group-header:active{background:linear-gradient(135deg,rgba(107,30,46,.6),rgba(61,10,20,.7));}
+.host-group-header.open{
+  border-radius:12px 12px 0 0;
+  border-bottom-color:transparent;
+}
+.host-group-left{display:flex;align-items:center;gap:.65rem;}
+.host-group-avatar{
+  width:36px;height:36px;border-radius:50%;
+  background:linear-gradient(135deg,var(--burgundy),var(--deep-wine));
+  border:1.5px solid var(--gold);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Playfair Display',serif;font-size:1rem;font-style:italic;
+  color:var(--pale-gold);flex-shrink:0;
+}
+.host-group-name{
+  font-family:'Playfair Display',serif;font-size:1.05rem;font-style:italic;
+  color:var(--pale-gold);
+}
+.host-group-meta{
+  font-family:'Josefin Sans',sans-serif;font-size:.54rem;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--smoke);
+  margin-top:2px;
+}
+.host-group-chevron{
+  font-size:.75rem;color:var(--gold);
+  transition:transform .25s ease;flex-shrink:0;
+  opacity:.8;
+}
+.host-group-header.open .host-group-chevron{transform:rotate(180deg);}
+.host-group-body{
+  display:none;
+  border:1px solid rgba(201,168,76,.2);
+  border-top:none;
+  border-radius:0 0 12px 12px;
+  overflow:hidden;
+}
+.host-group-body.open{display:block;}
+.host-group-body .hist-card{
+  border-radius:0;
+  border-left:none;border-right:none;border-top:none;
+  border-bottom:1px solid rgba(201,168,76,.08);
+  margin-bottom:0;
+}
+.host-group-body .hist-card:last-child{border-bottom:none;}
+
 /* ── MISC ── */
 .alert{padding:.7rem .9rem;border-radius:8px;font-size:.88rem;margin:.55rem 0;display:none;}
 .alert.error{background:rgba(180,30,30,.2);border:1px solid rgba(180,30,30,.4);color:#ffaaaa;display:block;}
@@ -2441,38 +2498,79 @@ async function loadHistory() {
   }
   codes.sort((a, b) => (archive[b].archivedAt || '') < (archive[a].archivedAt || '') ? -1 : 1);
 
-  hl.innerHTML = codes.map(c => {
-    const s = archive[c];
-    const wines = s.wines || [];
-    const allRatings = wines.flatMap(w => w.ratings || []);
-    const totalRatings = allRatings.length;
-    const tasters = [...new Set(allRatings.map(r => r.taster))];
-    const norms = allRatings.map(r => r.system === '100' ? r.score : r.system === '20' ? (r.score / 20) * 100 : (r.score / 5) * 100);
-    const sessionAvg = norms.length ? Math.round(norms.reduce((a, b) => a + b) / norms.length * 10) / 10 : null;
+  // ── Build per-session card HTML (reused inside groups) ──────────────
+  function buildSessionCard(c, s) {
+    const wines       = s.wines || [];
+    const allRatings  = wines.flatMap(w => w.ratings || []);
+    const totalRatings= allRatings.length;
+    const tasters     = [...new Set(allRatings.map(r => r.taster))];
+    const norms       = allRatings.map(r => r.system==='100'?r.score:r.system==='20'?(r.score/20)*100:(r.score/5)*100);
+    const sessionAvg  = norms.length ? Math.round(norms.reduce((a,b)=>a+b)/norms.length*10)/10 : null;
     let bestWine = null, bestAvg = 0;
     wines.forEach(w => {
-      const wr = w.ratings || [];
+      const wr = w.ratings||[];
       if (!wr.length) return;
-      const wn = wr.map(r => r.system === '100' ? r.score : r.system === '20' ? (r.score / 20) * 100 : (r.score / 5) * 100);
-      const wa = wn.reduce((a, b) => a + b) / wn.length;
-      if (wa > bestAvg) { bestAvg = wa; bestWine = w; }
+      const wn = wr.map(r=>r.system==='100'?r.score:r.system==='20'?(r.score/20)*100:(r.score/5)*100);
+      const wa = wn.reduce((a,b)=>a+b)/wn.length;
+      if (wa > bestAvg) { bestAvg=wa; bestWine=w; }
     });
     return `<div class="hist-card" onclick="showHistDetail('${c}')">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.4rem;">
         <div>
           <div class="hist-name">${s.name}</div>
-          <div class="hist-meta">Code ${c} · ${s.created}${s.host ? ' · Host: ' + s.host : ''}${s.archivedAt ? ' · Archived ' + s.archivedAt : ''}</div>
+          <div class="hist-meta">Code ${c} · ${s.created}${s.archivedAt ? ' · ' + s.archivedAt.split(',')[0] : ''}</div>
         </div>
-        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();loadResultsFrom('${c}')">📊 Full Results</button>
+        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();loadResultsFrom('${c}')">📊 Results</button>
       </div>
       <div class="hist-stats">
         <div class="stat-pill"><div class="stat-num">${wines.length}</div><div class="stat-lbl">Wines</div></div>
         <div class="stat-pill"><div class="stat-num">${tasters.length}</div><div class="stat-lbl">Tasters</div></div>
         <div class="stat-pill"><div class="stat-num">${totalRatings}</div><div class="stat-lbl">Ratings</div></div>
-        ${sessionAvg !== null ? `<div class="stat-pill"><div class="stat-num">${sessionAvg}</div><div class="stat-lbl">Avg /100</div></div>` : ''}
+        ${sessionAvg!==null?`<div class="stat-pill"><div class="stat-num">${sessionAvg}</div><div class="stat-lbl">Avg /100</div></div>`:''}
       </div>
-      ${bestWine ? `<div style="margin-top:.65rem;font-family:'Josefin Sans',sans-serif;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--smoke);">🏆 Best wine: <span style="color:var(--pale-gold);">${bestWine.name} ${bestWine.vintage || ''}</span> <span style="color:var(--gold);">${Math.round(bestAvg * 10) / 10}/100</span></div>` : ''}
+      ${bestWine?`<div style="margin-top:.6rem;font-family:'Josefin Sans',sans-serif;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke);">🏆 <span style="color:var(--pale-gold);">${bestWine.name} ${bestWine.vintage||''}</span> <span style="color:var(--gold);">${Math.round(bestAvg*10)/10}/100</span></div>`:''}
       <div id="hist-detail-${c}" style="display:none;margin-top:1rem;"></div>
+    </div>`;
+  }
+
+  // ── Group sessions by host ─────────────────────────────────────────
+  const byHost = {};
+  codes.forEach(c => {
+    const host = archive[c].host || 'Unknown Host';
+    if (!byHost[host]) byHost[host] = [];
+    byHost[host].push(c);
+  });
+
+  // Sort hosts by their most recent session date
+  const hostOrder = Object.keys(byHost).sort((a, b) => {
+    const latestA = byHost[a].map(c => archive[c].archivedAt||'').sort().at(-1)||'';
+    const latestB = byHost[b].map(c => archive[c].archivedAt||'').sort().at(-1)||'';
+    return latestB > latestA ? 1 : -1;
+  });
+
+  hl.innerHTML = hostOrder.map(host => {
+    const hostCodes  = byHost[host];
+    const groupId    = 'hg-' + host.replace(/[^a-z0-9]/gi,'_');
+    const allWinesH  = hostCodes.flatMap(c => archive[c].wines||[]);
+    const allRatingsH= allWinesH.flatMap(w => w.ratings||[]);
+    const normsH     = allRatingsH.map(r=>r.system==='100'?r.score:r.system==='20'?(r.score/20)*100:(r.score/5)*100);
+    const hostAvg    = normsH.length ? Math.round(normsH.reduce((a,b)=>a+b)/normsH.length*10)/10 : null;
+    const initial    = host.trim()[0] || '?';
+    const meta       = `${hostCodes.length} session${hostCodes.length!==1?'s':''}`
+      + (hostAvg!==null ? ` · avg ${hostAvg}/100` : '');
+    const cards      = hostCodes.map(c => buildSessionCard(c, archive[c])).join('');
+    return `<div class="host-group">
+      <div class="host-group-header" onclick="toggleHostGroup('${groupId}')">
+        <div class="host-group-left">
+          <div class="host-group-avatar">${initial}</div>
+          <div>
+            <div class="host-group-name">${host}</div>
+            <div class="host-group-meta">${meta}</div>
+          </div>
+        </div>
+        <span class="host-group-chevron">▼</span>
+      </div>
+      <div class="host-group-body" id="${groupId}">${cards}</div>
     </div>`;
   }).join('');
 
@@ -2523,6 +2621,15 @@ async function loadHistory() {
 
 }
 
+
+function toggleHostGroup(id) {
+  const header = document.querySelector(`[onclick="toggleHostGroup('${id}')"]`);
+  const body   = document.getElementById(id);
+  if (!header || !body) return;
+  const isOpen = body.classList.contains('open');
+  header.classList.toggle('open',  !isOpen);
+  body.classList.toggle('open',    !isOpen);
+}
 
 async function showHistDetail(c) {
   const el = document.getElementById('hist-detail-' + c);
