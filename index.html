@@ -2055,6 +2055,7 @@ let useCloud = false;
 let activeCode = null, tasteCode = null, tasteWineIdx = null, curSys = '100';
 let tasteListener = null;
 let resListener   = null;   // live results polling
+let _resWines     = [];        // cached for modal lookup
 
 // ── localStorage cache (instant reads + offline fallback) ──
 let LOCAL = {};
@@ -2170,13 +2171,15 @@ function dbListen(path, cb) {
 // ── Connection bar ──
 function setConnBar(mode) {
   const bar = document.getElementById('conn-bar');
+  if (!bar) return;  // bar removed from UI
   bar.className = mode;
   const msgs = {
     online:  '☁️  Firebase connected — real-time sync active',
     offline: '⚠️  Offline — using local cache, will sync when reconnected',
     local:   'Local mode — data saved in this browser only'
   };
-  document.getElementById('conn-msg').textContent = msgs[mode] || '';
+  const msg = document.getElementById('conn-msg');
+  if (msg) msg.textContent = msgs[mode] || '';
 }
 
 // ── Config screen (shown on first run or when no URL saved) ──
@@ -3054,7 +3057,8 @@ function renderResults(c, sess) {
   var hasAny = false;
   var notes = [];
 
-  document.getElementById('res-by-wine').innerHTML = (sess.wines || []).map(function(w, i) {
+  _resWines = sess.wines || [];
+  document.getElementById('res-by-wine').innerHTML = _resWines.map(function(w, i) {
     var r = w.ratings || [];
     if (r.length) hasAny = true;
     else if (w) hasAny = true; // show wine even without ratings
@@ -3109,17 +3113,10 @@ function renderResults(c, sess) {
         + '</div>'
       : '';
 
-        // Serialise wine data for modal (JSON-safe — strip functions)
-    var wModal = JSON.stringify({
-      name: w.name, vintage: w.vintage||'', type: w.type||'',
-      country: w.country||'', region: w.region||'', appellation: w.appellation||'',
-      classification: w.classification||'', grapes: w.grapes||'',
-      abv: w.abv||'', price: w.price||'', notes: w.notes||'', image: w.image||''
-    });
     var thumbSrc = w.image ? w.image : '';
     var subParts = [w.type, w.country, w.grapes].filter(Boolean);
     return '<div style="margin-bottom:1.6rem;">'
-      + '<button class="res-wine-img-btn" onclick="showWineModal(' + wModal.replace(/'/g,"&#39;") + ')">'
+      + '<button class="res-wine-img-btn" onclick="showWineModal(_resWines[' + i + '])">'
       + '<div class="res-wine-img-card">'
       + (thumbSrc
           ? '<img src="' + thumbSrc + '" class="res-wine-img-thumb-lg" alt="' + w.name + '">'
