@@ -467,11 +467,11 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
   font-weight:700;color:var(--gold);text-shadow:0 0 30px rgba(201,168,76,.5);}
 .res-card{
   background:rgba(255,255,255,.02);border:1px solid var(--gb);
-  border-radius:8px;padding:.8rem .9rem;
+  border-radius:6px;padding:.45rem .65rem;
   display:grid;grid-template-columns:1fr auto;
-  gap:.5rem;align-items:center;margin-bottom:.45rem;
+  gap:.4rem;align-items:center;margin-bottom:.3rem;
 }
-.res-taster{font-family:'Playfair Display',serif;font-size:.95rem;font-style:italic;}
+.res-taster{font-family:'Playfair Display',serif;font-size:.85rem;font-style:italic;}
 .res-meta-sm{font-family:'Josefin Sans',sans-serif;font-size:.54rem;
   letter-spacing:.08em;text-transform:uppercase;color:var(--smoke);margin-top:2px;}
 .res-score{font-family:'Playfair Display',serif;font-size:1.75rem;
@@ -943,6 +943,41 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
   color:var(--smoke);font-size:1rem;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
   flex-shrink:0;margin-left:auto;
+}
+
+/* ── INLINE RATING CHIPS ── */
+.res-chip-row{
+  display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.4rem;
+}
+.res-chip{
+  display:flex;align-items:center;gap:.28rem;
+  background:rgba(255,255,255,.05);
+  border:1px solid var(--gb);
+  border-radius:20px;
+  padding:.18rem .5rem .18rem .3rem;
+  font-size:.72rem;
+  white-space:nowrap;
+}
+.res-chip-avatar{
+  width:18px;height:18px;border-radius:50%;
+  background:linear-gradient(135deg,var(--burgundy),var(--deep-wine));
+  border:1px solid rgba(201,168,76,.35);
+  font-family:'Playfair Display',serif;font-size:.58rem;font-style:italic;
+  color:var(--pale-gold);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.res-chip-score{
+  font-family:'Playfair Display',serif;font-weight:700;
+  color:var(--pale-gold);font-size:.8rem;line-height:1;
+}
+.res-chip-unit{
+  font-family:'Josefin Sans',sans-serif;font-size:.48rem;
+  letter-spacing:.06em;color:var(--smoke);
+}
+.res-chip-note{
+  font-size:.6rem;color:var(--smoke);font-style:italic;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px;
 }
 
 /* ── MISC ── */
@@ -3104,18 +3139,23 @@ function renderResults(c, sess) {
         + '</div>';
   }).join('');
 
-    var avgHTML = avg !== null
-      ? '<div class="avg-box" style="padding:.95rem;margin-bottom:.6rem;">'
-        + '<div style="font-family:Josefin Sans,sans-serif;font-size:.58rem;letter-spacing:.18em;'
-        + 'text-transform:uppercase;color:var(--smoke);margin-bottom:.25rem;">Group Average (normalised to 100pt)</div>'
-        + '<div class="avg-num" style="font-size:2.5rem;">' + avg + '</div>'
-        + (badge ? '<span class="sbadge" style="background:' + badge.c + '22;border:1px solid ' + badge.c + ';color:' + badge.c + ';margin-top:.35rem;display:inline-block;">' + badge.l + '</span>' : '')
-        + '</div>'
-      : '';
+    var avgHTML = ''; // removed — score shown in image card
 
     var thumbSrc = w.image ? w.image : '';
     var subParts = [w.type, w.country, w.grapes].filter(Boolean);
-    return '<div style="margin-bottom:1.6rem;">'
+
+    // Ratings shown in modal — not in card
+
+    var avgLine = avg !== null
+      ? '<div style="display:flex;align-items:baseline;gap:.25rem;margin-top:.3rem;">'
+        + '<span style="font-family:Playfair Display,serif;font-weight:700;font-size:1.1rem;color:var(--gold);">' + avg + '</span>'
+        + '<span style="font-family:Josefin Sans,sans-serif;font-size:.48rem;letter-spacing:.06em;color:var(--smoke);">/100 avg</span>'
+        + '</div>'
+      : (r.length === 0
+          ? '<div style="font-family:Josefin Sans,sans-serif;font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke);margin-top:.25rem;opacity:.55;">No ratings yet</div>'
+          : '');
+
+    return '<div style="margin-bottom:.9rem;">'
       + '<button class="res-wine-img-btn" onclick="showWineModal(_resWines[' + i + '])">'
       + '<div class="res-wine-img-card">'
       + (thumbSrc
@@ -3125,12 +3165,11 @@ function renderResults(c, sess) {
         + '<div class="res-wine-card-number">Wine #' + (i+1) + '</div>'
         + '<div class="res-wine-card-name">' + w.name + (w.vintage ? ' ' + w.vintage : '') + '</div>'
         + (subParts.length ? '<div class="res-wine-card-sub">' + subParts.join(' · ') + '</div>' : '')
-        + (avg !== null ? '<div class="res-wine-card-score">' + avg + '<span style="font-size:.7rem;opacity:.7;margin-left:.2rem;">/100</span></div>' : '')
+        + avgLine
       + '</div>'
       + '<div class="res-wine-tap-hint">tap for info</div>'
       + '</div>'
       + '</button>'
-      + avgHTML + ratingsHTML
       + '</div>';
   }).join('');
 
@@ -5020,8 +5059,10 @@ function applyMemberName(name) {
 // ═══════════════════════════════════════
 //  WINE INFO MODAL
 // ═══════════════════════════════════════
-function showWineModal(wineData) {
-  var w = wineData;
+function showWineModal(wineOrIdx) {
+  // Accept either a wine object (legacy) or an index into _resWines
+  var w = (typeof wineOrIdx === 'number') ? _resWines[wineOrIdx] : wineOrIdx;
+  if (!w) return;
   var modal = document.getElementById('wine-info-modal');
   var cnt   = document.getElementById('wine-info-content');
   if (!modal || !cnt) return;
@@ -5056,6 +5097,47 @@ function showWineModal(wineData) {
       + '</div>'
     : '';
 
+  // ── Ratings section ──
+  var r = w.ratings || [];
+  var ratingsHtml = '';
+  if (r.length) {
+    // Normalise to 100pt for avg
+    var norm = r.map(function(x) {
+      return x.system === '100' ? x.score : x.system === '20' ? (x.score/20)*100 : (x.score/5)*100;
+    });
+    var avg = Math.round(norm.reduce(function(a,b){return a+b;}) / norm.length * 10) / 10;
+    var badge = getBadge('100', avg);
+
+    var rows = r.map(function(x) {
+      var unit = x.system === '5star' ? '★' : x.system === '20' ? '/20' : '/100';
+      var normPct = x.system === '100' ? x.score : x.system === '20' ? (x.score/20)*100 : (x.score/5)*100;
+      var barW = Math.round(normPct);
+      return '<div style="margin-bottom:.55rem;">'
+        + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.2rem;">'
+          + '<div style="font-family:Playfair Display,serif;font-size:.9rem;font-style:italic;color:var(--cream);">' + x.taster + '</div>'
+          + '<div style="font-family:Playfair Display,serif;font-size:1.05rem;font-weight:700;color:var(--pale-gold);">' + x.score + '<span style="font-size:.6rem;opacity:.7;margin-left:.15rem;">' + unit + '</span></div>'
+        + '</div>'
+        + '<div style="height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;">'
+          + '<div style="height:100%;width:' + barW + '%;background:linear-gradient(90deg,var(--burgundy),var(--gold));border-radius:2px;transition:width .4s;"></div>'
+        + '</div>'
+        + (x.notes ? '<div style="font-size:.75rem;color:var(--smoke);font-style:italic;margin-top:.2rem;line-height:1.4;">&ldquo;' + x.notes + '&rdquo;</div>' : '')
+      + '</div>';
+    }).join('');
+
+    ratingsHtml =
+      '<div style="margin-top:1rem;border-top:1px solid var(--gb);padding-top:.9rem;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.7rem;">'
+        + '<div style="font-family:Josefin Sans,sans-serif;font-size:.54rem;letter-spacing:.16em;text-transform:uppercase;color:var(--smoke);">Tasting Scores</div>'
+        + '<div style="display:flex;align-items:baseline;gap:.25rem;">'
+          + '<span style="font-family:Playfair Display,serif;font-size:1.2rem;font-weight:700;color:var(--gold);">' + avg + '</span>'
+          + '<span style="font-family:Josefin Sans,sans-serif;font-size:.5rem;letter-spacing:.06em;color:var(--smoke);">/100 avg</span>'
+          + (badge ? '<span class="sbadge" style="margin-left:.4rem;background:' + badge.c + '22;border:1px solid ' + badge.c + ';color:' + badge.c + ';font-size:.48rem;padding:.1rem .4rem;">' + badge.l + '</span>' : '')
+        + '</div>'
+      + '</div>'
+      + rows
+      + '</div>';
+  }
+
   cnt.innerHTML =
     '<div class="wine-info-hero">'
       + imgHtml
@@ -5066,7 +5148,8 @@ function showWineModal(wineData) {
       + '<button class="wine-info-close" onclick="closeWineModal()">✕</button>'
     + '</div>'
     + metaHtml
-    + notesHtml;
+    + notesHtml
+    + ratingsHtml;
 
   modal.classList.add('open');
   modal.style.display = 'flex';
@@ -5111,7 +5194,7 @@ renderHostPanel();
 <div id="welcome-overlay">
   <div class="welcome-card">
     <div class="welcome-logo"><svg class="ico" style="width:2.5rem;height:2.5rem;"><use href="#ico-bottle-red"/></svg></div>
-    <div class="welcome-title">Vino Society</div>
+    <div class="welcome-title">Vintosserne</div>
     <div class="welcome-sub">Who are you?</div>
     <div class="member-grid">
           <button class="member-btn" onclick="selectMember('Nichlas')">Nichlas</button>
