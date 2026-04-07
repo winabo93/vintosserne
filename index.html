@@ -849,6 +849,102 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
   transform:scale(1.02);
 }
 
+/* ── RESULTS WINE IMAGE ── */
+.res-wine-img-btn{
+  display:block;width:100%;
+  background:none;border:none;padding:0;cursor:pointer;
+  margin-bottom:.85rem;
+  text-align:left;
+}
+.res-wine-img-card{
+  position:relative;border-radius:14px;overflow:hidden;
+  background:linear-gradient(135deg,rgba(61,10,20,.7),rgba(26,10,14,.9));
+  border:1px solid var(--gb);
+  display:flex;align-items:stretch;gap:0;
+  min-height:96px;
+  transition:border-color .2s,box-shadow .2s;
+}
+.res-wine-img-card:active{box-shadow:0 0 0 2px var(--gold);border-color:var(--gold);}
+.res-wine-img-thumb-lg{
+  width:88px;flex-shrink:0;
+  object-fit:cover;display:block;
+}
+.res-wine-img-thumb-lg-placeholder{
+  width:72px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:2rem;opacity:.6;padding:.5rem;
+}
+.res-wine-card-body{
+  flex:1;padding:.75rem .9rem;display:flex;flex-direction:column;justify-content:center;min-width:0;
+}
+.res-wine-card-number{
+  font-family:'Josefin Sans',sans-serif;font-size:.52rem;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--smoke);margin-bottom:.2rem;
+}
+.res-wine-card-name{
+  font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:700;
+  color:var(--pale-gold);line-height:1.2;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.res-wine-card-sub{
+  font-family:'Josefin Sans',sans-serif;font-size:.56rem;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--smoke);
+  margin-top:.25rem;
+}
+.res-wine-card-score{
+  font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;
+  color:var(--gold);margin-top:.3rem;line-height:1;
+}
+.res-wine-tap-hint{
+  position:absolute;bottom:.45rem;right:.6rem;
+  font-family:'Josefin Sans',sans-serif;font-size:.48rem;
+  letter-spacing:.1em;text-transform:uppercase;color:rgba(201,168,76,.4);
+}
+
+/* ── WINE INFO MODAL ── */
+#wine-info-modal{
+  display:none;position:fixed;inset:0;z-index:9990;
+  background:rgba(10,4,8,.88);backdrop-filter:blur(10px);
+  align-items:flex-end;justify-content:center;
+  padding:0;
+}
+#wine-info-modal.open{display:flex;animation:slideUp .3s cubic-bezier(.22,1,.36,1);}
+@keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+.wine-info-sheet{
+  background:linear-gradient(160deg,rgba(36,8,16,.98),rgba(20,6,10,.98));
+  border:1px solid var(--gb);
+  border-bottom:none;
+  border-radius:20px 20px 0 0;
+  width:100%;max-width:600px;
+  max-height:88vh;overflow-y:auto;
+  padding:1.2rem 1.1rem calc(1.2rem + env(safe-area-inset-bottom,0px));
+}
+.wine-info-sheet::-webkit-scrollbar{width:3px;}
+.wine-info-sheet::-webkit-scrollbar-thumb{background:var(--burgundy);}
+.wine-info-handle{
+  width:40px;height:4px;border-radius:2px;
+  background:rgba(201,168,76,.3);margin:0 auto .9rem;
+}
+.wine-info-hero{display:flex;gap:1rem;align-items:flex-start;margin-bottom:1rem;}
+.wine-info-img{
+  width:90px;height:110px;border-radius:10px;object-fit:cover;
+  border:2px solid var(--gold);box-shadow:0 8px 24px rgba(0,0,0,.5);flex-shrink:0;
+}
+.wine-info-img-placeholder{
+  width:72px;height:90px;border-radius:10px;
+  background:rgba(201,168,76,.06);border:1px solid var(--gb);
+  display:flex;align-items:center;justify-content:center;font-size:2.2rem;flex-shrink:0;
+}
+.wine-info-title{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:700;color:var(--cream);line-height:1.2;}
+.wine-info-vintage{font-style:italic;color:var(--gold);font-size:.95rem;margin-top:.2rem;}
+.wine-info-close{
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(255,255,255,.08);border:1px solid var(--gb);
+  color:var(--smoke);font-size:1rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;margin-left:auto;
+}
+
 /* ── MISC ── */
 .alert{padding:.7rem .9rem;border-radius:8px;font-size:.88rem;margin:.55rem 0;display:none;}
 .alert.error{background:rgba(180,30,30,.2);border:1px solid rgba(180,30,30,.4);color:#ffaaaa;display:block;}
@@ -1287,12 +1383,7 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
   </div>
 </div>
 
-<!-- CONNECTION BAR -->
-<div id="conn-bar">
-  <span class="conn-dot"></span>
-  <span id="conn-msg">Connecting…</span>
 
-</div>
 
 <header>
   <div class="logo-mark"><svg class="ico logo-ico"><use href="#ico-bottle-red"/></svg></div>
@@ -1542,9 +1633,8 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
   <div class="card">
     <div class="card-title"><svg class="ico"><use href="#ico-history"/></svg> Session History &amp; Statistics</div>
     <div style="display:flex;gap:.55rem;flex-wrap:wrap;margin-bottom:1rem;">
-      <button class="btn btn-outline btn-sm" onclick="loadHistory()"><svg class="ico"><use href="#ico-refresh"/></svg> Refresh</button>
-      <button class="btn btn-outline btn-sm" onclick="importJSON()"><svg class="ico"><use href="#ico-import"/></svg> Import JSON Backup</button>
-      <input type="file" id="import-file" accept=".json" style="display:none;" onchange="handleImport(event)">
+      <button class="btn btn-outline" onclick="this.style.opacity='0.5';loadHistory().finally?loadHistory().finally(()=>this.style.opacity='1'):setTimeout(()=>this.style.opacity='1',1000)" style="min-height:44px;"><svg class="ico"><use href="#ico-refresh"/></svg> Refresh</button>
+
     </div>
     <div id="history-list">
       <div class="empty-state"><div class="ei"><svg class="ico"><use href="#ico-archive"/></svg></div>No archived sessions yet.<br><small style="font-size:.8rem;">Archive a session from the Host tab to save it here.</small></div>
@@ -1573,7 +1663,7 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
     </div>
     <div class="ai-chat-wrap">
       <div class="ai-messages" id="ai-messages">
-        <div class="ai-msg assistant">Welcome to <strong>Vino Intelligence</strong> — I have access to your full wine archive data.</div>
+        
       </div>
       <div class="ai-input-row">
         <textarea id="ai-input" placeholder="e.g. What's the average score for Pinot Noir?" rows="1"
@@ -3003,7 +3093,7 @@ function renderResults(c, sess) {
       return '<div class="res-card">'
         + '<div>'
         + '<div class="res-taster">' + x.taster + '</div>'
-        + '<div class="res-meta-sm">' + x.systemLabel + ' · ' + x.time + '</div>'
+        + (x.time && x.time !== '—' ? '<div class="res-meta-sm">' + x.time + '</div>' : '')
         + (x.notes ? '<div style="font-size:.8rem;color:var(--smoke);margin-top:.28rem;font-style:italic;">&ldquo;' + x.notes + '&rdquo;</div>' : '')
         + '</div>'
         + '<div class="res-score">' + x.score + (x.system === '5star' ? '★' : '') + '</div>'
@@ -3019,14 +3109,30 @@ function renderResults(c, sess) {
         + '</div>'
       : '';
 
-    return '<div style="margin-bottom:1.4rem;">'
-      + '<div class="res-wine-hdr">'
-      + (w.image ? '<img src="' + w.image + '" style="width:28px;height:28px;border-radius:4px;object-fit:cover;border:1px solid var(--gold);vertical-align:middle;margin-right:.4rem;"> ' : emoji + ' ')
-      + 'Wine #' + (i+1) + ': ' + w.name + (w.vintage ? ' ' + w.vintage : '') + (w.classification ? ' <span style="font-family:Josefin Sans,sans-serif;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-left:.4rem;">' + w.classification + '</span>' : '') + '</span>'
-      + (avg !== null
-        ? '<span style="font-family:Josefin Sans,sans-serif;font-size:.68rem;color:var(--gold);">avg ' + avg + '/100</span>'
-        : '<span style="color:var(--smoke);font-size:.68rem;">No ratings</span>')
+        // Serialise wine data for modal (JSON-safe — strip functions)
+    var wModal = JSON.stringify({
+      name: w.name, vintage: w.vintage||'', type: w.type||'',
+      country: w.country||'', region: w.region||'', appellation: w.appellation||'',
+      classification: w.classification||'', grapes: w.grapes||'',
+      abv: w.abv||'', price: w.price||'', notes: w.notes||'', image: w.image||''
+    });
+    var thumbSrc = w.image ? w.image : '';
+    var subParts = [w.type, w.country, w.grapes].filter(Boolean);
+    return '<div style="margin-bottom:1.6rem;">'
+      + '<button class="res-wine-img-btn" onclick="showWineModal(' + wModal.replace(/'/g,"&#39;") + ')">'
+      + '<div class="res-wine-img-card">'
+      + (thumbSrc
+          ? '<img src="' + thumbSrc + '" class="res-wine-img-thumb-lg" alt="' + w.name + '">'
+          : '<div class="res-wine-img-thumb-lg-placeholder">' + emoji + '</div>')
+      + '<div class="res-wine-card-body">'
+        + '<div class="res-wine-card-number">Wine #' + (i+1) + '</div>'
+        + '<div class="res-wine-card-name">' + w.name + (w.vintage ? ' ' + w.vintage : '') + '</div>'
+        + (subParts.length ? '<div class="res-wine-card-sub">' + subParts.join(' · ') + '</div>' : '')
+        + (avg !== null ? '<div class="res-wine-card-score">' + avg + '<span style="font-size:.7rem;opacity:.7;margin-left:.2rem;">/100</span></div>' : '')
       + '</div>'
+      + '<div class="res-wine-tap-hint">tap for info</div>'
+      + '</div>'
+      + '</button>'
       + avgHTML + ratingsHTML
       + '</div>';
   }).join('');
@@ -4914,6 +5020,68 @@ function applyMemberName(name) {
     }
 }
 
+// ═══════════════════════════════════════
+//  WINE INFO MODAL
+// ═══════════════════════════════════════
+function showWineModal(wineData) {
+  var w = wineData;
+  var modal = document.getElementById('wine-info-modal');
+  var cnt   = document.getElementById('wine-info-content');
+  if (!modal || !cnt) return;
+
+  var imgHtml = w.image
+    ? '<img src="' + w.image + '" class="wine-info-img" alt="' + w.name + '">'
+    : '<div class="wine-info-img-placeholder">' + (TE[w.type] || '<svg class="ico" style="width:2rem;height:2rem;"><use href="#ico-bottle-red"/></svg>') + '</div>';
+
+  var meta = [
+    {l:'Type',           v: w.type},
+    {l:'Country',        v: w.country},
+    {l:'Region',         v: w.region},
+    {l:'Appellation',    v: w.appellation},
+    {l:'Classification', v: w.classification},
+    {l:'Grape(s)',       v: w.grapes},
+    {l:'Alcohol',        v: w.abv},
+    {l:'Price',          v: w.price},
+  ].filter(function(m){ return m.v; });
+
+  var metaHtml = meta.length
+    ? '<div class="wine-meta" style="margin-top:.9rem;">'
+      + meta.map(function(m){
+          return '<div class="meta-item"><div class="meta-lbl">' + m.l + '</div><div class="meta-val">' + m.v + '</div></div>';
+        }).join('')
+      + '</div>'
+    : '';
+
+  var notesHtml = w.notes
+    ? '<div style="margin-top:.9rem;padding:.75rem .9rem;background:rgba(201,168,76,.06);border:1px solid var(--gb);border-radius:10px;">'
+      + '<div style="font-family:Josefin Sans,sans-serif;font-size:.54rem;letter-spacing:.14em;text-transform:uppercase;color:var(--smoke);margin-bottom:.35rem;">Host Notes</div>'
+      + '<div style="font-style:italic;color:var(--pale-gold);font-size:.95rem;line-height:1.55;">' + w.notes + '</div>'
+      + '</div>'
+    : '';
+
+  cnt.innerHTML =
+    '<div class="wine-info-hero">'
+      + imgHtml
+      + '<div style="flex:1;min-width:0;">'
+        + '<div class="wine-info-title">' + w.name + '</div>'
+        + (w.vintage ? '<div class="wine-info-vintage">' + w.vintage + '</div>' : '')
+      + '</div>'
+      + '<button class="wine-info-close" onclick="closeWineModal()">✕</button>'
+    + '</div>'
+    + metaHtml
+    + notesHtml;
+
+  modal.classList.add('open');
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeWineModal() {
+  var modal = document.getElementById('wine-info-modal');
+  if (modal) { modal.classList.remove('open'); modal.style.display = 'none'; }
+  document.body.style.overflow = '';
+}
+
 // ── BOOT ──
 FB_URL = 'https://vintosserv2-default-rtdb.europe-west1.firebasedatabase.app';
 useCloud = true;
@@ -4965,6 +5133,13 @@ renderHostPanel();
                font-family:'Cormorant Garamond',serif;font-size:1rem;outline:none;text-align:center;"
         onkeydown="if(event.key==='Enter')selectMember(this.value.trim())">
     </div>
+  </div>
+</div>
+
+<div id="wine-info-modal" onclick="if(event.target===this)closeWineModal()">
+  <div class="wine-info-sheet" id="wine-info-sheet">
+    <div class="wine-info-handle"></div>
+    <div id="wine-info-content"></div>
   </div>
 </div>
 </body>
