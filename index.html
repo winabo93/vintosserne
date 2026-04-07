@@ -810,6 +810,45 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
 /* Logo mark */
 .logo-ico{width:2rem;height:2rem;filter:drop-shadow(0 0 16px rgba(201,168,76,.5));}
 
+/* ── WELCOME OVERLAY ── */
+#welcome-overlay{
+  position:fixed;inset:0;z-index:9999;
+  background:rgba(10,4,8,.96);
+  backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;
+  padding:1.5rem;
+}
+.welcome-card{
+  background:linear-gradient(135deg,rgba(26,10,14,.98),rgba(61,10,20,.85));
+  border:1px solid var(--gold);
+  border-radius:18px;
+  padding:2rem 1.5rem;
+  max-width:360px;width:100%;
+  box-shadow:0 20px 60px rgba(0,0,0,.7),inset 0 1px 0 rgba(201,168,76,.15);
+  text-align:center;
+}
+.welcome-logo{font-size:2.5rem;margin-bottom:.5rem;animation:float 4s ease-in-out infinite;}
+.welcome-title{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:var(--cream);margin-bottom:.2rem;}
+.welcome-sub{font-family:'Josefin Sans',sans-serif;font-size:.6rem;letter-spacing:.25em;text-transform:uppercase;color:var(--smoke);margin-bottom:1.8rem;}
+.member-grid{display:grid;grid-template-columns:1fr 1fr;gap:.55rem;margin-bottom:1.2rem;}
+.member-btn{
+  padding:.7rem .5rem;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(201,168,76,.2);
+  border-radius:10px;
+  font-family:'Playfair Display',serif;
+  font-size:.95rem;font-style:italic;
+  color:var(--cream);
+  cursor:pointer;transition:all .2s;
+  min-height:44px;
+}
+.member-btn:hover,.member-btn:active{
+  background:rgba(201,168,76,.12);
+  border-color:var(--gold);
+  color:var(--pale-gold);
+  transform:scale(1.02);
+}
+
 /* ── MISC ── */
 .alert{padding:.7rem .9rem;border-radius:8px;font-size:.88rem;margin:.55rem 0;display:none;}
 .alert.error{background:rgba(180,30,30,.2);border:1px solid rgba(180,30,30,.4);color:#ffaaaa;display:block;}
@@ -1276,29 +1315,10 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
       <div class="card-title"><svg class="ico"><use href="#ico-bottle-red"/></svg> Create Tasting Session</div>
       <div class="form-grid">
         <div class="field full">
-        <label>Session Name</label>
-        <input type="text" id="sess-name-inp" placeholder="e.g. Bordeaux Evening, Club Night #12…">
+          <label>Session Name</label>
+          <input type="text" id="sess-name-inp" placeholder="e.g. Bordeaux Evening, Club Night #12…">
         </div>
-        <div class="field full">
-          <label>
-            Host Name 
-            <span style="color:var(--smoke);font-weight:300;letter-spacing:.05em;text-transform:none;font-size:.75rem;">
-              — your name as host of this session
-            </span>
-          </label>
-
-          <select id="sess-host-inp">
-            <option value="">Select host...</option>
-            <option>Nichlas</option>
-            <option>William</option>
-            <option>Nikoline</option>
-            <option>Mathilde</option>
-            <option>Mathilda</option>
-            <option>Carl Christian</option>
-            <option>Sylvester</option>
-            <option>Karoline</option>
-          </select>
-        </div>
+        <input type="hidden" id="sess-host-inp" value="">
         <div class="field full">
           <label>Host Password <span style="color:var(--smoke);font-weight:300;letter-spacing:.05em;text-transform:none;font-size:.75rem;">— protects session controls from tasters</span></label>
           <div style="position:relative;">
@@ -1405,20 +1425,8 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
           <button class="btn btn-outline btn-sm" onclick="resetTaste()">← Change Session</button>
         </div>
       </div>
-      <div class="field" style="margin-bottom:1rem;">
-        <label>Your Name</label>
-        <select id="taster-name" onchange="refreshWineSelector()">
-          <option value="">Select your name…</option>
-          <option>Nichlas</option>
-          <option>William</option>
-          <option>Nikoline</option>
-          <option>Mathilde</option>
-          <option>Mathilda</option>
-          <option>Carl Christian</option>
-          <option>Sylvester</option>
-          <option>Karoline</option>
-        </select>
-      </div>
+      <input type="hidden" id="taster-name" value="">
+      <input type="hidden" id="taster-name-other" value="">
       <div style="font-family:'Josefin Sans',sans-serif;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--smoke);margin-bottom:.6rem;">Select a wine to rate:</div>
       <div id="wine-selector" class="wine-selector"></div>
     </div>
@@ -1578,7 +1586,7 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
       <div style="font-family:'Josefin Sans',sans-serif;font-size:.52rem;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke);opacity:.6;">Powered by Claude · Reads your archived session data</div>
       <button class="btn btn-outline btn-sm" onclick="clearAIKey()" style="font-size:.52rem;padding:.22rem .6rem;opacity:.6;"><svg class="ico"><use href="#ico-key"/></svg> Change API Key</button>
     </div>
-</div>
+  </div>
 
 
 <!-- ══════════ MAP ══════════ -->
@@ -1650,13 +1658,13 @@ function _doRenderQR(canvasEl, text, size, darkColor, lightColor) {
 
 function _qrFallback(canvasEl, text, size) {
   // Show the URL as text so host can at least copy/share it manually
-    var ctx = canvasEl.getContext('2d');
+  var ctx = canvasEl.getContext('2d');
   canvasEl.width = size || 220; canvasEl.height = size || 220;
-    ctx.fillStyle = '#1a0a0e';
+  ctx.fillStyle = '#1a0a0e';
   ctx.fillRect(0, 0, canvasEl.width, canvasEl.height);
-    ctx.fillStyle = '#C9A84C';
+  ctx.fillStyle = '#C9A84C';
   ctx.font = '12px sans-serif';
-    ctx.textAlign = 'center';
+  ctx.textAlign = 'center';
   ctx.fillText('QR unavailable', canvasEl.width / 2, canvasEl.height / 2 - 8);
   ctx.fillStyle = '#8B7D7B';
   ctx.font = '9px sans-serif';
@@ -2301,7 +2309,7 @@ async function createSession() {
   const name = document.getElementById('sess-name-inp').value.trim() || 'Wine Evening';
   const host = document.getElementById('sess-host-inp').value.trim();
   const pw   = document.getElementById('sess-pass-inp').value.trim();
-  if (!host) { showAlert('host-alert', 'error', 'Please enter a host name.'); return; }
+  if (!host) host = localStorage.getItem('vino_member_name') || 'Host';
   if (!pw)   { showAlert('host-alert', 'error', 'Please set a host password.'); return; }
   const passwordHash = await hashPassword(pw);
   const code = String(Math.floor(1000 + Math.random() * 9000));
@@ -2583,6 +2591,25 @@ async function unlockSession() {
     refreshWineSelector(data);
     if (tasteWineIdx !== null && !document.getElementById('rating-card').classList.contains('hidden')) {
       renderRevealArea(tasteWineIdx, data);
+      // Re-evaluate blind game visibility whenever live data changes
+      const w = data.wines[tasteWineIdx];
+      const taster = getTaster();
+      const gameSection = document.getElementById('blind-game-section');
+      if (gameSection && w) {
+        const existing = taster && (w.guesses || []).find(g => g.taster === taster);
+        if (existing && existing.scored) {
+          // Already scored — keep showing result, nothing to do
+        } else if (existing && !existing.scored && w.revealed) {
+          // Just revealed with locked guesses — score them now
+          gameSection.classList.remove('hidden');
+          resetGameUI();
+          scoreAndShowGuess(existing, w);
+        } else if (!existing && w.revealed) {
+          // Revealed with no guesses — hide the game
+          gameSection.classList.add('hidden');
+        }
+        // Blind + no guesses, or blind + locked: no change needed
+      }
     }
     document.getElementById('live-indicator').innerHTML = '<span style="color:#7dffb0;font-size:1rem;">●</span> Live';
   });
@@ -2593,7 +2620,7 @@ async function unlockSession() {
 function refreshWineSelector(data) {
   if (!data) return;
   const wines = data.wines || [];
-  const taster = document.getElementById('taster-name').value.trim();
+  const taster = getTaster();
   document.getElementById('wine-selector').innerHTML = wines.map((w, i) => {
     const done = taster && (w.ratings || []).some(r => r.taster === taster);
     return w.revealed
@@ -2616,12 +2643,18 @@ function refreshWineSelector(data) {
   }).join('');
 }
 
+function getTaster() {
+  var el = document.getElementById('taster-name');
+  // Fall back to localStorage if hidden input not yet set
+  return (el && el.value.trim()) || localStorage.getItem('vino_member_name') || '';
+}
+
 async function openRating(idx) {
   tasteWineIdx = idx;
   document.getElementById('rating-title').innerHTML = '<svg class="ico"><use href="#ico-bottle-red"/></svg> Wine #' + (idx + 1);
   const data = await dbGet('sessions/' + tasteCode);
   const w    = data.wines[idx];
-  const taster = document.getElementById('taster-name').value.trim();
+  const taster = getTaster();
   renderRevealArea(idx, data);
 
   // Blind game section logic
@@ -2694,7 +2727,7 @@ function renderRevealArea(idx, data) {
   } else {
   // When wine is revealed, score any pending guesses and show result
   if (w.revealed) {
-    const taster = document.getElementById('taster-name') && document.getElementById('taster-name').value.trim();
+    const taster = document.getElementById('taster-name') && getTaster();
     if (taster) {
       const existing = (w.guesses || []).find(g => g.taster === taster);
       if (existing && !existing.scored) {
@@ -2847,7 +2880,7 @@ function getScore() {
 }
 
 async function submitRating() {
-  const taster = document.getElementById('taster-name').value.trim();
+  const taster = getTaster();
   if (!taster) { showAlert('rate-alert', 'error', 'Enter your name first.'); return; }
   const rawScore = getScore();
   const score = Math.round(rawScore);   // schema: integer, not float
@@ -4478,7 +4511,7 @@ async function handleWineImage(inputId, previewId, placeholderId, removeId, data
 
     // Show preview
     if (prev) { prev.src = url; prev.classList.add('visible'); }
-    if (plac) { plac.textContent = '<svg class="ico"><use href="#ico-camera"/></svg>'; plac.style.display = 'none'; }
+    if (plac) { plac.innerHTML = '<svg class="ico"><use href="#ico-camera"/></svg>'; plac.style.display = 'none'; }
     if (rem)  rem.classList.add('visible');
     // Show scan button if this is the add-wine form
     if (inputId === 'wf-img-input') {
@@ -4487,7 +4520,7 @@ async function handleWineImage(inputId, previewId, placeholderId, removeId, data
     }
 
   } catch(e) {
-    if (plac) plac.textContent = '<svg class="ico"><use href="#ico-camera"/></svg>';
+    if (plac) plac.innerHTML = '<svg class="ico"><use href="#ico-camera"/></svg>';
     alert('Image upload failed: ' + e.message + '\n\nCheck your Cloudinary preset is set to Unsigned.');
     input.value = '';
   }
@@ -4501,9 +4534,12 @@ function clearWineImage(inputId, previewId, placeholderId, removeId, dataId) {
   var prev = document.getElementById(previewId);
   if (prev) { prev.src = ''; prev.classList.remove('visible'); }
   var plac = document.getElementById(placeholderId);
-  if (plac) plac.style.display = '';
+  if (plac) { plac.style.display = ''; plac.innerHTML = '<svg class="ico"><use href="#ico-camera"/></svg>'; }
   var rem = document.getElementById(removeId);
   if (rem) rem.classList.remove('visible');
+  // Hide scan button if present
+  var scanBtn = document.getElementById('wf-scan-btn');
+  if (scanBtn) scanBtn.style.display = 'none';
 }
 
 // ═══════════════════════════════════════
@@ -4568,7 +4604,7 @@ function populateGuessUI(guess, wine) {
 }
 
 async function submitGuess() {
-  const taster = document.getElementById('taster-name').value.trim();
+  const taster = getTaster();
   if (!taster) {
     showAlert('game-alert','error','Enter your name first (top of page).');
     return;
@@ -4846,11 +4882,54 @@ Be precise. Use official names. Return only the JSON object, no other text.`;
   }
 }
 
+// ═══════════════════════════════════════
+//  MEMBER SELECTION
+// ═══════════════════════════════════════
+const CLUB_MEMBERS = ['Nichlas', 'William', 'Nikoline', 'Mathilde', 'Mathilda', 'Carl Christian', 'Sylvester', 'Karoline'];
+
+function selectMember(name) {
+  if (!name) return;
+  name = name.trim();
+  if (!name) return;
+  // Persist
+  localStorage.setItem('vino_member_name', name);
+  // Apply to all name fields
+  applyMemberName(name);
+  // Hide overlay
+  var ov = document.getElementById('welcome-overlay');
+  if (ov) ov.style.display = 'none';
+}
+
+function applyMemberName(name) {
+  if (!name) return;
+  // Set hidden taster field
+  var tn = document.getElementById('taster-name');
+  if (tn) tn.value = name;
+  // Set hidden host field
+  var hn = document.getElementById('sess-host-inp');
+  if (hn) hn.value = name;
+  // Refresh wine selector if session is active
+    if (typeof refreshWineSelector === 'function') {
+      try { refreshWineSelector(); } catch(e) {}
+    }
+}
+
 // ── BOOT ──
 FB_URL = 'https://vintosserv2-default-rtdb.europe-west1.firebasedatabase.app';
 useCloud = true;
 // setConnBar('online');
 renderHostPanel();
+
+// Member selection — show overlay or restore saved name
+(function() {
+  var saved = localStorage.getItem('vino_member_name');
+  if (saved) {
+    applyMemberName(saved);
+    var ov = document.getElementById('welcome-overlay');
+    if (ov) ov.style.display = 'none';
+  }
+  // else overlay stays visible
+})();
 
 // Auto-unlock from QR URL param
 (function() {
@@ -4863,5 +4942,30 @@ renderHostPanel();
   }
 })();
 </script>
+
+<div id="welcome-overlay">
+  <div class="welcome-card">
+    <div class="welcome-logo"><svg class="ico" style="width:2.5rem;height:2.5rem;"><use href="#ico-bottle-red"/></svg></div>
+    <div class="welcome-title">Vino Society</div>
+    <div class="welcome-sub">Who are you?</div>
+    <div class="member-grid">
+          <button class="member-btn" onclick="selectMember('Nichlas')">Nichlas</button>
+          <button class="member-btn" onclick="selectMember('William')">William</button>
+          <button class="member-btn" onclick="selectMember('Nikoline')">Nikoline</button>
+          <button class="member-btn" onclick="selectMember('Mathilde')">Mathilde</button>
+          <button class="member-btn" onclick="selectMember('Mathilda')">Mathilda</button>
+          <button class="member-btn" onclick="selectMember('Carl Christian')">Carl Christian</button>
+          <button class="member-btn" onclick="selectMember('Sylvester')">Sylvester</button>
+          <button class="member-btn" onclick="selectMember('Karoline')">Karoline</button>
+    </div>
+    <div style="margin-top:.5rem;">
+      <input type="text" id="welcome-custom" placeholder="Other name…"
+        style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(201,168,76,.2);
+               border-radius:8px;padding:.6rem .85rem;color:var(--cream);
+               font-family:'Cormorant Garamond',serif;font-size:1rem;outline:none;text-align:center;"
+        onkeydown="if(event.key==='Enter')selectMember(this.value.trim())">
+    </div>
+  </div>
+</div>
 </body>
 </html>
