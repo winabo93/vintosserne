@@ -237,7 +237,10 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
   display:flex;align-items:center;justify-content:center;
   font-family:'Josefin Sans',sans-serif;font-size:.68rem;
   color:var(--pale-gold);flex-shrink:0;
+  transition:background .15s;
 }
+.wnum:hover{background:rgba(201,168,76,.18);}
+
 .wrow-body{flex:1;min-width:0;}
 .wrow-name{
   font-family:'Playfair Display',serif;font-size:.97rem;line-height:1.25;
@@ -2574,8 +2577,8 @@ function renderOverview(s) {
         : `<button class="wbtn wbtn-reveal" onclick="toggleReveal(${i},true)" title="Reveal"><svg class="ico"><use href="#ico-reveal"/></svg></button>`;
       return `<div class="wine-row ${w.revealed ? 'revealed-row' : ''}" id="wine-row-${i}">
         <div class="wine-row-top">
-          <div class="wnum">${i + 1}</div>
-          ${thumb}
+          <div class="wnum" onclick="openEditWine(${i})" title="Edit wine" style="cursor:pointer;">${i + 1}</div>
+          <div onclick="openEditWine(${i})" title="Edit wine" style="cursor:pointer;flex-shrink:0;line-height:1;">${thumb}</div>
           <div class="wrow-body">
             <div class="wrow-name">${w.name}${w.vintage ? ' ' + w.vintage : ''}</div>
             ${meta ? `<div class="wrow-meta">${meta}</div>` : ''}
