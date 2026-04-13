@@ -450,7 +450,9 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
 .wine-stat-row{
   background:rgba(255,255,255,.02);border:1px solid var(--gb);
   border-radius:8px;padding:.8rem .9rem;margin-bottom:.5rem;
+  transition:border-color .18s,background .18s;
 }
+.wine-stat-row:active{border-color:var(--gold);background:rgba(201,168,76,.05);}
 .wine-stat-name{font-family:'Playfair Display',serif;font-size:.95rem;font-style:italic;margin-bottom:.35rem;}
 .mini-bar-wrap{display:flex;align-items:center;gap:.55rem;margin-top:.3rem;}
 .mini-bar-bg{flex:1;height:5px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;}
@@ -502,7 +504,9 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
   border:1px solid rgba(201,168,76,.2);border-radius:20px;
   font-family:'Josefin Sans',sans-serif;font-size:.56rem;
   letter-spacing:.06em;color:var(--pale-gold);
+  transition:all .18s;
 }
+.map-pin:active{background:rgba(201,168,76,.22);border-color:var(--gold);transform:scale(.97);}
 .map-pin .pin-num{
   width:16px;height:16px;border-radius:50%;
   background:linear-gradient(135deg,var(--burgundy),var(--deep-wine));
@@ -982,6 +986,45 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
   font-size:.6rem;color:var(--smoke);font-style:italic;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px;
 }
+
+/* ── START TASTING CTA ── */
+.start-tasting-cta{
+  display:flex;flex-direction:column;align-items:center;
+  padding:1.4rem 1rem 1rem;
+  margin-bottom:.85rem;
+  background:linear-gradient(135deg,rgba(107,30,46,.35),rgba(61,10,20,.45));
+  border:1px solid rgba(201,168,76,.25);
+  border-radius:14px;
+  text-align:center;
+  animation:fadeIn .4s ease;
+}
+.start-tasting-cta-label{
+  font-family:'Josefin Sans',sans-serif;font-size:.56rem;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--smoke);
+  margin-bottom:.55rem;
+}
+.start-tasting-cta-name{
+  font-family:'Playfair Display',serif;font-size:1.15rem;
+  font-style:italic;color:var(--pale-gold);margin-bottom:.9rem;
+}
+.btn-start-tasting{
+  background:linear-gradient(135deg,var(--burgundy),var(--deep-wine));
+  border:1.5px solid var(--gold);
+  color:var(--pale-gold);
+  font-family:'Josefin Sans',sans-serif;font-size:.7rem;
+  letter-spacing:.18em;text-transform:uppercase;
+  padding:.85rem 2rem;border-radius:50px;
+  cursor:pointer;
+  box-shadow:0 4px 20px rgba(107,30,46,.5),0 0 0 0 rgba(201,168,76,.3);
+  transition:all .2s;min-height:52px;
+  animation:pulse-gold 2.5s ease-in-out infinite;
+}
+@keyframes pulse-gold{
+  0%,100%{box-shadow:0 4px 20px rgba(107,30,46,.5),0 0 0 0 rgba(201,168,76,.3);}
+  50%{box-shadow:0 4px 28px rgba(107,30,46,.7),0 0 0 8px rgba(201,168,76,.0);}
+}
+.btn-start-tasting:active{transform:scale(.97);animation:none;}
+.wine-selector-wines{margin-top:.2rem;}
 
 /* ── MISC ── */
 .alert{padding:.7rem .9rem;border-radius:8px;font-size:.88rem;margin:.55rem 0;display:none;}
@@ -1556,7 +1599,6 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
       </div>
       <input type="hidden" id="taster-name" value="">
       <input type="hidden" id="taster-name-other" value="">
-      <div style="font-family:'Josefin Sans',sans-serif;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--smoke);margin-bottom:.6rem;">Select a wine to rate:</div>
       <div id="wine-selector" class="wine-selector"></div>
     </div>
     <div id="rating-card" class="card hidden">
@@ -1568,28 +1610,28 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
           <div class="game-card-title"><svg class="ico"><use href="#ico-spy"/></svg> Blind Guess</div>
           <div class="guess-row" id="guess-inputs">
             <div class="guess-field">
-              <span class="guess-label">Country</span>
-              <input class="guess-input" id="g-country" placeholder="France…" autocomplete="off">
+              <span class="guess-label">Land</span>
+              <input class="guess-input" id="g-country" autocomplete="off">
               <span class="guess-pts">2p</span>
             </div>
             <div class="guess-field">
               <span class="guess-label">Region</span>
-              <input class="guess-input" id="g-region" placeholder="Burgundy…" autocomplete="off">
+              <input class="guess-input" id="g-region" autocomplete="off">
               <span class="guess-pts">3p</span>
             </div>
             <div class="guess-field">
               <span class="guess-label">Appellation</span>
-              <input class="guess-input" id="g-appel" placeholder="Gevrey…" autocomplete="off">
+              <input class="guess-input" id="g-appel" autocomplete="off">
               <span class="guess-pts">5p</span>
             </div>
             <div class="guess-field">
-              <span class="guess-label">Grape</span>
-              <input class="guess-input" id="g-grape" placeholder="Pinot Noir…" autocomplete="off">
+              <span class="guess-label">Druesort</span>
+              <input class="guess-input" id="g-grape" autocomplete="off">
               <span class="guess-pts">8p</span>
             </div>
             <div class="guess-field">
-              <span class="guess-label">Vintage</span>
-              <input class="guess-input" id="g-vintage" placeholder="2019…" inputmode="numeric" autocomplete="off">
+              <span class="guess-label">Årgang</span>
+              <input class="guess-input" id="g-vintage" inputmode="numeric" autocomplete="off">
               <span class="guess-pts">2p</span>
             </div>
           </div>
@@ -2094,6 +2136,8 @@ let activeCode = null, tasteCode = null, tasteWineIdx = null, curSys = '100';
 let tasteListener = null;
 let resListener   = null;   // live results polling
 let _resWines     = [];        // cached for modal lookup
+let _histWines    = [];        // cached for history modal lookup
+// _mapWines is now stored per-legendId in window._mapWinesById
 let _clubWines    = [];        // cached for club stats modal
 
 // ── localStorage cache (instant reads + offline fallback) ──
@@ -2753,7 +2797,28 @@ function refreshWineSelector(data) {
   if (!data) return;
   const wines = data.wines || [];
   const taster = getTaster();
-  document.getElementById('wine-selector').innerHTML = wines.map((w, i) => {
+  const allDone = wines.length > 0 && taster && wines.every(w => (w.ratings || []).some(r => r.taster === taster));
+  const anyDone = taster && wines.some(w => (w.ratings || []).some(r => r.taster === taster));
+
+  // CTA header: "Start Tasting" if none done yet, compact label if in progress
+  const ctaHTML = wines.length === 0 ? '' : !anyDone
+    ? `<div class="start-tasting-cta">
+        <div class="start-tasting-cta-label">Ready to taste?</div>
+        <div class="start-tasting-cta-name">${taster ? taster + ' · ' : ''}${wines.length} wine${wines.length !== 1 ? 's' : ''} to rate</div>
+        <button class="btn-start-tasting" onclick="openRating(0)">
+          <svg class="ico" style="width:1rem;height:1rem;margin-right:.4rem;vertical-align:middle;"><use href="#ico-glass"/></svg>
+          Start Tasting
+        </button>
+       </div>`
+    : allDone
+    ? `<div style="font-family:'Josefin Sans',sans-serif;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:#7dffb0;margin-bottom:.6rem;text-align:center;">
+        ✓ All wines rated — tap to update
+       </div>`
+    : `<div style="font-family:'Josefin Sans',sans-serif;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--smoke);margin-bottom:.6rem;">
+        Continue tasting:
+       </div>`;
+
+  document.getElementById('wine-selector').innerHTML = ctaHTML + '<div class="wine-selector-wines">' + wines.map((w, i) => {
     const done = taster && (w.ratings || []).some(r => r.taster === taster);
     return w.revealed
       ? `<button class="wsb wsb-revealed${done ? ' done' : ''}" onclick="openRating(${i})">
@@ -2772,7 +2837,7 @@ function refreshWineSelector(data) {
            </div>
            <div style="margin-left:auto;color:#7070cc;">${done ? '✅' : '›'}</div>
          </button>`;
-  }).join('');
+    }).join('') + '</div>';
 }
 
 function getTaster() {
@@ -3431,6 +3496,8 @@ async function showHistDetail(c) {
   const s = await dbGet('archive/' + c) || getLocal('sessions/' + c);
   if (!s) return;
   el.style.display = 'block';
+  if (!window._histWinesById) window._histWinesById = {};
+  window._histWinesById[c] = []; // per-session wine cache
 
   const winesWithGeo = (s.wines || []).filter(w => w.location && w.location.lat);
   const mapSectionId = 'sess-map-' + c;
@@ -3440,7 +3507,8 @@ async function showHistDetail(c) {
     const r = w.ratings || [];
     const norm = r.map(x => x.system === '100' ? x.score : x.system === '20' ? (x.score / 20) * 100 : (x.score / 5) * 100);
     const avg = norm.length ? Math.round(norm.reduce((a, b) => a + b) / norm.length * 10) / 10 : null;
-    return `<div class="wine-stat-row">
+    const wData = encodeURIComponent(JSON.stringify(w));
+    return `<div class="wine-stat-row" data-wine="${wData}" onclick="event.stopPropagation();showWineFromAttr(this)" style="cursor:pointer;" title="Tap for details">
       <div class="wine-stat-name">${TE[w.type] || '<svg class="ico"><use href="#ico-bottle-red"/></svg>'} ${w.name}${w.vintage ? ' ' + w.vintage : ''}${w.location ? ' <span style="color:var(--gold);font-size:.75rem;"><svg class="ico"><use href="#ico-pin"/></svg></span>' : ''}</div>
       ${w.location ? `<div style="font-family:'Josefin Sans',sans-serif;font-size:.55rem;color:var(--smoke);margin-bottom:.25rem;"><svg class="ico"><use href="#ico-pin"/></svg> ${w.location.label || ''}</div>` : ''}
       ${r.length
@@ -3450,6 +3518,7 @@ async function showHistDetail(c) {
            </div>
            <div style="font-family:'Josefin Sans',sans-serif;font-size:.56rem;color:var(--smoke);margin-top:.3rem;">${r.map(x => `${x.taster} ${x.score}`).join(' · ')}</div>`
         : `<div style="color:var(--smoke);font-style:italic;font-size:.85rem;">No ratings</div>`}
+      <div style="font-family:'Josefin Sans',sans-serif;font-size:.46rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(201,168,76,.35);margin-top:.25rem;text-align:right;">tap for info</div>
     </div>`;
   }).join('') + (winesWithGeo.length ? `
     <div class="map-section" style="margin-top:1rem;">
@@ -3754,6 +3823,8 @@ function renderMap(containerId, pins) {
 }
 
 function renderSessionMap(containerId, legendId, session) {
+  if (!window._mapWinesById) window._mapWinesById = {};
+  window._mapWinesById[legendId] = []; // fresh array per legend
   const wines = (session.wines || []).filter(w => w.location && w.location.lat);
   if (!wines.length) {
     document.getElementById(containerId).closest('.map-section') &&
@@ -3776,8 +3847,8 @@ function renderSessionMap(containerId, legendId, session) {
       region:      w.region      || '',
       host:        session.host  || '',
       session:     session.name  || '',
-      score:       avg,
-      tasterCount: r.length
+      score:       avg
+      // tasterCount: r.length
     };
   });
   renderMap(containerId, pins);
@@ -3787,7 +3858,8 @@ function renderSessionMap(containerId, legendId, session) {
       const norm = r.map(x => x.system==='100'?x.score:x.system==='20'?(x.score/20)*100:(x.score/5)*100);
       const avg  = norm.length ? Math.round(norm.reduce((a,b)=>a+b)/norm.length*10)/10 : null;
       const emoji = {Red:'<svg class="ico"><use href="#ico-bottle-red"/></svg>',White:'<svg class="ico"><use href="#ico-bottle-red"/></svg>','Rosé':'<svg class="ico"><use href="#ico-rose"/></svg>',Sparkling:'<svg class="ico"><use href="#ico-bottle-red"/></svg>','Dessert / Sweet':'<svg class="ico"><use href="#ico-grape"/></svg>',Fortified:'<svg class="ico"><use href="#ico-bottle-red"/></svg>','Orange / Skin-Contact':'<svg class="ico"><use href="#ico-grape"/></svg>'}[w.type] || '<svg class="ico"><use href="#ico-bottle-red"/></svg>';
-      return `<div class="map-pin">
+      const wData = encodeURIComponent(JSON.stringify(w));
+      return `<div class="map-pin" data-wine="${wData}" onclick="event.stopPropagation();showWineFromAttr(this)" style="cursor:pointer;" title="Tap for details">
         <div class="pin-num">${emoji}</div>
         ${w.name}${w.vintage?' '+w.vintage:''}
         ${avg!==null?`<span style="color:var(--gold);margin-left:.3rem;">${avg}</span>`:''}
@@ -4601,13 +4673,16 @@ async function loadMapTab() {
   });
 
   setTimeout(() => {
+    if (!window._mapWinesById) window._mapWinesById = {};
+    window._mapWinesById['__global__'] = [];
     renderMap('map-tab-container', globalPins);
     document.getElementById('map-tab-legend').innerHTML = geoWines.map((w, i) => {
       const r    = w.ratings || [];
       const norm = r.map(x => x.system==='100'?x.score:x.system==='20'?(x.score/20)*100:(x.score/5)*100);
       const avg  = norm.length ? Math.round(norm.reduce((a,b)=>a+b)/norm.length*10)/10 : null;
       const emoji = {Red:'<svg class="ico"><use href="#ico-bottle-red"/></svg>',White:'<svg class="ico"><use href="#ico-bottle-red"/></svg>','Rosé':'<svg class="ico"><use href="#ico-rose"/></svg>',Sparkling:'<svg class="ico"><use href="#ico-bottle-red"/></svg>','Dessert / Sweet':'<svg class="ico"><use href="#ico-grape"/></svg>',Fortified:'<svg class="ico"><use href="#ico-bottle-red"/></svg>','Orange / Skin-Contact':'<svg class="ico"><use href="#ico-grape"/></svg>'}[w.type] || '<svg class="ico"><use href="#ico-bottle-red"/></svg>';
-      return `<div class="map-pin">
+      const wData = encodeURIComponent(JSON.stringify(w));
+      return `<div class="map-pin" data-wine="${wData}" onclick="event.stopPropagation();showWineFromAttr(this)" style="cursor:pointer;" title="Tap for details">
         <div class="pin-num">${emoji}</div>
         ${w.name}${w.vintage?' '+w.vintage:''}
         ${avg!==null?`<span style="color:var(--gold);margin-left:.3rem;">${avg}</span>`:''}
@@ -5176,6 +5251,10 @@ function applyMemberName(name) {
 // ═══════════════════════════════════════
 //  WINE INFO MODAL
 // ═══════════════════════════════════════
+function showWineFromAttr(el) {
+  try { showWineModal(JSON.parse(decodeURIComponent(el.dataset.wine))); } catch(e) { console.warn('showWineFromAttr error', e); }
+}
+
 function showWineModal(wineOrIdx) {
   // Accept either a wine object (legacy) or an index into _resWines
   var w = (typeof wineOrIdx === 'number') ? _resWines[wineOrIdx] : wineOrIdx;
