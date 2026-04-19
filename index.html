@@ -2736,7 +2736,7 @@ function cancelHostAuth() {
   document.getElementById('host-auth-overlay').style.display = 'none';
 }
 function closeSession() {
-  // Keep auth cached in sessionStorage so re-opening doesn't re-prompt
+  stopHostTimerTick();
   activeCode = null;
   renderHostPanel();
 }
@@ -2752,7 +2752,7 @@ function timerRowHTML(w, i) {
   var remaining = w.guessTimerStart ? Math.max(0, w.guessTimer - Math.floor((Date.now() - w.guessTimerStart) / 1000)) : null;
   var actionHtml = isRunning
     ? '<button class="timer-btn-stop" onclick="stopWineTimer(' + i + ')">Stop</button>'
-      + (function(r){var m=Math.floor(r/60),s=r%60;return '<span class="timer-status running">● '+m+':'+(s<10?'0':'')+s+' left</span>';})(remaining)
+      + (function(r){var m=Math.floor(r/60),s=r%60;return '<span class="timer-status running" id="host-timer-status-'+i+'">● '+m+':'+(s<10?'0':'')+s+' left</span>';})(remaining)
     : isExpired
       ? '<button class="timer-btn-start" onclick="startWineTimer(' + i + ')">Restart</button>'
         + '<span class="timer-status expired">Expired</span>'
@@ -2822,6 +2822,8 @@ function renderOverview(s) {
   const fa = document.getElementById('wine-form');
   fa.innerHTML = wineFormHTML();
   initFormAC();
+  // Start live tick for any wines with active timers
+  startHostTimerTick(wines);
 }
 
 async function toggleWineTimer(i, enabled) {
@@ -2848,6 +2850,44 @@ async function stopWineTimer(i) {
   s.wines[i].guessTimerStart = null;
   await dbSet('sessions/' + activeCode + '/wines', s.wines);
   renderOverview(s);
+}
+
+// ── Host panel live timer tick ──
+var _hostTimerInterval = null;
+var _hostTimerWines    = [];   // snapshot: [{idx, guessTimer, guessTimerStart}]
+
+function startHostTimerTick(wines) {
+  stopHostTimerTick();
+  // Collect wines with active timers
+  _hostTimerWines = (wines || []).map(function(w, i) {
+    return { i: i, guessTimer: w.guessTimer, guessTimerStart: w.guessTimerStart };
+  }).filter(function(w) {
+    return w.guessTimer && w.guessTimerStart &&
+           (Date.now() - w.guessTimerStart < w.guessTimer * 1000);
+  });
+  if (!_hostTimerWines.length) return;
+  _hostTimerInterval = setInterval(function() {
+    var anyAlive = false;
+    _hostTimerWines.forEach(function(w) {
+      var remaining = Math.max(0, w.guessTimer - (Date.now() - w.guessTimerStart) / 1000);
+      var el = document.getElementById('host-timer-status-' + w.i);
+      if (!el) return;
+      if (remaining <= 0) {
+        el.className = 'timer-status expired';
+        el.textContent = 'Expired';
+      } else {
+        anyAlive = true;
+        var m = Math.floor(remaining / 60), s = Math.floor(remaining % 60);
+        el.textContent = '● ' + m + ':' + (s < 10 ? '0' : '') + s + ' left';
+      }
+    });
+    if (!anyAlive) stopHostTimerTick();
+  }, 1000);
+}
+
+function stopHostTimerTick() {
+  if (_hostTimerInterval) { clearInterval(_hostTimerInterval); _hostTimerInterval = null; }
+  _hostTimerWines = [];
 }
 
 async function toggleReveal(i, val) {
