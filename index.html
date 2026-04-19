@@ -1074,6 +1074,77 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
 .btn-start-tasting:active{transform:scale(.97);animation:none;}
 .wine-selector-wines{margin-top:.2rem;}
 
+/* ── BLIND TIMER ── */
+.timer-row{
+  display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;
+  padding:.55rem .85rem .65rem;
+  border-top:1px solid rgba(100,100,220,.12);
+  background:rgba(20,20,60,.3);
+}
+.timer-toggle-label{
+  font-family:'Josefin Sans',sans-serif;font-size:.56rem;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--smoke);
+  user-select:none;cursor:pointer;display:flex;align-items:center;gap:.4rem;
+}
+.timer-config{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;}
+.timer-input{
+  width:56px;padding:.3rem .4rem;
+  background:rgba(255,255,255,.06);border:1px solid rgba(100,100,220,.3);
+  border-radius:7px;color:var(--cream);
+  font-family:'Josefin Sans',sans-serif;font-size:.85rem;text-align:center;
+}
+.timer-btn-start{
+  padding:.3rem .75rem;border-radius:8px;
+  background:rgba(125,255,176,.12);border:1px solid rgba(125,255,176,.35);
+  color:#7dffb0;font-family:'Josefin Sans',sans-serif;
+  font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;
+  cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.timer-btn-start:active{background:rgba(125,255,176,.25);}
+.timer-btn-stop{
+  padding:.3rem .75rem;border-radius:8px;
+  background:rgba(255,100,100,.1);border:1px solid rgba(255,100,100,.3);
+  color:#ff9999;font-family:'Josefin Sans',sans-serif;
+  font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;
+  cursor:pointer;transition:all .15s;
+}
+.timer-status{
+  font-family:'Josefin Sans',sans-serif;font-size:.54rem;
+  letter-spacing:.1em;text-transform:uppercase;
+}
+.timer-status.running{color:#7dffb0;}
+.timer-status.expired{color:#ff9999;}
+
+/* Countdown ring on taster side */
+.countdown-wrap{
+  display:flex;flex-direction:column;align-items:center;gap:.5rem;
+  padding:.9rem .5rem .6rem;
+  background:linear-gradient(135deg,rgba(20,20,60,.7),rgba(15,15,45,.5));
+  border:1px solid rgba(100,100,220,.3);border-radius:14px;
+  margin-bottom:.8rem;
+}
+.countdown-ring-svg{transform:rotate(-90deg);}
+.countdown-ring-bg{fill:none;stroke:rgba(100,100,220,.2);}
+.countdown-ring-fill{
+  fill:none;stroke:#9090ff;stroke-linecap:round;
+  transition:stroke-dashoffset .9s linear, stroke .5s;
+}
+.countdown-ring-fill.urgent{stroke:#ff9999;}
+.countdown-ring-fill.expired{stroke:#ff5555;}
+.countdown-number{
+  font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;
+  color:var(--pale-gold);position:absolute;
+  top:50%;left:50%;transform:translate(-50%,-50%);
+}
+.countdown-ring-container{position:relative;width:72px;height:72px;}
+.countdown-label{
+  font-family:'Josefin Sans',sans-serif;font-size:.56rem;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--smoke);
+  text-align:center;
+}
+.countdown-label.urgent{color:#ff9999;animation:pulse .6s ease-in-out infinite alternate;}
+@keyframes pulse{from{opacity:.6}to{opacity:1}}
+
 /* ── MISC ── */
 .alert{padding:.7rem .9rem;border-radius:8px;font-size:.88rem;margin:.55rem 0;display:none;}
 .alert.error{background:rgba(180,30,30,.2);border:1px solid rgba(180,30,30,.4);color:#ffaaaa;display:block;}
@@ -1656,6 +1727,19 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
       <div id="blind-game-section" class="hidden">
         <div class="game-card">
           <div class="game-card-title"><svg class="ico"><use href="#ico-spy"/></svg> Blind Guess</div>
+          <div id="countdown-area" style="display:none;">
+            <div class="countdown-wrap">
+              <div class="countdown-ring-container">
+                <svg class="countdown-ring-svg" width="72" height="72" viewBox="0 0 72 72">
+                  <circle class="countdown-ring-bg" cx="36" cy="36" r="30" stroke-width="5"/>
+                  <circle class="countdown-ring-fill" id="countdown-ring" cx="36" cy="36" r="30"
+                    stroke-width="5" stroke-dasharray="188.5" stroke-dashoffset="0"/>
+                </svg>
+                <div class="countdown-number" id="countdown-number">—</div>
+              </div>
+              <div class="countdown-label" id="countdown-label">Time remaining</div>
+            </div>
+          </div>
           <div class="guess-row" id="guess-inputs">
             <div class="guess-field">
               <span class="guess-label">Land</span>
@@ -2470,6 +2554,24 @@ function clearWineForm() {
 function showTab(n) {
   // Stop results listener when navigating away
   if (n !== 'results' && resListener) { resListener(); resListener = null; }
+  // When returning to taste tab, re-sync the countdown with live data
+  if (n === 'taste' && tasteWineIdx !== null) {
+    var rcard = document.getElementById('rating-card');
+    if (rcard && !rcard.classList.contains('hidden')) {
+      // Re-fetch wine state and restart countdown from server timestamp
+      dbGet('sessions/' + tasteCode).then(function(data) {
+        if (!data || !data.wines) return;
+        var w = data.wines[tasteWineIdx];
+        if (w && w.guessTimer && w.guessTimerStart) {
+          startCountdown(w);
+        } else {
+          stopCountdown();
+          var a = document.getElementById('countdown-area');
+          if (a) a.style.display = 'none';
+        }
+      });
+    }
+  }
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   ['host','taste','results','history','map'].forEach((t, i) => {
@@ -2639,6 +2741,36 @@ function closeSession() {
   renderHostPanel();
 }
 
+function timerRowHTML(w, i) {
+  if (!w.guessTimer) {
+    return '<div class="timer-row"><label class="timer-toggle-label">'
+      + '<input type="checkbox" onchange="toggleWineTimer(' + i + ', this.checked)" style="accent-color:#9090ff;">'
+      + ' Blind Guess Timer</label></div>';
+  }
+  var isRunning = w.guessTimerStart && (Date.now() - w.guessTimerStart < w.guessTimer * 1000);
+  var isExpired = w.guessTimerStart && (Date.now() - w.guessTimerStart >= w.guessTimer * 1000);
+  var remaining = w.guessTimerStart ? Math.max(0, w.guessTimer - Math.floor((Date.now() - w.guessTimerStart) / 1000)) : null;
+  var actionHtml = isRunning
+    ? '<button class="timer-btn-stop" onclick="stopWineTimer(' + i + ')">Stop</button>'
+      + (function(r){var m=Math.floor(r/60),s=r%60;return '<span class="timer-status running">● '+m+':'+(s<10?'0':'')+s+' left</span>';})(remaining)
+    : isExpired
+      ? '<button class="timer-btn-start" onclick="startWineTimer(' + i + ')">Restart</button>'
+        + '<span class="timer-status expired">Expired</span>'
+      : '<button class="timer-btn-start" onclick="startWineTimer(' + i + ')">Start</button>';
+  var disabledAttr = isRunning ? ' disabled' : '';
+  return '<div class="timer-row">'
+    + '<label class="timer-toggle-label">'
+      + '<input type="checkbox" checked onchange="toggleWineTimer(' + i + ', this.checked)" style="accent-color:#9090ff;">'
+      + ' Blind Guess Timer'
+    + '</label>'
+    + '<div class="timer-config">'
+      + '<input type="number" class="timer-input" id="timer-inp-' + i + '" min="0.5" max="60" step="0.5" value="' + Math.round(w.guessTimer/60*10)/10 + '" placeholder="min"' + disabledAttr + '>'
+      + '<span style="font-family:Josefin Sans,sans-serif;font-size:.54rem;color:var(--smoke);">min</span>'
+      + actionHtml
+    + '</div>'
+  + '</div>';
+}
+
 function renderOverview(s) {
   document.getElementById('ov-name').textContent = s.name;
   document.getElementById('ov-code').textContent = activeCode;
@@ -2683,12 +2815,39 @@ function renderOverview(s) {
           </div>
         </div>
         <div id="edit-inline-${i}" style="display:none;"></div>
+        ${timerRowHTML(w, i)}
       </div>`;
     }).join('');
   }
   const fa = document.getElementById('wine-form');
   fa.innerHTML = wineFormHTML();
   initFormAC();
+}
+
+async function toggleWineTimer(i, enabled) {
+  const s = await dbGet('sessions/' + activeCode);
+  s.wines[i].guessTimer = enabled ? 600 : 0;
+  s.wines[i].guessTimerStart = null;
+  await dbSet('sessions/' + activeCode + '/wines', s.wines);
+  renderOverview(s);
+}
+
+async function startWineTimer(i) {
+  const s = await dbGet('sessions/' + activeCode);
+  const inp = document.getElementById('timer-inp-' + i);
+  const mins = inp ? parseFloat(inp.value) || 10 : 10;
+  const secs = Math.round(mins * 60);
+  s.wines[i].guessTimer = secs;
+  s.wines[i].guessTimerStart = Date.now();
+  await dbSet('sessions/' + activeCode + '/wines', s.wines);
+  renderOverview(s);
+}
+
+async function stopWineTimer(i) {
+  const s = await dbGet('sessions/' + activeCode);
+  s.wines[i].guessTimerStart = null;
+  await dbSet('sessions/' + activeCode + '/wines', s.wines);
+  renderOverview(s);
 }
 
 async function toggleReveal(i, val) {
@@ -2728,7 +2887,9 @@ async function addWine() {
     location: latVal && lngVal ? { lat: parseFloat(latVal), lng: parseFloat(lngVal), label: locLabel } : null,
     image: document.getElementById('wf-img-data').value || null,
     revealed: false,
-    ratings: []
+    ratings: [],
+    guessTimer: 0,  // stored in seconds internally
+    guessTimerStart: null
   });
   await dbSet('sessions/' + activeCode + '/wines', s.wines);
   showAlert('wf-alert', 'success', `"${name}" added (blind). ${s.wines.length} wine(s) in session.`);
@@ -2810,11 +2971,23 @@ async function unlockSession() {
   localStorage.setItem('vino_last_res_code', c);  // propagate to Results tab
   document.getElementById('taste-sess-name').textContent = sess.name;
   if (tasteListener) tasteListener();
+  stopCountdown();
+  var cdArea = document.getElementById('countdown-area');
+  if (cdArea) cdArea.style.display = 'none';
   tasteListener = dbListen('sessions/' + c, data => {
     if (!data) return;
     refreshWineSelector(data);
     if (tasteWineIdx !== null && !document.getElementById('rating-card').classList.contains('hidden')) {
       renderRevealArea(tasteWineIdx, data);
+      // Refresh countdown timer with latest server data
+      const wLive = data.wines[tasteWineIdx];
+      if (wLive && wLive.guessTimer && wLive.guessTimerStart) {
+        startCountdown(wLive);
+      } else if (!wLive || !wLive.guessTimerStart) {
+        stopCountdown();
+        var cdArea = document.getElementById('countdown-area');
+        if (cdArea) cdArea.style.display = 'none';
+      }
       // Re-evaluate blind game visibility whenever live data changes
       const w = data.wines[tasteWineIdx];
       const taster = getTaster();
@@ -2890,6 +3063,75 @@ function refreshWineSelector(data) {
     }).join('') + '</div>';
 }
 
+// Countdown timer state
+var _countdownInterval = null;
+
+function startCountdown(wine) {
+  stopCountdown();
+  var area = document.getElementById('countdown-area');
+  if (!area) return;
+  if (!wine.guessTimer || !wine.guessTimerStart) {
+    area.style.display = 'none';
+    return;
+  }
+  area.style.display = '';
+  var total = wine.guessTimer;
+  var circumference = 2 * Math.PI * 30; // r=30
+
+  function tick() {
+    var elapsed = (Date.now() - wine.guessTimerStart) / 1000;
+    var remaining = Math.max(0, total - elapsed);
+    var pct = remaining / total;
+    var ring    = document.getElementById('countdown-ring');
+    var numEl   = document.getElementById('countdown-number');
+    var labelEl = document.getElementById('countdown-label');
+    if (!ring || !numEl) return;
+
+    // Update ring
+    ring.style.strokeDashoffset = circumference * (1 - pct);
+    if (remaining <= 10) {
+      ring.classList.add('urgent');
+    } else {
+      ring.classList.remove('urgent');
+    }
+
+    // Update number
+    var mins = Math.floor(remaining / 60);
+    var secs = Math.floor(remaining % 60);
+    numEl.textContent = mins > 0
+      ? mins + ':' + (secs < 10 ? '0' : '') + secs
+      : Math.ceil(remaining);
+
+    if (labelEl) {
+      if (remaining <= 0) {
+        labelEl.textContent = "Time's up — guesses locked!";
+        labelEl.classList.add('urgent');
+        ring.classList.add('expired');
+        numEl.textContent = '0';
+        stopCountdown();
+        // Auto-lock if not already submitted
+        var gameSection = document.getElementById('blind-game-section');
+        var guessInputs = document.getElementById('guess-inputs');
+        if (guessInputs && guessInputs.style.display !== 'none') {
+          submitGuess();
+        }
+      } else if (remaining <= 10) {
+        labelEl.textContent = 'Hurry!';
+        labelEl.classList.add('urgent');
+      } else {
+        labelEl.textContent = 'Time remaining';
+        labelEl.classList.remove('urgent');
+      }
+    }
+  }
+  tick();
+  _countdownInterval = setInterval(tick, 500);
+}
+
+function stopCountdown() {
+  if (_countdownInterval) { clearInterval(_countdownInterval); _countdownInterval = null; }
+}
+
 function getTaster() {
   var el = document.getElementById('taster-name');
   // Fall back to localStorage if hidden input not yet set
@@ -2957,6 +3199,15 @@ async function openRating(idx) {
   // Restore tasting notes
   const notesEl = document.getElementById('taste-notes');
   if (notesEl) notesEl.value = ex ? (ex.notes || '') : '';
+
+  // Start countdown if timer is configured and running
+  if (w.guessTimer && w.guessTimerStart) {
+    startCountdown(w);
+  } else {
+    stopCountdown();
+    var area = document.getElementById('countdown-area');
+    if (area) area.style.display = 'none';
+  }
 
   document.getElementById('rating-card').classList.remove('hidden');
   document.getElementById('rating-card').scrollIntoView({behavior: 'smooth', block: 'start'});
@@ -5309,6 +5560,14 @@ function showWineModal(wineOrIdx) {
   // Accept either a wine object (legacy) or an index into _resWines
   var w = (typeof wineOrIdx === 'number') ? _resWines[wineOrIdx] : wineOrIdx;
   if (!w) return;
+  // Sort ratings highest → lowest (normalised to 100pt) before rendering
+  w = Object.assign({}, w, {
+    ratings: (w.ratings || []).slice().sort(function(a, b) {
+      var na = a.system==='100'?a.score:a.system==='20'?(a.score/20)*100:(a.score/5)*100;
+      var nb = b.system==='100'?b.score:b.system==='20'?(b.score/20)*100:(b.score/5)*100;
+      return nb - na;
+    })
+  });
   var modal = document.getElementById('wine-info-modal');
   var cnt   = document.getElementById('wine-info-content');
   if (!modal || !cnt) return;
