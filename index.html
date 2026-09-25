@@ -1255,6 +1255,12 @@ button,.tab-btn,.sess-chip,.member-btn,.res-wine-img-btn{touch-action:manipulati
 #toast.show{opacity:1;transform:translate(-50%,0);}
 .wine-info-sheet{transition:transform .25s cubic-bezier(.22,1,.36,1);}
 
+.hist-host-row{display:flex;align-items:center;gap:.75rem;width:100%;
+  background:rgba(255,255,255,.03);border:1px solid var(--gb);border-radius:12px;
+  padding:.7rem .85rem;margin-bottom:.55rem;cursor:pointer;color:var(--cream);transition:background .15s;}
+.hist-host-row:active{background:rgba(201,168,76,.1);border-color:var(--gold);}
+.hist-chev{color:var(--gold);opacity:.6;font-size:1.2rem;}
+
 /* ── MISC ── */
 .alert{padding:.7rem .9rem;border-radius:8px;font-size:.88rem;margin:.55rem 0;display:none;}
 .alert.error{background:rgba(180,30,30,.2);border:1px solid rgba(180,30,30,.4);color:#ffaaaa;display:block;}
@@ -1697,8 +1703,8 @@ button,.tab-btn,.sess-chip,.member-btn,.res-wine-img-btn{touch-action:manipulati
 
 <header>
   <button class="member-avatar" id="member-avatar" onclick="changeMember()" aria-label="Switch member">?</button>
-  <button class="host-fab" id="host-fab" onclick="showTab('host')" aria-label="Host — create and manage tastings">
-    <svg class="ico"><use href="#ico-host"/></svg>
+  <button class="host-fab" id="host-fab" onclick="toggleHost()" aria-label="Host — create and manage tastings">
+    <svg class="ico"><use id="host-fab-ico" href="#ico-host"/></svg>
   </button>
   <div class="logo-mark"><svg class="ico logo-ico"><use href="#ico-bottle-red"/></svg></div>
   <h1>Vin<span>tosserne</span></h1>
@@ -1715,7 +1721,6 @@ button,.tab-btn,.sess-chip,.member-btn,.res-wine-img-btn{touch-action:manipulati
 
 <!-- ══════════ HOST ══════════ -->
 <div id="tab-host" class="panel">
-  <button class="btn btn-outline btn-sm" onclick="exitHost()" style="margin-bottom:.85rem;"><svg class="ico"><use href="#ico-delete"/></svg> Close Host</button>
   <div id="host-new">
     <div class="card">
       <div class="card-title"><svg class="ico"><use href="#ico-bottle-red"/></svg> Create Tasting Session</div>
@@ -2752,6 +2757,8 @@ function showTab(n, direction) {
   if (subEl && SECTION_META[n]) subEl.innerHTML = SECTION_META[n];
   var fabEl = document.getElementById('host-fab');
   if (fabEl) fabEl.classList.toggle('active', n === 'host');
+  var fabIco = document.getElementById('host-fab-ico');
+  if (fabIco) fabIco.setAttribute('href', n === 'host' ? '#ico-delete' : '#ico-host');
   window.scrollTo({ top: 0, behavior: 'auto' });
   if (n === 'history') loadHistory();
   if (n === 'map')     loadMapTab();
@@ -3944,30 +3951,22 @@ async function loadHistory() {
     return latestB > latestA ? 1 : -1;
   });
 
+  _histArchive = archive; _histByHost = byHost;
   hl.innerHTML = hostOrder.map(host => {
     const hostCodes  = byHost[host];
-    const groupId    = 'hg-' + host.replace(/[^a-z0-9]/gi,'_');
-    const allWinesH  = hostCodes.flatMap(c => archive[c].wines||[]);
-    const allRatingsH= allWinesH.flatMap(w => w.ratings||[]);
+    const allRatingsH= hostCodes.flatMap(c => archive[c].wines||[]).flatMap(w => w.ratings||[]);
     const normsH     = allRatingsH.map(r=>r.system==='100'?r.score:r.system==='20'?(r.score/20)*100:(r.score/5)*100);
     const hostAvg    = normsH.length ? Math.round(normsH.reduce((a,b)=>a+b)/normsH.length*10)/10 : null;
     const initial    = host.trim()[0] || '?';
-    const meta       = `${hostCodes.length} session${hostCodes.length!==1?'s':''}`
-      + (hostAvg!==null ? ` · avg ${hostAvg}/100` : '');
-    const cards      = hostCodes.map(c => buildSessionCard(c, archive[c])).join('');
-    return `<div class="host-group">
-      <div class="host-group-header" onclick="toggleHostGroup('${groupId}')">
-        <div class="host-group-left">
-          <div class="host-group-avatar">${initial}</div>
-          <div>
-            <div class="host-group-name">${host}</div>
-            <div class="host-group-meta">${meta}</div>
-          </div>
-        </div>
-        <span class="host-group-chevron">▼</span>
+    const meta       = `${hostCodes.length} session${hostCodes.length!==1?'s':''}` + (hostAvg!==null ? ` · avg ${hostAvg}` : '');
+    return `<button class="hist-host-row" data-host="${escAttr(host)}" onclick="openHostSheet(this.dataset.host)">
+      <div class="host-group-avatar">${initial}</div>
+      <div style="flex:1;min-width:0;text-align:left;">
+        <div class="host-group-name">${host}</div>
+        <div class="host-group-meta">${meta}</div>
       </div>
-      <div class="host-group-body" id="${groupId}">${cards}</div>
-    </div>`;
+      <span class="hist-chev">›</span>
+    </button>`;
   }).join('');
 
   // Club statistics
@@ -5818,12 +5817,92 @@ function showWineFromAttr(el) {
 }
 
 var _currentModalWine = null;
+var _sheetStack = [];
+var _histArchive = {}, _histByHost = {};
+
+function sheetPush(renderFn) { _sheetStack.push(renderFn); renderFn(); }
+function sheetBack() {
+  _sheetStack.pop();
+  if (_sheetStack.length) { _sheetStack[_sheetStack.length - 1](); }
+  else closeWineModal();
+}
+function openSheet() {
+  var modal = document.getElementById('wine-info-modal');
+  if (!modal) return;
+  if (!modal.classList.contains('open')) {
+    try { history.pushState({ modal: true }, ''); _modalPushed = true; } catch(e) {}
+  }
+  modal.classList.add('open');
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  var sh = document.getElementById('wine-info-sheet'); if (sh) { sh.style.transform = ''; sh.scrollTop = 0; }
+}
+function sheetHeader(title, sub) {
+  return '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.6rem;margin-bottom:1rem;">'
+    + '<div style="min-width:0;"><div class="wine-info-title" style="font-size:1.2rem;">' + title + '</div>'
+    + (sub ? '<div class="sess-chip-meta" style="margin-top:.25rem;">' + sub + '</div>' : '') + '</div>'
+    + '<button class="wine-info-close" onclick="sheetBack()" aria-label="Back">✕</button></div>';
+}
+function normScore(r) { return r.system==='100'?r.score:r.system==='20'?(r.score/20)*100:(r.score/5)*100; }
+function avgOf(rs) { if (!rs.length) return null; var n = rs.map(normScore); return Math.round(n.reduce(function(a,b){return a+b;})/n.length*10)/10; }
+
+function openHostSheet(host) {
+  sheetPush(function() {
+    var cnt = document.getElementById('wine-info-content'); if (!cnt) return;
+    var codes = _histByHost[host] || [];
+    cnt.innerHTML = sheetHeader(host, codes.length + ' session' + (codes.length !== 1 ? 's' : ''))
+      + codes.map(function(code) {
+          var s = _histArchive[code] || {};
+          var wines = s.wines || [];
+          var avg = avgOf(wines.flatMap(function(w){ return w.ratings || []; }));
+          return '<button class="sess-chip" onclick="openHistSession(\'' + code + '\')">'
+            + '<div><div class="sess-chip-name">' + (s.name || 'Session') + '</div>'
+            + '<div class="sess-chip-meta">' + (s.created || '') + ' · ' + wines.length + ' wine' + (wines.length !== 1 ? 's' : '') + '</div></div>'
+            + '<div class="sess-chip-code">' + (avg !== null ? avg : '—') + '</div></button>';
+        }).join('');
+    openSheet();
+  });
+}
+
+function openHistSession(code) {
+  sheetPush(function() {
+    var cnt = document.getElementById('wine-info-content'); if (!cnt) return;
+    var s = _histArchive[code] || {};
+    var wines = s.wines || [];
+    var allR = wines.flatMap(function(w){ return w.ratings || []; });
+    var tasters = new Set(allR.map(function(r){ return r.taster; })).size;
+    var avg = avgOf(allR);
+    var gMap = {};
+    wines.forEach(function(w){ (w.guesses||[]).filter(function(g){return g.scored;}).forEach(function(g){ gMap[g.taster]=(gMap[g.taster]||0)+(g.points||0); }); });
+    var gTop = Object.entries(gMap).sort(function(a,b){return b[1]-a[1];})[0];
+    var stat = function(v,l){ return '<div class="stat-pill"><div class="stat-num">' + v + '</div><div class="stat-lbl">' + l + '</div></div>'; };
+    var rows = wines.map(function(w, i) {
+      var a = avgOf(w.ratings || []);
+      return '<button class="sess-chip" onclick="openHistWine(\'' + code + '\',' + i + ')">'
+        + '<div style="min-width:0;"><div class="sess-chip-name">' + (TE[w.type] || '') + ' ' + w.name + (w.vintage ? ' ' + w.vintage : '') + '</div>'
+        + '<div class="sess-chip-meta">' + [w.country, w.grapes].filter(Boolean).join(' · ') + '</div></div>'
+        + '<div class="sess-chip-code">' + (a !== null ? a : '—') + '</div></button>';
+    }).join('');
+    cnt.innerHTML = sheetHeader(s.name || 'Session', [s.host, s.created].filter(Boolean).join(' · '))
+      + '<div class="hist-stats" style="margin-bottom:1rem;">' + stat(wines.length,'Wines') + stat(tasters,'Tasters') + stat(avg !== null ? avg : '—','Avg') + '</div>'
+      + (gTop ? '<div class="section-lbl">Best blind guesser · <span style="color:var(--pale-gold);">' + gTop[0] + ' ' + gTop[1] + 'p</span></div>' : '')
+      + '<div class="section-lbl">Wines</div>' + rows;
+    openSheet();
+  });
+}
+
+function openHistWine(code, i) {
+  var s = _histArchive[code]; if (!s || !s.wines || !s.wines[i]) return;
+  showWineModal(s.wines[i]);
+}
+
 
 function escAttr(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
-function showWineModal(wineOrIdx) {
+function showWineModal(wineOrIdx, _fromStack) {
+  if (!_fromStack) { _sheetStack.push(function(){ showWineModal(wineOrIdx, true); }); }
   // Accept either a wine object (legacy) or an index into _resWines
   var w = (typeof wineOrIdx === 'number') ? _resWines[wineOrIdx] : wineOrIdx;
   if (!w) return;
@@ -5939,7 +6018,7 @@ function showWineModal(wineOrIdx) {
         + '<div class="wine-info-title">' + w.name + '</div>'
         + (w.vintage ? '<div class="wine-info-vintage">' + w.vintage + '</div>' : '')
       + '</div>'
-      + '<button class="wine-info-close" onclick="closeWineModal()">✕</button>'
+      + '<button class="wine-info-close" onclick="sheetBack()">✕</button>'
     + '</div>'
     + metaHtml
     + notesHtml
@@ -5955,7 +6034,8 @@ function showWineModal(wineOrIdx) {
   var sh = document.getElementById('wine-info-sheet'); if (sh) { sh.style.transform = ''; sh.scrollTop = 0; }
 }
 
-function showTasterDetail(taster) {
+function showTasterDetail(taster, _fromStack) {
+  if (!_fromStack) { var _w = _currentModalWine; _sheetStack.push(function(){ _currentModalWine = _w; showTasterDetail(taster, true); }); }
   var w = _currentModalWine;
   var cnt = document.getElementById('wine-info-content');
   if (!w || !cnt) return;
@@ -6043,7 +6123,7 @@ function showTasterDetail(taster) {
   cnt.innerHTML =
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.3rem;">'
       + '<div class="wine-info-title" style="font-size:1.15rem;">' + taster + '</div>'
-      + '<button class="wine-info-close" onclick="showWineModal(_currentModalWine)" title="Back to wine">✕</button>'
+      + '<button class="wine-info-close" onclick="sheetBack()" title="Back">✕</button>'
     + '</div>'
     + '<div style="font-family:Josefin Sans,sans-serif;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke);margin-bottom:1rem;">' + w.name + (w.vintage ? ' ' + w.vintage : '') + '</div>'
     + ratingDetailHtml
@@ -6055,6 +6135,7 @@ function showTasterDetail(taster) {
 
 var _modalPushed = false;
 function closeWineModal(fromPop) {
+  _sheetStack = [];
   if (!fromPop && _modalPushed) { _modalPushed = false; history.back(); return; }
   _modalPushed = false;
   var modal = document.getElementById('wine-info-modal');
@@ -6153,7 +6234,13 @@ function pickTasteSession(code) {
 // Hardware / browser back button navigates inside the app
 window.addEventListener('popstate', function(e) {
   var modal = document.getElementById('wine-info-modal');
-  if (modal && modal.classList.contains('open')) { closeWineModal(true); return; }
+  if (modal && modal.classList.contains('open')) {
+    if (_sheetStack.length > 1) {
+      _sheetStack.pop(); _sheetStack[_sheetStack.length - 1]();
+      try { history.pushState({ modal: true }, ''); _modalPushed = true; } catch(err) {}
+    } else { closeWineModal(true); }
+    return;
+  }
   if (e.state && e.state.tab) {
     _navFromPop = true;
     try { showTab(e.state.tab); } finally { _navFromPop = false; }
@@ -6181,6 +6268,11 @@ window.addEventListener('popstate', function(e) {
     y0 = null; dy = 0;
   }, { passive: true });
 })();
+
+function toggleHost() {
+  var hp = document.getElementById('tab-host');
+  if (hp && hp.classList.contains('active')) exitHost(); else showTab('host');
+}
 
 function exitHost() {
   showTab(_lastNonHostTab || 'taste');
