@@ -1253,6 +1253,9 @@ button,.tab-btn,.sess-chip,.member-btn,.res-wine-img-btn{touch-action:manipulati
   font-family:'Josefin Sans',sans-serif;font-size:.66rem;letter-spacing:.05em;
   box-shadow:0 8px 24px rgba(0,0,0,.45);transition:opacity .25s,transform .25s;}
 #toast.show{opacity:1;transform:translate(-50%,0);}
+#toast.error{background:rgba(70,16,20,.97);border-color:rgba(255,120,120,.45);color:#ffc4c4;}
+input.lk-invalid,.field input.lk-invalid,.guess-input.lk-invalid{border-color:#ff6b6b !important;
+  box-shadow:0 0 0 2px rgba(255,107,107,.18);}
 .wine-info-sheet{transition:transform .25s cubic-bezier(.22,1,.36,1);}
 
 .hist-host-row{display:flex;align-items:center;gap:.75rem;width:100%;
@@ -2234,6 +2237,28 @@ Sparkling:[
 const WINE_TYPES=["Red","White","Rosé","Sparkling","Dessert / Sweet","Fortified","Orange / Skin-Contact"];
 const TE={Red:'<svg class="ico wine-type-ico"><use href="#ico-bottle-red"/></svg>',White:'<svg class="ico wine-type-ico"><use href="#ico-bottle-white"/></svg>',"Rosé":'<svg class="ico wine-type-ico"><use href="#ico-bottle-rose"/></svg>',Sparkling:'<svg class="ico wine-type-ico"><use href="#ico-bottle-sparkling"/></svg>',"Dessert / Sweet":'<svg class="ico wine-type-ico"><use href="#ico-grape"/></svg>',Fortified:'<svg class="ico wine-type-ico"><use href="#ico-bottle-red"/></svg>',"Orange / Skin-Contact":'<svg class="ico wine-type-ico"><use href="#ico-bottle-white"/></svg>'};
 
+
+// ═══════════════════════════════════════
+//  EXTENDED LOOKUP LISTS (merged at load — deduped accent/case-insensitively)
+// ═══════════════════════════════════════
+const LOOKUP_ALIASES = {"usa": "United States", "us": "United States", "america": "United States", "uk": "United Kingdom", "britain": "United Kingdom", "great britain": "United Kingdom", "holland": "Netherlands", "nz": "New Zealand", "sa": "South Africa", "danmark": "Denmark", "frankrig": "France", "italien": "Italy", "spanien": "Spain", "tyskland": "Germany", "østrig": "Austria", "grækenland": "Greece", "ungarn": "Hungary", "sydafrika": "South Africa", "sverige": "Sweden", "norge": "Norway", "england": "England", "new zealand": "New Zealand", "argentinien": "Argentina", "australien": "Australia", "schweiz": "Switzerland", "kroatien": "Croatia", "georgien": "Georgia", "libanon": "Lebanon", "slovenien": "Slovenia", "tjekkiet": "Czech Republic", "rumænien": "Romania", "bulgarien": "Bulgaria", "portugal": "Portugal", "polen": "Poland", "armenien": "Armenia", "tyrkiet": "Turkey", "marokko": "Morocco", "kina": "China", "japan": "Japan", "mexico": "Mexico", "burgundy": "Burgundy / Bourgogne", "bourgogne": "Burgundy / Bourgogne", "rhone": "Rhône Valley", "loire": "Loire Valley", "toscana": "Tuscany", "piemonte": "Piedmont", "sicilia": "Sicily", "sardegna": "Sardinia", "puglia": "Apulia / Puglia", "napa": "California", "bordeaux": "Bordeaux", "shiraz": "Syrah / Shiraz", "syrah": "Syrah / Shiraz", "zinfandel": "Primitivo / Zinfandel", "primitivo": "Primitivo / Zinfandel", "garnacha": "Grenache / Garnacha", "grenache": "Grenache / Garnacha", "monastrell": "Mourvèdre / Monastrell", "mourvedre": "Mourvèdre / Monastrell", "pinot gris": "Grauburgunder / Pinot Gris", "grauburgunder": "Grauburgunder / Pinot Gris", "vermentino": "Vermentino", "rolle": "Rolle / Vermentino", "viura": "Macabeo / Viura", "macabeo": "Macabeo / Viura", "prosecco": "Glera / Prosecco", "glera": "Glera / Prosecco", "cab sav": "Cabernet Sauvignon", "cabernet": "Cabernet Sauvignon", "sauv blanc": "Sauvignon Blanc", "chard": "Chardonnay", "spatburgunder": "Pinot Noir", "spätburgunder": "Pinot Noir", "blauburgunder": "Blauburgunder", "gruner": "Grüner Veltliner", "gv": "Grüner Veltliner", "tempranillo": "Tempranillo", "tinta roriz": "Tinta Roriz"};
+(function() {
+  var nk = function(s) { return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); };
+  var addTo = function(arr, items) {
+    var seen = new Set(arr.map(nk));
+    items.forEach(function(x) { if (!seen.has(nk(x))) { arr.push(x); seen.add(nk(x)); } });
+    arr.sort(function(a, b) { return a.localeCompare(b); });
+  };
+  addTo(COUNTRIES, ["Albania", "Algeria", "Armenia", "Azerbaijan", "Bosnia and Herzegovina", "Kosovo", "Montenegro", "Poland", "South Korea", "Thailand", "Lithuania", "Belarus", "Kazakhstan", "Scotland", "Ireland"]);
+  var mergeMap = function(target, extra) {
+    Object.keys(extra).forEach(function(k) { if (!target[k]) target[k] = []; addTo(target[k], extra[k]); });
+  };
+  mergeMap(REGIONS, {"France": ["Bugey", "Lorraine", "Cognac", "Armagnac"], "Italy": ["Valle d'Aosta"], "Spain": ["Andalucía", "Aragón", "Balearic Islands", "Madrid", "Murcia", "Bierzo", "Cava"], "Portugal": ["Beira Interior", "Trás-os-Montes", "Távora-Varosa", "Península de Setúbal"], "United States": ["Arizona", "Michigan", "Missouri", "New Jersey", "New Mexico", "North Carolina", "Ohio", "Pennsylvania"], "Australia": ["Adelaide Hills", "Beechworth", "Frankland River", "Geelong", "Grampians", "Great Southern", "Heathcote", "King Valley", "Macedon Ranges", "Orange", "Padthaway", "Pemberton", "Riverina", "Riverland", "Rutherglen", "Swan Valley", "Tasmania", "Tumbarumba", "Wrattonbully"], "Argentina": ["Catamarca", "Chubut", "Jujuy", "La Rioja", "Neuquén", "Río Negro", "Valle de Uco", "Cafayate"], "Chile": ["Cachapoal Valley", "Choapa Valley", "Curicó Valley", "Elqui Valley", "Leyda Valley", "Limarí Valley", "Malleco", "Osorno", "San Antonio Valley"], "South Africa": ["Breedekloof", "Cape Agulhas", "Cederberg", "Darling", "Durbanville", "Hemel-en-Aarde", "Klein Karoo", "Olifants River", "Tulbagh", "Wellington", "Worcester"], "New Zealand": ["Canterbury", "North Canterbury", "Northland", "Waiheke Island", "Wairarapa", "Waitaki Valley"], "Austria": ["Wagram"], "Greece": ["Central Greece", "Epirus", "Ionian Islands", "Rhodes", "Naoussa"], "Hungary": ["Mátra", "Somló", "Etyek-Buda", "Kunság"], "Canada": ["Ontario", "Quebec", "Lake Erie North Shore", "Similkameen Valley"], "Israel": ["Judean Hills", "Upper Galilee"], "Lebanon": ["Batroun"], "Armenia": ["Aragatsotn", "Ararat Valley", "Armavir", "Tavush", "Vayots Dzor"], "Poland": ["Dolny Śląsk", "Lubuskie", "Małopolska", "Podkarpacie"], "Montenegro": ["Crmnica", "Podgorica"], "Bosnia and Herzegovina": ["Herzegovina"], "Albania": ["Berat", "Korçë"], "Croatia": ["Plešivica", "Zagorje"], "Czech Republic": ["Znojmo", "Mikulov", "Velké Pavlovice", "Slovácko"], "Switzerland": ["Neuchâtel", "Geneva", "Schaffhausen"], "Turkey": ["Marmara", "Cappadocia"], "Sweden": ["Österlen", "Gotland"], "Denmark": ["Dons"]});
+  mergeMap(APPELLATIONS, {"Bordeaux": ["Barsac AOC", "Blaye Côtes de Bordeaux AOC", "Cadillac AOC", "Castillon Côtes de Bordeaux AOC", "Côtes de Bourg AOC", "Crémant de Bordeaux AOC", "Haut-Médoc AOC", "Lalande-de-Pomerol AOC", "Loupiac AOC", "Lussac-Saint-Émilion AOC", "Saint-Émilion Grand Cru AOC", "Sainte-Croix-du-Mont AOC"], "Burgundy / Bourgogne": ["Bâtard-Montrachet AOC", "Bonnes-Mares AOC", "Bourgogne Aligoté AOC", "Bourgogne Hautes-Côtes de Beaune AOC", "Bourgogne Hautes-Côtes de Nuits AOC", "Bourgogne Passe-Tout-Grains AOC", "Chambertin AOC", "Chevalier-Montrachet AOC", "Chorey-lès-Beaune AOC", "Clos de la Roche AOC", "Clos de Vougeot AOC", "Corton-Charlemagne AOC", "Côte de Beaune-Villages AOC", "Crémant de Bourgogne AOC", "Échezeaux AOC", "Grands-Échezeaux AOC", "Irancy AOC", "La Tâche AOC", "Ladoix AOC", "Mâcon-Villages AOC", "Montagny AOC", "Montrachet AOC", "Musigny AOC", "Pernand-Vergelesses AOC", "Petit Chablis AOC", "Pouilly-Loché AOC", "Pouilly-Vinzelles AOC", "Richebourg AOC", "Romanée-Conti AOC", "Saint-Romain AOC", "Viré-Clessé AOC"], "Loire Valley": ["Anjou-Villages AOC", "Bonnezeaux AOC", "Cabernet d'Anjou AOC", "Cheverny AOC", "Jasnières AOC", "Menetou-Salon AOC", "Muscadet Côtes de Grandlieu AOC", "Quarts de Chaume AOC", "Rosé d'Anjou AOC", "Saint-Nicolas-de-Bourgueil AOC", "Saumur AOC", "Saumur-Champigny AOC"], "Rhône Valley": ["Beaumes-de-Venise AOC", "Cairanne AOC", "Château-Grillet AOC", "Clairette de Die AOC", "Costières de Nîmes AOC", "Crémant de Die AOC", "Duché d'Uzès AOC", "Grignan-les-Adhémar AOC", "Muscat de Beaumes-de-Venise AOC"], "Languedoc-Roussillon": ["Blanquette de Limoux AOC", "Cabardès AOC", "Côtes du Roussillon Villages AOC", "Crémant de Limoux AOC", "La Clape AOC", "Malepère AOC", "Maury AOC", "Pays d'Oc IGP", "Rivesaltes AOC", "Terrasses du Larzac AOC"], "Jura": ["Arbois AOC", "Château-Chalon AOC", "Côtes du Jura AOC", "Crémant du Jura AOC", "L'Étoile AOC", "Macvin du Jura AOC"], "Savoie": ["Crémant de Savoie AOC", "Roussette de Savoie AOC", "Seyssel AOC", "Vin de Savoie AOC"], "Corsica": ["Ajaccio AOC", "Patrimonio AOC", "Vin de Corse AOC"], "Tuscany": ["Montecucco Sangiovese DOCG", "Pomino DOC", "Rosso di Montalcino DOC", "Rosso di Montepulciano DOC", "Toscana IGT"], "Piedmont": ["Alta Langa DOCG", "Colli Tortonesi DOC", "Dogliani DOCG", "Erbaluce di Caluso DOCG", "Gattinara DOCG", "Ghemme DOCG", "Grignolino d'Asti DOC", "Langhe Nebbiolo DOC", "Nebbiolo d'Alba DOC", "Nizza DOCG"], "Veneto": ["Asolo Prosecco DOCG", "Bianco di Custoza DOC", "Colli Euganei DOC", "Conegliano Valdobbiadene Prosecco Superiore DOCG", "Gambellara DOC"], "Trentino-Alto Adige": ["Alto Adige DOC", "Lago di Caldaro DOC", "Teroldego Rotaliano DOC", "Trentino DOC", "Trento DOC"], "Sicily": ["Contea di Sclafani DOC", "Faro DOC", "Malvasia delle Lipari DOC", "Menfi DOC", "Noto DOC", "Sicilia DOC"], "Sardinia": ["Cannonau di Sardegna DOC", "Carignano del Sulcis DOC", "Monica di Sardegna DOC", "Vermentino di Gallura DOCG", "Vermentino di Sardegna DOC"], "Marche": ["Conero DOCG", "Offida DOCG", "Rosso Piceno DOC", "Verdicchio dei Castelli di Jesi DOC", "Verdicchio di Matelica DOC"], "Emilia-Romagna": ["Colli Piacentini DOC", "Lambrusco di Sorbara DOC", "Lambrusco Grasparossa di Castelvetro DOC", "Romagna Sangiovese DOC"], "Lazio": ["Cesanese del Piglio DOCG", "Est! Est!! Est!!! di Montefiascone DOC", "Frascati DOC"], "Basilicata": ["Aglianico del Vulture DOC", "Aglianico del Vulture Superiore DOCG"], "Calabria": ["Cirò DOC"], "Liguria": ["Cinque Terre DOC", "Riviera Ligure di Ponente DOC", "Rossese di Dolceacqua DOC"], "Valle d'Aosta": ["Valle d'Aosta DOC"], "Friuli-Venezia Giulia": ["Carso DOC", "Colli Orientali del Friuli Picolit DOCG", "Friuli Grave DOC", "Friuli Isonzo DOC", "Ramandolo DOCG"], "Campania": ["Campi Flegrei DOC", "Falerno del Massico DOC", "Irpinia DOC", "Lacryma Christi del Vesuvio DOC"], "Apulia / Puglia": ["Brindisi DOC", "Castel del Monte DOC", "Gioia del Colle DOC", "Salento IGT"], "Abruzzo": ["Montepulciano d'Abruzzo Colline Teramane DOCG"], "Navarra": ["Navarra DO"], "Catalonia": ["Alella DO", "Conca de Barberà DO", "Corpinnat", "Costers del Segre DO", "Tarragona DO", "Terra Alta DO"], "Valencia": ["Alicante DO", "Utiel-Requena DO", "Valencia DO"], "Castilla-La Mancha": ["La Mancha DO", "Manchuela DO", "Méntrida DO", "Valdepeñas DO", "Vino de la Tierra de Castilla"], "Castilla y León": ["Arlanza DO", "Arribes DO", "Sierra de Salamanca DO", "Tierra de León DO", "Vino de la Tierra de Castilla y León"], "Aragón": ["Calatayud DO", "Campo de Borja DO", "Cariñena DO", "Somontano DO"], "Murcia": ["Bullas DO", "Jumilla DO", "Yecla DO"], "Canary Islands": ["Islas Canarias DO", "Lanzarote DO", "Tacoronte-Acentejo DO", "Valle de la Orotava DO", "Ycoden-Daute-Isora DO"], "País Vasco": ["Arabako Txakolina DO", "Bizkaiko Txakolina DO", "Getariako Txakolina DO"], "Andalucía": ["Condado de Huelva DO", "Málaga DO", "Montilla-Moriles DO"], "Extremadura": ["Ribera del Guadiana DO"], "Galicia": ["Monterrei DO"], "Lisboa": ["Alenquer DOC", "Bucelas DOC", "Carcavelos DOC", "Colares DOC", "Lisboa VR", "Óbidos DOC"], "Setúbal": ["Moscatel de Setúbal DOC", "Palmela DOC", "Setúbal DOC"], "Madeira": ["Madeira DOC", "Madeirense DOC"], "Tejo": ["DoTejo DOC", "Tejo VR"], "Algarve": ["Lagoa DOC", "Lagos DOC", "Portimão DOC", "Tavira DOC"], "Azores": ["Biscoitos DOC", "Graciosa DOC", "Pico DOC"], "Trás-os-Montes": ["Trás-os-Montes DOC"], "Beira Interior": ["Beira Interior DOC"], "Távora-Varosa": ["Távora-Varosa DOC"], "Mosel": ["Bernkastel", "Brauneberg", "Erden", "Graach", "Piesport", "Ruwer", "Saar", "Trittenheim", "Ürzig", "Wehlen"], "Pfalz": ["Bad Dürkheim", "Birkweiler", "Kallstadt", "Pfalz QbA"], "Württemberg": ["Remstal", "Stuttgart", "Württemberg QbA"], "Sachsen": ["Meissen", "Sachsen QbA"], "Saale-Unstrut": ["Freyburg", "Saale-Unstrut QbA"], "Mittelrhein": ["Bacharach", "Boppard", "Mittelrhein QbA"], "Weinviertel": ["Weinviertel DAC"], "Traisental": ["Traisental DAC"], "Wien": ["Wiener Gemischter Satz DAC"], "Steiermark": ["Südsteiermark DAC", "Vulkanland Steiermark DAC", "Weststeiermark DAC"], "Thermenregion": ["Thermenregion DAC"], "Wagram": ["Wagram DAC"], "Burgenland": ["Ruster Ausbruch DAC"], "Villány": ["Villány DO", "Villányi Franc"], "Szekszárd": ["Szekszárd DO", "Szekszárdi Bikavér DO"], "Somló": ["Somló DO"], "Badacsony": ["Badacsony DO"], "Mátra": ["Mátra DO"], "Santorini": ["Santorini PDO"], "Nemea": ["Nemea PDO"], "Macedonia": ["Amyndeon PDO", "Goumenissa PDO", "Naoussa PDO"], "Crete": ["Archanes PDO", "Dafnes PDO", "Peza PDO", "Sitia PDO"], "Peloponnese": ["Mantinia PDO", "Mavrodaphne of Patras PDO", "Monemvasia-Malvasia PDO", "Patras PDO"], "Aegean Islands": ["Limnos PDO", "Paros PDO", "Rhodes PDO", "Samos PDO"], "Thessaly": ["Anchialos PDO", "Rapsani PDO"], "California": ["Adelaida District AVA", "Amador County AVA", "Arroyo Seco AVA", "Atlas Peak AVA", "Ballard Canyon AVA", "Calistoga AVA", "Chalk Hill AVA", "Chalone AVA", "Coombsville AVA", "Diamond Mountain District AVA", "El Dorado AVA", "Fort Ross-Seaview AVA", "Happy Canyon of Santa Barbara AVA", "Howell Mountain AVA", "Knights Valley AVA", "Livermore Valley AVA", "Lodi AVA", "Mendocino AVA", "Mount Veeder AVA", "Oak Knoll District AVA", "Oakville AVA", "Petaluma Gap AVA", "Rutherford AVA", "Santa Maria Valley AVA", "Santa Ynez Valley AVA", "Spring Mountain District AVA", "St. Helena AVA", "Sta. Rita Hills AVA", "Temecula Valley AVA", "Yountville AVA"], "Oregon": ["Applegate Valley AVA", "Laurelwood District AVA", "Rogue Valley AVA", "Southern Oregon AVA", "The Rocks District of Milton-Freewater AVA", "Tualatin Hills AVA", "Umpqua Valley AVA", "Van Duzer Corridor AVA", "Yamhill-Carlton AVA"], "Washington": ["Ancient Lakes AVA", "Lake Chelan AVA", "Naches Heights AVA", "Puget Sound AVA", "Rattlesnake Hills AVA", "Snipes Mountain AVA", "Wahluke Slope AVA"], "New York": ["Cayuga Lake AVA", "Lake Erie AVA", "Niagara Escarpment AVA", "Seneca Lake AVA"], "Virginia": ["Middleburg AVA", "Monticello AVA", "Shenandoah Valley AVA"], "Texas": ["Texas High Plains AVA", "Texas Hill Country AVA"], "Adelaide Hills": ["Adelaide Hills GI", "Lenswood GI", "Piccadilly Valley GI"], "Tasmania": ["Tasmania GI"], "Heathcote": ["Heathcote GI"], "Hunter Valley": ["Hunter GI", "Hunter Valley GI"], "Coonawarra": ["Coonawarra GI"], "Clare Valley": ["Clare Valley GI", "Polish Hill River", "Watervale"], "Great Southern": ["Albany GI", "Denmark GI", "Frankland River GI", "Great Southern GI", "Mount Barker GI", "Porongurup GI"], "Rutherglen": ["Rutherglen GI", "Rutherglen Muscat"], "Mornington Peninsula": ["Mornington Peninsula GI"], "Orange": ["Orange GI"], "Canberra": ["Canberra District GI"], "Geelong": ["Geelong GI"], "Langhorne Creek": ["Langhorne Creek GI"], "Mudgee": ["Mudgee GI"], "Eden Valley": ["Eden Valley GI"], "Wairarapa": ["Gladstone", "Martinborough"], "Canterbury": ["North Canterbury", "Waipara Valley"], "Waipara": ["Waipara Valley"], "Nelson": ["Moutere Hills", "Nelson", "Waimea Plains"], "Gisborne": ["Gisborne"], "Auckland": ["Kumeu", "Matakana", "Waiheke Island"], "Marlborough": ["Southern Valleys"], "Central Otago": ["Alexandra", "Wanaka"], "Mendoza": ["Agrelo", "Gualtallary", "Los Chacayes", "Luján de Cuyo DOC", "Paraje Altamira GI", "Perdriel", "San Carlos GI", "San Rafael DOC", "Tunuyán GI", "Tupungato GI", "Vista Flores"], "Salta": ["Cafayate", "Molinos", "Valles Calchaquíes"], "Patagonia": ["Chubut", "Neuquén", "Río Negro"], "San Juan": ["Pedernal Valley", "Tulum Valley", "Zonda Valley"], "Maipo Valley": ["Alto Maipo", "Buin", "Isla de Maipo", "Pirque", "Puente Alto"], "Colchagua Valley": ["Apalta", "Lolol", "Los Lingues", "Marchigüe", "Paredones"], "Aconcagua": ["Aconcagua Costa", "Aconcagua Valley", "Leyda Valley", "San Antonio Valley"], "Rapel Valley": ["Cachapoal Valley", "Peumo"], "Maule Valley": ["Cauquenes", "Curicó Valley", "Loncomilla", "Tutuvén"], "Itata": ["Itata Valley"], "Bio-Bío": ["Bío-Bío Valley", "Malleco Valley"], "Constantia": ["Constantia WO"], "Elgin": ["Elgin WO"], "Paarl": ["Paarl WO", "Simonsberg-Paarl WO", "Voor Paardeberg WO"], "Robertson": ["Robertson WO"], "Walker Bay": ["Bot River WO", "Hemel-en-Aarde Ridge WO", "Hemel-en-Aarde Valley WO", "Upper Hemel-en-Aarde Valley WO", "Walker Bay WO"], "Stellenbosch": ["Banghoek WO", "Jonkershoek Valley WO", "Polkadraai Hills WO", "Simonsberg-Stellenbosch WO"], "Niagara Peninsula": ["Beamsville Bench VQA", "Niagara Escarpment VQA", "Niagara Peninsula VQA", "Niagara-on-the-Lake VQA", "Ontario Icewine", "Short Hills Bench VQA", "Twenty Mile Bench VQA"], "Okanagan Valley": ["Golden Mile Bench", "Naramata Bench", "Okanagan Falls", "Okanagan Valley VQA"], "Prince Edward County": ["Prince Edward County VQA"], "British Columbia": ["British Columbia VQA", "Similkameen Valley VQA"], "Galilee": ["Galilee", "Upper Galilee"], "Golan Heights": ["Golan Heights"], "Kakheti": ["Akhasheni AOC", "Gurjaani AOC", "Kardenakhi AOC", "Kindzmarauli AOC", "Kvareli AOC", "Manavi AOC", "Napareuli AOC", "Teliani AOC", "Vazisubani AOC"], "Racha-Lechkhumi": ["Khvanchkara AOC", "Tvishi AOC"], "Imereti": ["Sviri AOC"], "Kartli": ["Atenuri AOC"], "Goriška Brda": ["Goriška Brda PDO"], "Primorska": ["Karst PDO", "Slovenian Istria PDO", "Vipava Valley PDO"], "Štajerska Slovenija": ["Jeruzalem", "Štajerska Slovenija PDO"], "Posavje": ["Bela krajina PDO", "Bizeljsko-Sremič PDO", "Cviček PTP", "Dolenjska PDO"], "Slavonia": ["Ilok", "Kutjevo", "Slavonija PDO"], "Moravia": ["Mikulov", "Slovácko", "Velké Pavlovice", "Znojmo"], "Valais": ["Dôle", "Fendant", "Valais AOC"], "Vaud": ["Calamin Grand Cru", "Chablais AOC", "Dézaley Grand Cru", "La Côte AOC", "Lavaux AOC"], "Ticino": ["Ticino DOC"], "Graubünden": ["Bündner Herrschaft", "Graubünden AOC"], "Moselle Luxembourgeoise": ["Crémant de Luxembourg AOP", "Moselle Luxembourgeoise AOP"], "Sussex": ["Sussex PDO"], "Jutland": ["Dons PDO", "Jylland PGI"], "Fyn": ["Fyn PGI"], "Zealand": ["Sjælland PGI"], "Bornholm": ["Bornholm PGI"], "Skåne": ["Skåne PGI"], "Canelones": ["Canelones", "Las Violetas", "Progreso"], "Maldonado": ["Garzón", "Pueblo Edén"], "Yamanashi": ["Katsunuma", "Yamanashi GI"], "Hokkaido": ["Hokkaido GI", "Yoichi"], "Nagano": ["Nagano GI"], "Ningxia": ["Helan Mountain East"], "Vayots Dzor": ["Areni"], "Herzegovina": ["Mostar"]});
+  Object.keys(LOOKUP_ALIASES).forEach(function(k) { var n = _normLk(k); if (n !== k) LOOKUP_ALIASES[n] = LOOKUP_ALIASES[k]; });
+  mergeMap(GRAPES, {"Red": ["Merlot", "Negroamaro", "Acolon", "Aglianico", "Alfrocheiro", "Alicante Bouschet", "Aragonez", "Babić", "Băbească Neagră", "Blauburgunder", "Blauer Portugieser", "Bobal", "Boğazkere", "Cabernet Cortis", "Cabernet Dorsa", "Cabernet Mitos", "Caladoc", "Cannonau", "Castelão", "Counoise", "Croatina", "Durif", "Fer Servadou", "Fetească Neagră", "Frühburgunder", "Gamaret", "Garnacha Tintorera", "Graciano", "Grignolino", "Jaen", "Juan García", "Kalecik Karası", "Kotsifali", "Liatiko", "Limnio", "Listán Negro", "Mandilaria", "Marselan", "Mavrodaphne", "Mavrud", "Mazuelo", "Melnik", "Mondeuse", "Negramoll", "Nero di Troia", "Öküzgözü", "País", "Pallagrello Nero", "Perricone", "Piedirosso", "Pignolo", "Pineau d'Aunis", "Plavina", "Poulsard", "Prieto Picudo", "Prokupac", "Regent", "Rondo", "Rufete", "Schioppettino", "Sciaccerellu", "Sousão", "Susumaniello", "Tazzelenghe", "Teran", "Tinta Amarela", "Tinta Barroca", "Tinta Cão", "Tinta de Toro", "Tinta Negra", "Tinto Fino", "Trousseau", "Vinhão", "Vranac", "Žametovka"], "White": ["Airén", "Albana", "Altesse", "Alvarinho", "Amigne", "Antão Vaz", "Arinto", "Asprinio", "Athiri", "Avesso", "Azal", "Biancolella", "Bical", "Boal", "Bombino Bianco", "Bosco", "Bourboulenc", "Bronner", "Cabernet Blanc", "Carricante", "Catarratto", "Chasselas", "Coda di Volpe", "Doña Blanca", "Durella", "Emir", "Encruzado", "Erbaluce", "Favorita", "Fernão Pires", "Fetească Albă", "Fetească Regală", "Folle Blanche", "Forastera", "Friulano", "Garnacha Blanca", "Gouveio", "Grasă de Cotnari", "Graševina", "Grecanico", "Grechetto", "Greco", "Grillo", "Gringet", "Grk", "Gros Manseng", "Gutedel", "Hanepoot", "Heida", "Helios", "Hondarrabi Zuri", "Humagne Blanche", "Huxelrebe", "Inzolia", "Irsai Olivér", "Johanniter", "Juhfark", "Kéknyelű", "Királyleányka", "Kisi", "Koshu", "Kövérszőlő", "Leányka", "Len de l'El", "Listán Blanco", "Madeleine Angevine", "Malagousia", "Malmsey", "Malvasia Fina", "Malvasia Istriana", "Malvasía Volcánica", "Malvazija", "Mauzac", "Merseguera", "Merwah", "Moscatel de Alejandría", "Moschofilero", "Mtsvane", "Muscadelle", "Muscat of Alexandria", "Muskateller", "Narince", "Nascetta", "Neuburger", "Nosiola", "Obaideh", "Olaszrizling", "Ondenc", "Ortega", "Pallagrello Bianco", "Passerina", "Petit Arvine", "Petit Courbu", "Petit Manseng", "Phoenix", "Picardan", "Picolit", "Pigato", "Pinella", "Pošip", "Rabigato", "Räuschling", "Rebula", "Ribolla Gialla", "Rieslaner", "Rivaner", "Rkatsiteli", "Robola", "Roditis", "Romorantin", "Roter Veltliner", "Rotgipfler", "Sárgamuskotály", "Sauvignac", "Sauvignon Gris", "Savagnin", "Savatiano", "Scheurebe", "Sercial", "Seyval Blanc", "Šipon", "Souvignier Gris", "Sultaniye", "Tamaioasă Românească", "Tamjanika", "Terrantez", "Timorasso", "Trajadura", "Traminer", "Traminette", "Treixadura", "Trebbiano Toscano", "Ugni Blanc", "Verdelho", "Verduzzo", "Vermentino", "Vidal Blanc", "Vidiano", "Vignoles", "Vilana", "Viosinho", "Vitovska", "Zalagyöngye", "Zelen", "Zéta", "Zibibbo", "Zierfandler", "Tsolikouri", "Chinuri", "Khikhvi"], "Sparkling": ["Arbanne", "Brachetto", "Chenin Blanc", "Durella", "Fromenteau", "Lambrusco", "Moscato Bianco", "Petit Meslier", "Pinot Blanc", "Pinot Gris", "Riesling"], "Rosé": ["Blaufränkisch", "Bobal", "Cabernet Franc", "Carignan", "Gamay", "Merlot", "Mencia", "Negroamaro", "Pinot Meunier", "Schiava", "Tibouren", "Touriga Nacional", "Xinomavro", "Zweigelt"], "Orange": ["Chinuri", "Friulano", "Kisi", "Mtsvane", "Pinot Gris", "Pošip", "Savagnin", "Vitovska", "Zibibbo"]});
+})();
+
 const CLASSIFICATIONS = {
   // ── France ──
   "Bordeaux": [
@@ -2502,6 +2527,65 @@ function setConnBar(mode) {
 // ═══════════════════════════════════════
 //  AUTOCOMPLETE
 // ═══════════════════════════════════════
+// ═══════════════════════════════════════
+//  LOOKUP ENFORCEMENT — only approved list values allowed
+// ═══════════════════════════════════════
+function _normLk(s) { return String(s || '').toLowerCase().replace(/æ/g, 'ae').replace(/ø/g, 'o').replace(/ß/g, 'ss').replace(/œ/g, 'oe').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim(); }
+function lookupList(kind) {
+  if (kind === 'country')     return COUNTRIES;
+  if (kind === 'region')      return [...new Set(Object.values(REGIONS).flat())];
+  if (kind === 'appellation') return [...new Set(Object.values(APPELLATIONS).flat())];
+  if (kind === 'grape')       return [...new Set(Object.values(GRAPES).flat())];
+  return [];
+}
+// Returns the canonical list value for v, or null if v isn't an approved value.
+// Accent/case-insensitive; also accepts a partial entry that matches exactly one item.
+function canonLookup(kind, v) {
+  const n = _normLk(v); if (!n) return '';
+  const list = lookupList(kind);
+  const exact = list.find(x => _normLk(x) === n);
+  if (exact) return exact;
+  const alias = LOOKUP_ALIASES[n];
+  if (alias && list.includes(alias)) return alias;
+  const partial = list.filter(x => _normLk(x).includes(n));
+  return partial.length === 1 ? partial[0] : null;
+}
+function enforceLookup(inp, kind) {
+  if (!inp || inp._lkBound) return;
+  inp._lkBound = true; inp.dataset.lookup = kind;
+  inp.setAttribute('autocomplete', 'off'); inp.setAttribute('autocorrect', 'off');
+  inp.setAttribute('autocapitalize', 'off'); inp.setAttribute('spellcheck', 'false');
+  // Delay so a tap on a dropdown item is applied before we validate
+  inp.addEventListener('blur', () => setTimeout(() => checkLookupField(inp), 200));
+  inp.addEventListener('input', () => inp.classList.remove('lk-invalid'));
+}
+function checkLookupField(inp) {
+  if (!inp || !inp.dataset.lookup) return true;
+  const v = inp.value.trim();
+  if (!v) { inp.classList.remove('lk-invalid'); return true; }
+  const canon = canonLookup(inp.dataset.lookup, v);
+  if (canon) { inp.value = canon; inp.classList.remove('lk-invalid'); return true; }
+  inp.classList.add('lk-invalid');
+  return false;
+}
+const LOOKUP_LABELS = { country:'Country', region:'Region', appellation:'Appellation', grape:'Grape' };
+// Validates fields; returns true if all OK. With clearInvalid, bad values are wiped instead of blocking.
+function validateLookups(ids, clearInvalid) {
+  let firstBad = null;
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el || checkLookupField(el)) return;
+    if (clearInvalid) { el.value = ''; el.classList.remove('lk-invalid'); }
+    else if (!firstBad) firstBad = el;
+  });
+  if (firstBad) {
+    showToast('Choose ' + (LOOKUP_LABELS[firstBad.dataset.lookup] || 'a value') + ' from the list', 'error');
+    firstBad.focus();
+    return false;
+  }
+  return true;
+}
+
 function makeAC(inp, getList, onPick) {
   const wrap = document.createElement('div');
   wrap.className = 'ac-wrap';
@@ -2538,20 +2622,6 @@ function makeAC(inp, getList, onPick) {
     drop.classList.remove('open');
     if (onPick) onPick(cur[i]);
   };
-  // Clear on blur if value not picked from list (enforces list-only)
-  if (inp.dataset.acEnforce === 'true') {
-    inp.addEventListener('blur', function() {
-      const v = inp.value.trim();
-      if (!v) return;
-      const list = getList(v.toLowerCase());
-      const exact = list.some(x => x.toLowerCase() === v.toLowerCase());
-      if (!exact) {
-        inp.value = '';
-        inp.dataset.acPicked = '';
-        drop.classList.remove('open');
-      }
-    });
-  }
   const filt = () => {
     const q = inp.value.trim().toLowerCase();
     if (!q) { drop.classList.remove('open'); return; }
@@ -2569,7 +2639,14 @@ function makeAC(inp, getList, onPick) {
   document.addEventListener('click', e => { if (!wrap.contains(e.target)) drop.classList.remove('open'); });
 }
 
-const filt = (list, q) => list.filter(x => x.toLowerCase().includes(q.toLowerCase()));
+const filt = (list, q) => {
+  const n = _normLk(q); if (!n) return [];
+  const hits = list.filter(x => _normLk(x).includes(n));
+  hits.sort((a, b) => (_normLk(a).startsWith(n) ? 0 : 1) - (_normLk(b).startsWith(n) ? 0 : 1));
+  const alias = LOOKUP_ALIASES[n];
+  if (alias && list.includes(alias) && !hits.includes(alias)) hits.unshift(alias);
+  return hits;
+};
 
 // ═══════════════════════════════════════
 //  WINE FORM
@@ -2645,34 +2722,10 @@ function initFormAC() {
     const type    = document.getElementById('wf-type').value;
     return filt(getClassifications(country, region, type), q);
   });
-}
-
-function initGuessAC() {
-  // Only init once — check if already wrapped
-  const gc = document.getElementById('g-country');
-  if (!gc || gc.closest('.ac-wrap')) return;
-
-  makeAC(gc, q => filt(COUNTRIES, q), () => {});
-
-  makeAC(document.getElementById('g-region'), q => {
-    const c = document.getElementById('g-country').value;
-    return filt([...new Set([...(REGIONS[c] || []), ...Object.values(REGIONS).flat()])], q);
-  }, () => {});
-
-  makeAC(document.getElementById('g-appel'), q => {
-    const r = document.getElementById('g-region').value;
-    return filt([...new Set([...(APPELLATIONS[r] || []), ...Object.values(APPELLATIONS).flat()])], q);
-  }, () => {});
-
-  makeAC(document.getElementById('g-grape'), q => {
-    return filt(Object.values(GRAPES).flat(), q);
-  }, () => {});
-
-  // Enforce list-only on all guess fields
-  ['g-country','g-region','g-appel','g-grape'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.dataset.acEnforce = 'true';
-  });
+  enforceLookup(document.getElementById('wf-country'), 'country');
+  enforceLookup(document.getElementById('wf-region'), 'region');
+  enforceLookup(document.getElementById('wf-appel'), 'appellation');
+  enforceLookup(document.getElementById('wf-grapes'), 'grape');
 }
 
 function clearWineForm() {
@@ -3095,6 +3148,7 @@ async function bulkReveal(val) {
 async function addWine() {
   const name = document.getElementById('wf-name').value.trim();
   if (!name) { showAlert('wf-alert', 'error', 'Please enter the wine name.'); return; }
+  if (!validateLookups(['wf-country','wf-region','wf-appel','wf-grapes'])) return;
   const s = await dbGet('sessions/' + activeCode);
   if (!s.wines) s.wines = [];
   const latVal = document.getElementById('wf-lat').value.trim();
@@ -3343,7 +3397,7 @@ function startCountdown(wine) {
         var gameSection = document.getElementById('blind-game-section');
         var guessInputs = document.getElementById('guess-inputs');
         if (guessInputs && guessInputs.style.display !== 'none') {
-          submitGuess();
+          submitGuess(true);
         }
       } else if (remaining <= 10) {
         labelEl.textContent = 'Hurry!';
@@ -4547,6 +4601,7 @@ function closeEditWine(idx) {
 async function saveEditWine(idx) {
   const name = document.getElementById('ew-name').value.trim();
   if (!name) { showAlert('ew-alert', 'error', 'Wine name is required.'); return; }
+  if (!validateLookups(['ew-country','ew-region','ew-appel','ew-grapes'])) return;
   const s = await dbGet('sessions/' + activeCode);
   const w = s.wines[idx];
   // Preserve existing fields not in edit form (ratings, revealed, location, etc.)
@@ -4596,6 +4651,8 @@ function initEditAC() {
     const t = document.getElementById('ew-type') ? document.getElementById('ew-type').value : '';
     return filt(getClassifications(c, r, t), q);
   });
+  enforceLookup(ewCountry, 'country'); enforceLookup(ewRegion, 'region');
+  enforceLookup(ewAppel, 'appellation'); enforceLookup(ewGrapes, 'grape');
 }
 
 
@@ -5413,7 +5470,9 @@ function populateGuessUI(guess, wine) {
   }
 }
 
-async function submitGuess() {
+async function submitGuess(force) {
+  // When the timer expires (force), invalid entries are dropped instead of blocking the lock-in
+  if (!validateLookups(['g-country','g-region','g-appel','g-grape'], !!force)) return;
   const taster = getTaster();
   if (!taster) {
     showAlert('game-alert','error','Enter your name first (top of page).');
@@ -5551,24 +5610,20 @@ function initGuessAC() {
   const elRegion  = document.getElementById('g-region');
   const elAppel   = document.getElementById('g-appel');
   const elGrape   = document.getElementById('g-grape');
-  if (!elCountry) return; // not rendered yet
-
+  if (!elCountry || elCountry._acInit) return; // not rendered, or already wired
+  elCountry._acInit = true;
   makeAC(elCountry, q => filt(COUNTRIES, q), () => {});
-
   makeAC(elRegion, q => {
-    const c = elCountry ? elCountry.value : '';
+    const c = elCountry.value;
     return filt([...new Set([...(REGIONS[c] || []), ...Object.values(REGIONS).flat()])], q);
   }, () => {});
-
   makeAC(elAppel, q => {
-    const r = elRegion ? elRegion.value : '';
+    const r = elRegion.value;
     return filt([...new Set([...(APPELLATIONS[r] || []), ...Object.values(APPELLATIONS).flat()])], q);
   }, () => {});
-
-  makeAC(elGrape, q => {
-    return filt([...new Set(Object.values(GRAPES).flat())], q);
-  }, () => {});
-  // Vintage is numeric — no autocomplete needed
+  makeAC(elGrape, q => filt([...new Set(Object.values(GRAPES).flat())], q), () => {});
+  enforceLookup(elCountry, 'country'); enforceLookup(elRegion, 'region');
+  enforceLookup(elAppel, 'appellation'); enforceLookup(elGrape, 'grape');
 }
 
 // ═══════════════════════════════════════
@@ -5741,6 +5796,7 @@ Be precise. Use official names. Return only the JSON object, no other text.`;
         el.value = val;
         // Trigger input event so autocomplete/listeners fire
         el.dispatchEvent(new Event('input', { bubbles: true }));
+        if (el.dataset.lookup) checkLookupField(el);
         el.dispatchEvent(new Event('change', { bubbles: true }));
       }
     };
@@ -5753,6 +5809,8 @@ Be precise. Use official names. Return only the JSON object, no other text.`;
     set('wf-classification', wine.classification);
     set('wf-grapes',         wine.grapes);
     set('wf-abv',            wine.abv);
+    // Snap scanned values to approved list entries (or flag them red for the host to fix)
+    ['wf-country','wf-region','wf-appel','wf-grapes'].forEach(function(id){ checkLookupField(document.getElementById(id)); });
 
     // Wine type — use Claude's value, or infer from grapes/appellation
     const inferredType = wine.type || guessWineType(wine.grapes, wine.appellation, wine.region, wine.country);
@@ -6196,9 +6254,10 @@ function updateMemberAvatar(name) {
   if (a) { a.textContent = name ? name.trim()[0].toUpperCase() : '?'; a.title = name || ''; }
 }
 
-function showToast(msg) {
+function showToast(msg, type) {
   var t = document.getElementById('toast');
   if (!t) { t = document.createElement('div'); t.id = 'toast'; document.body.appendChild(t); }
+  t.classList.toggle('error', type === 'error');
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(t._tm);
