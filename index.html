@@ -1187,6 +1187,23 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.56rem;
 .host-fab:active{transform:translateY(-50%) scale(.88);}
 .host-fab.active{box-shadow:0 0 0 2px var(--gold),0 4px 16px rgba(201,168,76,.6);}
 
+/* ── BLIND GUESS RESULTS (wine info modal) ── */
+.guess-lb{margin-top:1rem;border-top:1px solid var(--gb);padding-top:.9rem;}
+.guess-lb-title{font-family:'Josefin Sans',sans-serif;font-size:.54rem;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--smoke);margin-bottom:.7rem;}
+.guess-lb-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;
+  gap:.5rem;padding:.4rem 0;border-bottom:1px solid rgba(255,255,255,.05);}
+.guess-lb-row:last-child{border-bottom:none;}
+.guess-lb-name{font-family:'Playfair Display',serif;font-style:italic;font-size:.92rem;color:var(--cream);}
+.guess-lb-hits{font-family:'Josefin Sans',sans-serif;font-size:.54rem;
+  letter-spacing:.06em;color:var(--smoke);white-space:nowrap;}
+.guess-lb-pts{font-family:'Playfair Display',serif;font-weight:700;font-size:1.02rem;
+  color:var(--pale-gold);min-width:34px;text-align:right;}
+.guess-lb-pts.perfect{color:#7dffb0;}
+/* Discoverability hint line on the results wine card */
+.res-wine-card-hint{font-family:'Josefin Sans',sans-serif;font-size:.5rem;
+  letter-spacing:.08em;text-transform:uppercase;color:#9090ff;margin-top:.3rem;opacity:.85;}
+
 /* ── MISC ── */
 .alert{padding:.7rem .9rem;border-radius:8px;font-size:.88rem;margin:.55rem 0;display:none;}
 .alert.error{background:rgba(180,30,30,.2);border:1px solid rgba(180,30,30,.4);color:#ffaaaa;display:block;}
@@ -3724,6 +3741,14 @@ function renderResults(c, sess) {
           ? '<div style="font-family:Josefin Sans,sans-serif;font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke);margin-top:.25rem;opacity:.55;">No ratings yet</div>'
           : '');
 
+    var scoredGuessCount = (w.guesses || []).filter(function(g) { return g.scored; }).length;
+    var hintParts = [];
+    if (r.length) hintParts.push(r.length + ' rating' + (r.length !== 1 ? 's' : ''));
+    if (scoredGuessCount) hintParts.push(scoredGuessCount + ' blind guess' + (scoredGuessCount !== 1 ? 'es' : ''));
+    var hintLine = hintParts.length
+      ? '<div class="res-wine-card-hint">' + hintParts.join(' · ') + ' — tap for details</div>'
+      : '';
+
     return '<div style="margin-bottom:.9rem;">'
       + '<button class="res-wine-img-btn" onclick="showWineModal(_resWines[' + i + '])">'
       + '<div class="res-wine-img-card">'
@@ -3735,6 +3760,7 @@ function renderResults(c, sess) {
         + '<div class="res-wine-card-name">' + w.name + (w.vintage ? ' ' + w.vintage : '') + '</div>'
         + (subParts.length ? '<div class="res-wine-card-sub">' + subParts.join(' · ') + '</div>' : '')
         + avgLine
+        + hintLine
       + '</div>'
       + '<div class="res-wine-tap-hint">tap for info</div>'
       + '</div>'
@@ -5837,6 +5863,27 @@ function showWineModal(wineOrIdx) {
       + '</div>';
   }
 
+  // ── Blind guess results section ──
+  var guessesHtml = '';
+  var scoredGuesses = (w.guesses || []).filter(function(g) { return g.scored; });
+  if (scoredGuesses.length) {
+    scoredGuesses = scoredGuesses.slice().sort(function(a, b) { return (b.points||0) - (a.points||0); });
+    var guessRows = scoredGuesses.map(function(g) {
+      var hits = Object.values(g.result || {}).filter(function(v) { return v.hit; }).length;
+      var isPerfect = g.points === GUESS_MAX;
+      return '<div class="guess-lb-row">'
+        + '<div class="guess-lb-name">' + g.taster + '</div>'
+        + '<div class="guess-lb-hits">' + hits + '/5 correct</div>'
+        + '<div class="guess-lb-pts' + (isPerfect ? ' perfect' : '') + '">' + g.points + '</div>'
+        + '</div>';
+    }).join('');
+    guessesHtml =
+      '<div class="guess-lb">'
+      + '<div class="guess-lb-title"><svg class="ico" style="width:.85em;height:.85em;vertical-align:-1px;"><use href="#ico-spy"/></svg> Blind Guess Results — ' + scoredGuesses.length + ' taster' + (scoredGuesses.length !== 1 ? 's' : '') + '</div>'
+      + guessRows
+      + '</div>';
+  }
+
   cnt.innerHTML =
     '<div class="wine-info-hero">'
       + imgHtml
@@ -5848,7 +5895,8 @@ function showWineModal(wineOrIdx) {
     + '</div>'
     + metaHtml
     + notesHtml
-    + ratingsHtml;
+    + ratingsHtml
+    + guessesHtml;
 
   modal.classList.add('open');
   modal.style.display = 'flex';
