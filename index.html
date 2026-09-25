@@ -2,7 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#14060a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Vintosserne">
 <title>Vintosserne — Wine Tasting Club</title>
 <style>
 /* Attempt to load Google Fonts — silently ignored if offline/file:// */
@@ -1216,6 +1221,40 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.56rem;
 .detail-crit-bar-bg{height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;}
 .detail-crit-bar-fill{height:100%;background:linear-gradient(90deg,var(--burgundy),var(--gold));border-radius:3px;}
 
+/* ── NEXT-LEVEL POLISH ── */
+button,.tab-btn,.sess-chip,.member-btn,.res-wine-img-btn{touch-action:manipulation;}
+.section-lbl{font-family:'Josefin Sans',sans-serif;font-size:.56rem;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--smoke);margin-bottom:.7rem;}
+.btn-back{background:none;border:none;color:var(--smoke);cursor:pointer;padding:.4rem .2rem;
+  font-family:'Josefin Sans',sans-serif;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;
+  min-height:36px;transition:color .15s;}
+.btn-back:active{color:var(--gold);}
+.sess-picker{margin-top:1.1rem;}
+.sess-picker:empty{display:none;}
+.sess-chip{display:flex;align-items:center;justify-content:space-between;width:100%;
+  background:rgba(255,255,255,.03);border:1px solid var(--gb);border-radius:12px;
+  padding:.75rem .9rem;margin-bottom:.5rem;cursor:pointer;color:var(--cream);text-align:left;
+  transition:background .15s,border-color .15s;}
+.sess-chip:active{background:rgba(201,168,76,.1);border-color:var(--gold);}
+.sess-chip-name{font-family:'Playfair Display',serif;font-size:.98rem;}
+.sess-chip-meta{font-family:'Josefin Sans',sans-serif;font-size:.52rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--smoke);margin-top:.15rem;}
+.sess-chip-code{font-family:'Josefin Sans',sans-serif;font-size:.8rem;letter-spacing:.2em;color:var(--gold);}
+.member-avatar{position:absolute;top:50%;left:.85rem;transform:translateY(-50%);
+  width:34px;height:34px;border-radius:50%;padding:0;cursor:pointer;
+  background:rgba(255,255,255,.05);border:1px solid var(--gb);color:var(--pale-gold);
+  font-family:'Playfair Display',serif;font-style:italic;font-size:.95rem;
+  display:flex;align-items:center;justify-content:center;transition:transform .15s;}
+.member-avatar:active{transform:translateY(-50%) scale(.88);}
+#toast{position:fixed;left:50%;bottom:calc(var(--tab-h) + env(safe-area-inset-bottom,0px) + 14px);
+  transform:translate(-50%,20px);opacity:0;pointer-events:none;z-index:9995;
+  background:rgba(30,60,40,.96);border:1px solid rgba(125,255,176,.35);color:#c8ffd9;
+  padding:.6rem 1.1rem;border-radius:22px;max-width:86vw;text-align:center;
+  font-family:'Josefin Sans',sans-serif;font-size:.66rem;letter-spacing:.05em;
+  box-shadow:0 8px 24px rgba(0,0,0,.45);transition:opacity .25s,transform .25s;}
+#toast.show{opacity:1;transform:translate(-50%,0);}
+.wine-info-sheet{transition:transform .25s cubic-bezier(.22,1,.36,1);}
+
 /* ── MISC ── */
 .alert{padding:.7rem .9rem;border-radius:8px;font-size:.88rem;margin:.55rem 0;display:none;}
 .alert.error{background:rgba(180,30,30,.2);border:1px solid rgba(180,30,30,.4);color:#ffaaaa;display:block;}
@@ -1657,6 +1696,7 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.56rem;
 
 
 <header>
+  <button class="member-avatar" id="member-avatar" onclick="changeMember()" aria-label="Switch member">?</button>
   <button class="host-fab" id="host-fab" onclick="showTab('host')" aria-label="Host — create and manage tastings">
     <svg class="ico"><use href="#ico-host"/></svg>
   </button>
@@ -1717,7 +1757,7 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.56rem;
           <button class="btn btn-outline btn-sm" onclick="copyCode()" style="padding:.3rem .6rem;min-height:36px;"><svg class="ico"><use href="#ico-copy"/></svg></button>
         </div>
         <button class="btn btn-outline btn-sm" onclick="toggleQR()"><svg class="ico"><use href="#ico-qr"/></svg> QR</button>
-        <button class="btn btn-outline btn-sm" onclick="closeSession()">← Back</button>
+        <button class="btn-back" onclick="closeSession()">‹ Sessions</button>
         <button class="btn btn-danger btn-sm" onclick="deleteSession()"><svg class="ico"><use href="#ico-trash"/></svg></button>
       </div>
     </div>
@@ -1765,9 +1805,8 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.56rem;
 <div id="tab-taste" class="panel active">
   <div id="unlock-screen">
     <div class="card">
-      <div class="card-title"><svg class="ico"><use href="#ico-key"/></svg> Unlock Tasting Session</div>
-      <div style="text-align:center;padding:1.8rem 1rem .5rem;">
-        <p style="color:var(--smoke);font-size:1rem;margin-bottom:.8rem;">Enter the 4-digit code from your host</p>
+      <div style="text-align:center;padding:1rem .5rem .3rem;">
+        <div class="section-lbl">Session code</div>
         <div class="code-input-row">
           <input class="code-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
           <input class="code-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
@@ -1775,8 +1814,9 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.56rem;
           <input class="code-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
         </div>
         <div id="unlock-alert" class="alert"></div>
-        <button class="btn btn-primary" onclick="unlockSession()"><svg class="ico"><use href="#ico-glass"/></svg> Unlock &amp; Taste</button>
+        <button class="btn btn-primary" onclick="unlockSession()"><svg class="ico"><use href="#ico-glass"/></svg> Taste</button>
       </div>
+      <div id="taste-picker" class="sess-picker"></div>
     </div>
   </div>
   <div id="taste-screen" class="hidden">
@@ -1787,8 +1827,7 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.56rem;
           <div style="font-family:'Playfair Display',serif;font-size:1.2rem;" id="taste-sess-name">—</div>
         </div>
         <div style="display:flex;align-items:center;gap:.65rem;flex-wrap:wrap;">
-          <span id="live-indicator" style="font-family:'Josefin Sans',sans-serif;font-size:.6rem;color:var(--smoke);display:flex;align-items:center;gap:.35rem;">⏳ Connecting…</span>
-          <button class="btn btn-outline btn-sm" onclick="resetTaste()">← Change Session</button>
+          <button class="btn-back" onclick="resetTaste()">‹ Change</button>
         </div>
       </div>
       <input type="hidden" id="taster-name" value="">
@@ -1850,14 +1889,7 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.56rem;
         </div>
       </div>
 
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.45rem;margin-bottom:.85rem;">
-        <div style="font-family:'Josefin Sans',sans-serif;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--smoke);">Rating System</div>
-        <div class="sys-tabs" style="margin-bottom:0;">
-          <button class="sys-tab active" onclick="setSys('100')" id="sys-100">100pt</button>
-          <!-- <button class="sys-tab" onclick="setSys('20')" id="sys-20">20pt</button>
-          <button class="sys-tab" onclick="setSys('5star')" id="sys-5star">5★</button> -->
-        </div>
-      </div>
+      <div class="sys-tabs" style="display:none;"><button class="sys-tab active" id="sys-100"></button></div>
       <div class="crit-grid" id="crit-grid"></div>
       <div class="total-row">
         <div><div class="total-lbl">Total Score</div><div style="font-size:.75rem;color:var(--smoke);margin-top:.12rem;" id="sys-lbl">100-point scale</div></div>
@@ -1871,7 +1903,7 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.56rem;
       <div id="rate-alert" class="alert"></div>
       <div class="btn-row">
         <button class="btn btn-gold" onclick="submitRating()"><svg class="ico"><use href="#ico-star"/></svg> Submit Rating</button>
-        <button class="btn btn-outline" onclick="backToSelector()">← All Wines</button>
+        <button class="btn btn-outline" onclick="backToSelector()">‹ Wines</button>
       </div>
     </div>
   </div>
@@ -1880,9 +1912,8 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.56rem;
 <!-- ══════════ RESULTS ══════════ -->
 <div id="tab-results" class="panel">
   <div class="card">
-    <div class="card-title"><svg class="ico"><use href="#ico-results"/></svg> Live Session Results</div>
     <div id="results-unlock">
-      <p style="color:var(--smoke);margin-bottom:.85rem;font-size:.9rem;">Enter the session code to view ratings in real time.</p>
+      <div id="results-picker" class="sess-picker" style="margin-top:0;margin-bottom:.9rem;"></div>
       <div style="display:flex;gap:.7rem;flex-wrap:wrap;align-items:flex-end;">
         <div class="field" style="flex:1;min-width:105px;">
           <label>Session Code</label>
@@ -1897,7 +1928,7 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.56rem;
         <div style="font-family:'Playfair Display',serif;font-size:1.15rem;font-style:italic;" id="res-sess-name">—</div>
         <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
 
-          <button class="btn btn-outline btn-sm" onclick="clearResults()" style="opacity:.75;">✕ Change</button>
+          <button class="btn-back" onclick="clearResults()">‹ Change</button>
           <!-- <button class="btn btn-primary btn-sm" onclick="exportResults()"><svg class="ico"><use href="#ico-export"/></svg> Export</button> -->
           <!-- <button class="btn btn-outline btn-sm" onclick="exportJSON()"><svg class="ico"><use href="#ico-export"/></svg> JSON Backup</button> -->
         </div>
@@ -1907,9 +1938,6 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.56rem;
         <div class="divider">Host Notes</div>
         <div id="host-notes-list"></div>
       </div>
-      <div class="btn-row" style="margin-top:1rem;">
-        <button class="btn btn-outline" onclick="clearResults()">← Back</button>
-      </div>
     </div>
   </div>
 </div>
@@ -1917,13 +1945,8 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.56rem;
 <!-- ══════════ HISTORY ══════════ -->
 <div id="tab-history" class="panel">
   <div class="card">
-    <div class="card-title"><svg class="ico"><use href="#ico-history"/></svg> Session History &amp; Statistics</div>
-    <div style="display:flex;gap:.55rem;flex-wrap:wrap;margin-bottom:1rem;">
-      <button class="btn btn-outline" onclick="this.style.opacity='0.5';loadHistory().finally?loadHistory().finally(()=>this.style.opacity='1'):setTimeout(()=>this.style.opacity='1',1000)" style="min-height:44px;"><svg class="ico"><use href="#ico-refresh"/></svg> Refresh</button>
-
-    </div>
     <div id="history-list">
-      <div class="empty-state"><div class="ei"><svg class="ico"><use href="#ico-archive"/></svg></div>No archived sessions yet.<br><small style="font-size:.8rem;">Archive a session from the Host tab to save it here.</small></div>
+      <div class="empty-state"><div class="ei"><svg class="ico"><use href="#ico-archive"/></svg></div>No archived sessions yet.</div>
     </div>
   </div>
   <div id="club-stats" class="card hidden">
@@ -1936,9 +1959,6 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.56rem;
 <!-- ══════════ MAP ══════════ -->
 <div id="tab-map" class="panel">
   <div class="card">
-    <div class="card-title"><svg class="ico"><use href="#ico-map"/></svg> Wine Origins Map
-      <span style="font-family:'Josefin Sans',sans-serif;font-size:.58rem;font-style:normal;color:var(--smoke);margin-left:.3rem;">all archived sessions</span>
-    </div>
     <div id="map-tab-empty" style="text-align:center;padding:2rem 1rem;color:var(--smoke);font-style:italic;">
       <div style="font-size:2rem;margin-bottom:.5rem;opacity:.4;"><svg class="ico"><use href="#ico-map"/></svg></div>
       No geo-tagged wines yet. Add winery locations when entering wines to see them here.
@@ -1946,9 +1966,9 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.56rem;
     <div id="map-tab-content" style="display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;margin-bottom:.8rem;">
         <div style="font-family:'Josefin Sans',sans-serif;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--smoke);">
-          <span id="map-tab-count">0</span> wineries plotted across all sessions
+          <span id="map-tab-count">0</span> wineries
         </div>
-        <button class="btn btn-outline btn-sm" onclick="loadMapTab()"><svg class="ico"><use href="#ico-refresh"/></svg> Refresh</button>
+        
       </div>
       <div class="map-container" id="map-tab-container" style="height:480px;"></div>
       <div class="map-legend" id="map-tab-legend" style="margin-top:.75rem;"></div>
@@ -1962,9 +1982,6 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.56rem;
 <!-- ══════════ AI ══════════ -->
 <div id="tab-ai" class="panel">
   <div id="ai-stats-card" class="card">
-    <div class="card-title"><svg class="ico"><use href="#ico-ai"/></svg> AI Wine Intelligence
-      <span style="font-family:'Josefin Sans',sans-serif;font-size:.56rem;font-style:normal;color:var(--smoke);margin-left:.4rem;">Ask anything about your collection</span>
-    </div>
     <div class="ai-chips" id="ai-chips">
       <!-- <span class="ai-chip" onclick="askChip(this)">Best rated grape variety</span>
       <span class="ai-chip" onclick="askChip(this)">Top 5 wines overall</span>
@@ -1987,13 +2004,12 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.56rem;
       </div>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;margin-top:.7rem;">
-      <div style="font-family:'Josefin Sans',sans-serif;font-size:.52rem;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke);opacity:.6;">Powered by Claude · Reads your archived session data</div>
+      <div></div>
       <button class="btn btn-outline btn-sm" onclick="clearAIKey()" style="font-size:.52rem;padding:.22rem .6rem;opacity:.6;"><svg class="ico"><use href="#ico-key"/></svg> Change API Key</button>
     </div>
   </div>
 </div>
 
-<div class="ornament">✦ ✦ ✦</div>
 </div><!-- /.app -->
 
 <script>
@@ -2677,6 +2693,7 @@ function spinnerHTML(label) {
 
 var TAB_ORDER = ['taste','results','history','map','ai'];
 
+var _navFromPop = false;
 var _lastNonHostTab = 'taste';
 
 function showTab(n, direction) {
@@ -2742,7 +2759,13 @@ function showTab(n, direction) {
     var cached = localStorage.getItem('vino_last_res_code');
     if (cached) {
       loadResults(cached);
+    } else {
+      renderSessionPicker('results-picker', 'results');
     }
+  }
+  if (!_navFromPop) {
+    try { history.pushState({ tab: n }, ''); } catch(e) {}
+    if (navigator.vibrate) { try { navigator.vibrate(6); } catch(e) {} }
   }
 }
 
@@ -3208,7 +3231,7 @@ async function unlockSession() {
         // Blind + no guesses, or blind + locked: no change needed
       }
     }
-    document.getElementById('live-indicator').innerHTML = '<span style="color:#7dffb0;font-size:1rem;">●</span> Live';
+
   });
   document.getElementById('unlock-screen').classList.add('hidden');
   document.getElementById('taste-screen').classList.remove('hidden');
@@ -3497,6 +3520,7 @@ function resetTaste() {
   document.getElementById('unlock-screen').classList.remove('hidden');
   document.getElementById('rating-card').classList.add('hidden');
   document.getElementById('unlock-alert').className = 'alert';
+  renderSessionPicker('taste-picker', 'taste');
 }
 
 // ═══════════════════════════════════════
@@ -3513,9 +3537,9 @@ const SYS = {
     ],
     badges: [
       {m:95, l:'Classic <svg class="ico"><use href="#ico-trophy"/></svg>',       c:'#C9A84C'},
-      {m:90, l:'Outstanding ⭐',   c:'#C9A84C'},
-      {m:85, l:'Very Good 👍',     c:'#A8C490'},
-      {m:80, l:'Good 🙂',          c:'#A8C490'},
+      {m:90, l:'Outstanding',   c:'#C9A84C'},
+      {m:85, l:'Very Good',     c:'#A8C490'},
+      {m:80, l:'Good',          c:'#A8C490'},
       {m:70, l:'Average',          c:'#8B7D7B'},
       {m:0,  l:'Below Average',    c:'#996666'}
     ]
@@ -3531,9 +3555,9 @@ const SYS = {
   //   ],
   //   badges: [
   //     {m:19, l:'Exceptional 🏆',   c:'#C9A84C'},
-  //     {m:17, l:'Very Fine ⭐',     c:'#C9A84C'},
-  //     {m:15, l:'Good 👍',          c:'#A8C490'},
-  //     {m:12, l:'Acceptable 🙂',    c:'#A8C490'},
+  //     {m:17, l:'Very Fine',     c:'#C9A84C'},
+  //     {m:15, l:'Good',          c:'#A8C490'},
+  //     {m:12, l:'Acceptable',    c:'#A8C490'},
   //     {m:0,  l:'Poor',             c:'#996666'}
   //   ]
   // },
@@ -3548,9 +3572,9 @@ const SYS = {
   //   ],
   //   badges: [
   //     {m:4.5, l:'Extraordinary 🏆', c:'#C9A84C'},
-  //     {m:4,   l:'Excellent ⭐',     c:'#C9A84C'},
-  //     {m:3,   l:'Good 👍',          c:'#A8C490'},
-  //     {m:2,   l:'Fair 🙂',          c:'#A8C490'},
+  //     {m:4,   l:'Excellent',     c:'#C9A84C'},
+  //     {m:3,   l:'Good',          c:'#A8C490'},
+  //     {m:2,   l:'Fair',          c:'#A8C490'},
   //     {m:0,   l:'Poor',             c:'#996666'}
   //   ]
   // }
@@ -3782,6 +3806,7 @@ function renderResults(c, sess) {
 
   // Always show the panel — display a waiting state if no ratings yet
   document.getElementById('res-content').classList.remove('hidden');
+  var ru = document.getElementById('results-unlock'); if (ru) ru.classList.add('hidden');
   if (!hasAny) {
     showAlert('res-alert', 'info', 'Session loaded — no ratings submitted yet. Updates automatically.');
     return;
@@ -3807,6 +3832,8 @@ function clearResults() {
   document.getElementById('res-alert').className = 'alert';
   document.getElementById('host-notes-sec').classList.add('hidden');
   localStorage.removeItem('vino_last_res_code');
+  var ru = document.getElementById('results-unlock'); if (ru) ru.classList.remove('hidden');
+  renderSessionPicker('results-picker', 'results');
 }
 
 async function exportResults() {
@@ -4100,6 +4127,7 @@ function showAlert(id, type, msg) {
   if (!e) return;
   // Clear any pending hide timer
   if (e._alertTimer) clearTimeout(e._alertTimer);
+  if (type === 'success') { e.className = 'alert'; showToast(msg); return; }
   e.className = 'alert ' + type;
   e.textContent = msg;
   e._alertTimer = setTimeout(() => { e.className = 'alert'; }, 5000);
@@ -5493,9 +5521,9 @@ function showGameResult(guess, wine) {
   const pts   = guess.points || 0;
   const pct   = Math.round(pts / GUESS_MAX * 100);
   const grade = pts >= 18 ? '<svg class="ico"><use href="#ico-trophy"/></svg> Perfect!'
-              : pts >= 14 ? '⭐ Excellent'
-              : pts >= 10 ? '👍 Good'
-              : pts >=  5 ? '🙂 Getting there'
+              : pts >= 14 ? 'Excellent'
+              : pts >= 10 ? 'Good'
+              : pts >=  5 ? 'Getting there'
               :              '<svg class="ico"><use href="#ico-bottle-red"/></svg> Keep tasting!';
 
   resultArea.innerHTML = `
@@ -5769,6 +5797,7 @@ function selectMember(name) {
 
 function applyMemberName(name) {
   if (!name) return;
+  updateMemberAvatar(name);
   // Set hidden taster field
   var tn = document.getElementById('taster-name');
   if (tn) tn.value = name;
@@ -5917,9 +5946,13 @@ function showWineModal(wineOrIdx) {
     + ratingsHtml
     + guessesHtml;
 
+  if (!modal.classList.contains('open')) {
+    try { history.pushState({ modal: true }, ''); _modalPushed = true; } catch(e) {}
+  }
   modal.classList.add('open');
   modal.style.display = 'flex';
   document.body.style.overflow = 'hidden';
+  var sh = document.getElementById('wine-info-sheet'); if (sh) { sh.style.transform = ''; sh.scrollTop = 0; }
 }
 
 function showTasterDetail(taster) {
@@ -5987,9 +6020,9 @@ function showTasterDetail(taster) {
 
     var gPts = guess.points || 0;
     var grade = gPts >= 18 ? '<svg class="ico"><use href="#ico-trophy"/></svg> Perfect!'
-              : gPts >= 14 ? '⭐ Excellent'
-              : gPts >= 10 ? '👍 Good'
-              : gPts >=  5 ? '🙂 Getting there'
+              : gPts >= 14 ? 'Excellent'
+              : gPts >= 10 ? 'Good'
+              : gPts >=  5 ? 'Getting there'
               :              'Keep tasting!';
 
     guessDetailHtml =
@@ -6020,7 +6053,10 @@ function showTasterDetail(taster) {
   cnt.scrollTop = 0;
 }
 
-function closeWineModal() {
+var _modalPushed = false;
+function closeWineModal(fromPop) {
+  if (!fromPop && _modalPushed) { _modalPushed = false; history.back(); return; }
+  _modalPushed = false;
   var modal = document.getElementById('wine-info-modal');
   if (modal) { modal.classList.remove('open'); modal.style.display = 'none'; }
   document.body.style.overflow = '';
@@ -6069,6 +6105,83 @@ function closeWineModal() {
   }, { passive: true });
 })();
 
+function changeMember() {
+  var ov = document.getElementById('welcome-overlay');
+  if (ov) ov.style.display = '';
+}
+
+function updateMemberAvatar(name) {
+  var a = document.getElementById('member-avatar');
+  if (a) { a.textContent = name ? name.trim()[0].toUpperCase() : '?'; a.title = name || ''; }
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  if (!t) { t = document.createElement('div'); t.id = 'toast'; document.body.appendChild(t); }
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._tm);
+  t._tm = setTimeout(function(){ t.classList.remove('show'); }, 2400);
+}
+
+async function renderSessionPicker(targetId, mode) {
+  var el = document.getElementById(targetId);
+  if (!el) return;
+  var sessions = await dbGet('sessions') || {};
+  var codes = Object.keys(sessions).filter(function(k) {
+    var s = sessions[k]; return s && !s.archived && (s.wines || []).length;
+  });
+  if (!codes.length) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="section-lbl" style="margin-top:.4rem;">Active sessions</div>'
+    + codes.map(function(k) {
+        var s = sessions[k];
+        var n = (s.wines || []).length;
+        var action = mode === 'taste' ? 'pickTasteSession(\'' + k + '\')' : 'loadResults(\'' + k + '\')';
+        return '<button class="sess-chip" onclick="' + action + '">'
+          + '<div><div class="sess-chip-name">' + (s.name || 'Session') + '</div>'
+          + '<div class="sess-chip-meta">' + (s.host ? s.host + ' · ' : '') + n + ' wine' + (n !== 1 ? 's' : '') + '</div></div>'
+          + '<div class="sess-chip-code">' + k + '</div>'
+          + '</button>';
+      }).join('');
+}
+
+function pickTasteSession(code) {
+  String(code).split('').forEach(function(ch, i) { if (digits[i]) digits[i].value = ch; });
+  unlockSession();
+}
+
+// Hardware / browser back button navigates inside the app
+window.addEventListener('popstate', function(e) {
+  var modal = document.getElementById('wine-info-modal');
+  if (modal && modal.classList.contains('open')) { closeWineModal(true); return; }
+  if (e.state && e.state.tab) {
+    _navFromPop = true;
+    try { showTab(e.state.tab); } finally { _navFromPop = false; }
+  }
+});
+
+// Swipe down on the wine sheet to dismiss it
+(function() {
+  var y0 = null, dy = 0;
+  document.addEventListener('touchstart', function(e) {
+    var sh = e.target.closest && e.target.closest('#wine-info-sheet');
+    if (!sh || sh.scrollTop > 0) { y0 = null; return; }
+    y0 = e.touches[0].clientY; dy = 0;
+  }, { passive: true });
+  document.addEventListener('touchmove', function(e) {
+    if (y0 === null) return;
+    dy = e.touches[0].clientY - y0;
+    var sh = document.getElementById('wine-info-sheet');
+    if (sh && dy > 0) sh.style.transform = 'translateY(' + dy + 'px)';
+  }, { passive: true });
+  document.addEventListener('touchend', function() {
+    if (y0 === null) return;
+    var sh = document.getElementById('wine-info-sheet');
+    if (dy > 90) closeWineModal(); else if (sh) sh.style.transform = '';
+    y0 = null; dy = 0;
+  }, { passive: true });
+})();
+
 function exitHost() {
   showTab(_lastNonHostTab || 'taste');
 }
@@ -6088,6 +6201,8 @@ renderHostPanel();
     if (ov) ov.style.display = 'none';
   }
   // else overlay stays visible
+  try { history.replaceState({ tab: 'taste' }, ''); } catch(e) {}
+  renderSessionPicker('taste-picker', 'taste');
 })();
 
 // Auto-unlock from QR URL param
