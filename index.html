@@ -31,19 +31,24 @@ body::before{content:'';position:fixed;inset:0;
 
 /* ── HEADER ── */
 header{
+  position:sticky;top:0;z-index:850;
   text-align:center;
-  padding:1rem 1rem .8rem;
+  padding:.55rem 1rem .5rem;
   border-bottom:1px solid var(--gb);
+  background:linear-gradient(to bottom,rgba(20,6,10,.97),rgba(20,6,10,.9));
+  backdrop-filter:blur(14px);
+  transition:padding .2s;
 }
-.logo-mark{display:inline-block;font-size:1.5rem;margin-bottom:.15rem;
-  filter:drop-shadow(0 0 14px rgba(201,168,76,.4));
+.logo-mark{display:inline-block;font-size:1.15rem;margin-bottom:.1rem;
+  filter:drop-shadow(0 0 10px rgba(201,168,76,.4));
   animation:float 4s ease-in-out infinite;}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 header h1{font-family:'Playfair Display',serif;
-  font-size:clamp(1.35rem,6vw,2.2rem);font-weight:700;color:var(--cream);}
+  font-size:clamp(1.05rem,4.5vw,1.5rem);font-weight:700;color:var(--cream);line-height:1.1;}
 header h1 span{color:var(--gold);font-style:italic;}
-header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
-  letter-spacing:.25em;text-transform:uppercase;color:var(--smoke);margin-top:.2rem;}
+header p{font-family:'Josefin Sans',sans-serif;font-size:.56rem;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--smoke);margin-top:.15rem;
+  transition:opacity .2s;}
 
 /* ── CONNECTION BAR ── */
 #conn-bar{display:none;align-items:center;justify-content:center;gap:.5rem;
@@ -81,8 +86,16 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
   cursor:pointer;transition:color .2s;
   padding:.4rem .1rem;
   position:relative;
-  /* remove old border-radius used for desktop pill */
 }
+.tab-btn::before{
+  content:'';position:absolute;top:1px;left:50%;
+  width:0;height:3px;border-radius:0 0 3px 3px;
+  background:var(--gold);transform:translateX(-50%);
+  transition:width .25s cubic-bezier(.34,1.56,.64,1);
+}
+.tab-btn.active::before{width:26px;}
+.tab-btn:active .tab-icon{transform:scale(.82);}
+.tab-btn.active .tab-icon{transform:scale(1.08);}
 .tab-btn .tab-icon{font-size:1.25rem;line-height:1;transition:transform .2s;}
 .tab-btn .tab-label{line-height:1;}
 .tab-btn::before{display:none;}  /* kill old gradient pseudo */
@@ -98,7 +111,11 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
 /* ── PANELS ── */
 .panel{display:none;padding:1rem;max-width:880px;margin:0 auto;}
 .panel.active{display:block;animation:fadeIn .3s ease;}
+.panel.active.slide-fwd{animation:slideInFromRight .3s cubic-bezier(.22,1,.36,1);}
+.panel.active.slide-back{animation:slideInFromLeft .3s cubic-bezier(.22,1,.36,1);}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideInFromRight{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideInFromLeft{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:translateX(0)}}
 
 /* ── CARD ── */
 .card{
@@ -1145,6 +1162,31 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
 .countdown-label.urgent{color:#ff9999;animation:pulse .6s ease-in-out infinite alternate;}
 @keyframes pulse{from{opacity:.6}to{opacity:1}}
 
+/* ── LOADING SPINNER ── */
+.spin-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:2.4rem 1rem;gap:.7rem;color:var(--smoke);}
+.spin-ring{width:34px;height:34px;border-radius:50%;
+  border:2.5px solid rgba(201,168,76,.18);border-top-color:var(--gold);
+  animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spin-label{font-family:'Josefin Sans',sans-serif;font-size:.6rem;
+  letter-spacing:.14em;text-transform:uppercase;}
+
+/* ── HOST FAB ── */
+.host-fab{
+  position:absolute;top:50%;right:.85rem;transform:translateY(-50%);
+  width:38px;height:38px;border-radius:50%;
+  background:linear-gradient(135deg,var(--gold),#8a6d1a);
+  border:1px solid rgba(255,255,255,.28);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 14px rgba(201,168,76,.4),0 2px 6px rgba(0,0,0,.35);
+  cursor:pointer;transition:transform .15s,box-shadow .2s;
+  color:#1a0a0e;padding:0;
+}
+.host-fab .ico{width:19px;height:19px;}
+.host-fab:active{transform:translateY(-50%) scale(.88);}
+.host-fab.active{box-shadow:0 0 0 2px var(--gold),0 4px 16px rgba(201,168,76,.6);}
+
 /* ── MISC ── */
 .alert{padding:.7rem .9rem;border-radius:8px;font-size:.88rem;margin:.55rem 0;display:none;}
 .alert.error{background:rgba(180,30,30,.2);border:1px solid rgba(180,30,30,.4);color:#ffaaaa;display:block;}
@@ -1586,17 +1628,20 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
 
 
 <header>
+  <button class="host-fab" id="host-fab" onclick="showTab('host')" aria-label="Host — create and manage tastings">
+    <svg class="ico"><use href="#ico-host"/></svg>
+  </button>
   <div class="logo-mark"><svg class="ico logo-ico"><use href="#ico-bottle-red"/></svg></div>
   <h1>Vin<span>tosserne</span></h1>
-  <p>Wine Tasting Club · Member Rating System</p>
+  <p id="header-subtitle">Taste · Rate wines blind</p>
 </header>
 
 <div class="tabs">
-  <button class="tab-btn" onclick="showTab('host')"><span><span class="tab-icon"><svg class="ico"><use href="#ico-host"/></svg></span><span class="tab-label">Host</span></span></button>
   <button class="tab-btn active" onclick="showTab('taste')"><span><span class="tab-icon"><svg class="ico"><use href="#ico-taste"/></svg></span><span class="tab-label">Taste</span></span></button>
   <button class="tab-btn" onclick="showTab('results')"><span><span class="tab-icon"><svg class="ico"><use href="#ico-results"/></svg></span><span class="tab-label">Results</span></span></button>
   <button class="tab-btn" onclick="showTab('history')"><span><span class="tab-icon"><svg class="ico"><use href="#ico-history"/></svg></span><span class="tab-label">History</span></span></button>
   <button class="tab-btn" onclick="showTab('map')"><span><span class="tab-icon"><svg class="ico"><use href="#ico-map"/></svg></span><span class="tab-label">Map</span></span></button>
+  <button class="tab-btn" onclick="showTab('ai')"><span><span class="tab-icon"><svg class="ico"><use href="#ico-ai"/></svg></span><span class="tab-label">AI</span></span></button>
 </div>
 
 <!-- ══════════ HOST ══════════ -->
@@ -1742,28 +1787,28 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
           </div>
           <div class="guess-row" id="guess-inputs">
             <div class="guess-field">
-              <span class="guess-label">Land</span>
-              <input class="guess-input" id="g-country" autocomplete="off">
+              <span class="guess-label">Country</span>
+              <input class="guess-input" id="g-country" placeholder="France…" autocomplete="off">
               <span class="guess-pts">2p</span>
             </div>
             <div class="guess-field">
               <span class="guess-label">Region</span>
-              <input class="guess-input" id="g-region" autocomplete="off">
+              <input class="guess-input" id="g-region" placeholder="Burgundy…" autocomplete="off">
               <span class="guess-pts">3p</span>
             </div>
             <div class="guess-field">
               <span class="guess-label">Appellation</span>
-              <input class="guess-input" id="g-appel" autocomplete="off">
+              <input class="guess-input" id="g-appel" placeholder="Gevrey…" autocomplete="off">
               <span class="guess-pts">5p</span>
             </div>
             <div class="guess-field">
-              <span class="guess-label">Druesort</span>
-              <input class="guess-input" id="g-grape" autocomplete="off">
+              <span class="guess-label">Grape</span>
+              <input class="guess-input" id="g-grape" placeholder="Pinot Noir…" autocomplete="off">
               <span class="guess-pts">8p</span>
             </div>
             <div class="guess-field">
-              <span class="guess-label">Årgang</span>
-              <input class="guess-input" id="g-vintage" inputmode="numeric" autocomplete="off">
+              <span class="guess-label">Vintage</span>
+              <input class="guess-input" id="g-vintage" placeholder="2019…" inputmode="numeric" autocomplete="off">
               <span class="guess-pts">2p</span>
             </div>
           </div>
@@ -1821,8 +1866,7 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.45rem;margin-bottom:1.2rem;">
         <div style="font-family:'Playfair Display',serif;font-size:1.15rem;font-style:italic;" id="res-sess-name">—</div>
         <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
-          <span class="code-badge" id="res-code-badge">—</span>
-          <span id="res-live-indicator" style="font-family:'Josefin Sans',sans-serif;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke);display:none;"></span>
+
           <button class="btn btn-outline btn-sm" onclick="clearResults()" style="opacity:.75;">✕ Change</button>
           <!-- <button class="btn btn-primary btn-sm" onclick="exportResults()"><svg class="ico"><use href="#ico-export"/></svg> Export</button> -->
           <!-- <button class="btn btn-outline btn-sm" onclick="exportJSON()"><svg class="ico"><use href="#ico-export"/></svg> JSON Backup</button> -->
@@ -1859,6 +1903,34 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
 
 </div>
 
+<!-- ══════════ MAP ══════════ -->
+<div id="tab-map" class="panel">
+  <div class="card">
+    <div class="card-title"><svg class="ico"><use href="#ico-map"/></svg> Wine Origins Map
+      <span style="font-family:'Josefin Sans',sans-serif;font-size:.58rem;font-style:normal;color:var(--smoke);margin-left:.3rem;">all archived sessions</span>
+    </div>
+    <div id="map-tab-empty" style="text-align:center;padding:2rem 1rem;color:var(--smoke);font-style:italic;">
+      <div style="font-size:2rem;margin-bottom:.5rem;opacity:.4;"><svg class="ico"><use href="#ico-map"/></svg></div>
+      No geo-tagged wines yet. Add winery locations when entering wines to see them here.
+    </div>
+    <div id="map-tab-content" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;margin-bottom:.8rem;">
+        <div style="font-family:'Josefin Sans',sans-serif;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--smoke);">
+          <span id="map-tab-count">0</span> wineries plotted across all sessions
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="loadMapTab()"><svg class="ico"><use href="#ico-refresh"/></svg> Refresh</button>
+      </div>
+      <div class="map-container" id="map-tab-container" style="height:480px;"></div>
+      <div class="map-legend" id="map-tab-legend" style="margin-top:.75rem;"></div>
+    </div>
+  </div>
+
+  <!-- Per-session breakdown -->
+  <div id="map-sessions-list"></div>
+</div>
+
+<!-- ══════════ AI ══════════ -->
+<div id="tab-ai" class="panel">
   <div id="ai-stats-card" class="card">
     <div class="card-title"><svg class="ico"><use href="#ico-ai"/></svg> AI Wine Intelligence
       <span style="font-family:'Josefin Sans',sans-serif;font-size:.56rem;font-style:normal;color:var(--smoke);margin-left:.4rem;">Ask anything about your collection</span>
@@ -1889,33 +1961,8 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.58rem;
       <button class="btn btn-outline btn-sm" onclick="clearAIKey()" style="font-size:.52rem;padding:.22rem .6rem;opacity:.6;"><svg class="ico"><use href="#ico-key"/></svg> Change API Key</button>
     </div>
   </div>
-
-
-<!-- ══════════ MAP ══════════ -->
-<div id="tab-map" class="panel">
-  <div class="card">
-    <div class="card-title"><svg class="ico"><use href="#ico-map"/></svg> Wine Origins Map
-      <span style="font-family:'Josefin Sans',sans-serif;font-size:.58rem;font-style:normal;color:var(--smoke);margin-left:.3rem;">all archived sessions</span>
-    </div>
-    <div id="map-tab-empty" style="text-align:center;padding:2rem 1rem;color:var(--smoke);font-style:italic;">
-      <div style="font-size:2rem;margin-bottom:.5rem;opacity:.4;"><svg class="ico"><use href="#ico-map"/></svg></div>
-      No geo-tagged wines yet. Add winery locations when entering wines to see them here.
-    </div>
-    <div id="map-tab-content" style="display:none;">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;margin-bottom:.8rem;">
-        <div style="font-family:'Josefin Sans',sans-serif;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--smoke);">
-          <span id="map-tab-count">0</span> wineries plotted across all sessions
-        </div>
-        <button class="btn btn-outline btn-sm" onclick="loadMapTab()"><svg class="ico"><use href="#ico-refresh"/></svg> Refresh</button>
-      </div>
-      <div class="map-container" id="map-tab-container" style="height:480px;"></div>
-      <div class="map-legend" id="map-tab-legend" style="margin-top:.75rem;"></div>
-    </div>
-  </div>
-
-  <!-- Per-session breakdown -->
-  <div id="map-sessions-list"></div>
 </div>
+
 <div class="ornament">✦ ✦ ✦</div>
 </div><!-- /.app -->
 
@@ -2436,9 +2483,24 @@ function makeAC(inp, getList, onPick) {
   };
   const pick = i => {
     inp.value = cur[i];
+    inp.dataset.acPicked = 'true';
     drop.classList.remove('open');
     if (onPick) onPick(cur[i]);
   };
+  // Clear on blur if value not picked from list (enforces list-only)
+  if (inp.dataset.acEnforce === 'true') {
+    inp.addEventListener('blur', function() {
+      const v = inp.value.trim();
+      if (!v) return;
+      const list = getList(v.toLowerCase());
+      const exact = list.some(x => x.toLowerCase() === v.toLowerCase());
+      if (!exact) {
+        inp.value = '';
+        inp.dataset.acPicked = '';
+        drop.classList.remove('open');
+      }
+    });
+  }
   const filt = () => {
     const q = inp.value.trim().toLowerCase();
     if (!q) { drop.classList.remove('open'); return; }
@@ -2485,11 +2547,11 @@ function wineFormHTML() {
     <div class="field full"><label>Navn / Producent *</label><input type="text" id="wf-name" placeholder="e.g. Château Margaux"></div>
     <div class="field"><label>Årgang</label><input type="number" id="wf-vintage" placeholder="2019" min="1900" max="2030"></div>
     <div class="field"><label>Vintype</label><select id="wf-type"><option value="">Select…</option>${WINE_TYPES.map(t => `<option value="${t}">${t}</option>`).join('')}</select></div>
-    <div class="field"><label>Land</label><input type="text" id="wf-country" placeholder="Start typing…" autocomplete="off"></div>
-    <div class="field"><label>Region</label><input type="text" id="wf-region" placeholder="Start typing…" autocomplete="off"></div>
-    <div class="field full"><label>Appellation / AOC / DOC / AVA</label><input type="text" id="wf-appel" placeholder="Start typing…" autocomplete="off" onblur="inferAndSetType()"></div>
+    <div class="field"><label>Land</label><input type="text" id="wf-country" placeholder="Start typing…" autocomplete="off" data-ac-enforce="true"></div>
+    <div class="field"><label>Region</label><input type="text" id="wf-region" placeholder="Start typing…" autocomplete="off" data-ac-enforce="true"></div>
+    <div class="field full"><label>Appellation / AOC / DOC / AVA</label><input type="text" id="wf-appel" placeholder="Start typing…" autocomplete="off" data-ac-enforce="true" onblur="inferAndSetType()"></div>
     <div class="field full"><label>Classification / Quality Level <span style="color:var(--smoke);font-weight:300;text-transform:none;font-size:.75rem;">— e.g. Grand Cru, Reserva, GG, Kabinett</span></label><input type="text" id="wf-classification" placeholder="Start typing or select…" autocomplete="off"></div>
-    <div class="field full"><label>Primær druesort</label><input type="text" id="wf-grapes" placeholder="e.g. Cabernet Sauvignon" onblur="inferAndSetType()"></div>
+    <div class="field full"><label>Primær druesort</label><input type="text" id="wf-grapes" placeholder="Start typing…" autocomplete="off" data-ac-enforce="true" onblur="inferAndSetType()"></div>
     <div class="field"><label>Alkohol (%)</label><input type="number" id="wf-abv" placeholder="e.g. 13.5"></div>
     <div class="field"><label>Pris (DKK)</label><input type="number" id="wf-price" placeholder="e.g. 250.00" min="0" step="0.01"></div>
     <div class="field full"><label>Host Noter (revealed after tasting)</label><textarea id="wf-notes" placeholder="Winemaker story, food pairing, impressions…"></textarea></div>
@@ -2534,6 +2596,34 @@ function initFormAC() {
   });
 }
 
+function initGuessAC() {
+  // Only init once — check if already wrapped
+  const gc = document.getElementById('g-country');
+  if (!gc || gc.closest('.ac-wrap')) return;
+
+  makeAC(gc, q => filt(COUNTRIES, q), () => {});
+
+  makeAC(document.getElementById('g-region'), q => {
+    const c = document.getElementById('g-country').value;
+    return filt([...new Set([...(REGIONS[c] || []), ...Object.values(REGIONS).flat()])], q);
+  }, () => {});
+
+  makeAC(document.getElementById('g-appel'), q => {
+    const r = document.getElementById('g-region').value;
+    return filt([...new Set([...(APPELLATIONS[r] || []), ...Object.values(APPELLATIONS).flat()])], q);
+  }, () => {});
+
+  makeAC(document.getElementById('g-grape'), q => {
+    return filt(Object.values(GRAPES).flat(), q);
+  }, () => {});
+
+  // Enforce list-only on all guess fields
+  ['g-country','g-region','g-appel','g-grape'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.dataset.acEnforce = 'true';
+  });
+}
+
 function clearWineForm() {
   ['wf-name','wf-vintage','wf-country','wf-region','wf-appel','wf-classification','wf-grapes','wf-abv','wf-notes','wf-location-search','wf-lat','wf-lng','wf-img-data'].forEach(id => {
     const e = document.getElementById(id); if (e) e.value = '';
@@ -2551,7 +2641,13 @@ function clearWineForm() {
 // ═══════════════════════════════════════
 //  TABS
 // ═══════════════════════════════════════
-function showTab(n) {
+function spinnerHTML(label) {
+  return '<div class="spin-wrap"><div class="spin-ring"></div><div class="spin-label">' + (label || 'Loading…') + '</div></div>';
+}
+
+var TAB_ORDER = ['taste','results','history','map','ai'];
+
+function showTab(n, direction) {
   // Stop results listener when navigating away
   if (n !== 'results' && resListener) { resListener(); resListener = null; }
   // When returning to taste tab, re-sync the countdown with live data
@@ -2574,12 +2670,30 @@ function showTab(n) {
   }
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  ['host','taste','results','history','map'].forEach((t, i) => {
+  TAB_ORDER.forEach((t, i) => {
     if (t === n) {
       document.querySelectorAll('.tab-btn')[i].classList.add('active');
-      document.getElementById('tab-' + t).classList.add('active');
+      var panelEl = document.getElementById('tab-' + t);
+      panelEl.classList.remove('slide-fwd', 'slide-back');
+      if (direction === 'fwd') panelEl.classList.add('slide-fwd');
+      else if (direction === 'back') panelEl.classList.add('slide-back');
+      panelEl.classList.add('active');
     }
   });
+  // Update header subtitle for orientation, and scroll to top on section change
+  var SECTION_META = {
+    host:    'Host · Create &amp; manage tastings',
+    taste:   'Taste · Rate wines blind',
+    results: 'Results · Live scores',
+    history: 'History · Past sessions',
+    map:     'Map · Wine origins',
+    ai:      'AI · Ask about your collection'
+  };
+  var subEl = document.getElementById('header-subtitle');
+  if (subEl && SECTION_META[n]) subEl.innerHTML = SECTION_META[n];
+  var fabEl = document.getElementById('host-fab');
+  if (fabEl) fabEl.classList.toggle('active', n === 'host');
+  window.scrollTo({ top: 0, behavior: 'auto' });
   if (n === 'history') loadHistory();
   if (n === 'map')     loadMapTab();
   if (n === 'results') {
@@ -2660,6 +2774,8 @@ async function createSession() {
 }
 
 async function renderHostPanel() {
+  const plEarly = document.getElementById('prev-sess-list');
+  if (plEarly) plEarly.innerHTML = spinnerHTML('Loading sessions…');
   let sessions = await dbGet('sessions');
   if (!sessions) sessions = {};
   const codes = Object.keys(sessions).filter(c => !sessions[c].archived);
@@ -3006,6 +3122,7 @@ async function unlockSession() {
   if (c.length !== 4) { showAlert('unlock-alert', 'error', 'Enter all 4 digits.'); return; }
   const sess = await dbGet('sessions/' + c);
   if (!sess) { showAlert('unlock-alert', 'error', 'Invalid code. Please check and try again.'); return; }
+  if (sess.archived) { showAlert('unlock-alert', 'error', 'This session has been archived and is now read-only. Find it in History.'); return; }
   if (!(sess.wines || []).length) { showAlert('unlock-alert', 'error', 'No wines in this session yet.'); return; }
   tasteCode = c;
   localStorage.setItem('vino_last_res_code', c);  // propagate to Results tab
@@ -3016,6 +3133,7 @@ async function unlockSession() {
   if (cdArea) cdArea.style.display = 'none';
   tasteListener = dbListen('sessions/' + c, data => {
     if (!data) return;
+    lockTasteIfArchived(data.archived);
     refreshWineSelector(data);
     if (tasteWineIdx !== null && !document.getElementById('rating-card').classList.contains('hidden')) {
       renderRevealArea(tasteWineIdx, data);
@@ -3172,6 +3290,33 @@ function stopCountdown() {
   if (_countdownInterval) { clearInterval(_countdownInterval); _countdownInterval = null; }
 }
 
+function lockTasteIfArchived(isArchived) {
+  var rateBtn  = document.querySelector('#rating-card .btn-gold');
+  var guessBtn = document.querySelector('#game-btn-row .btn-hide');
+  var banner   = document.getElementById('archived-lock-banner');
+  if (isArchived) {
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'archived-lock-banner';
+      banner.style.cssText = 'background:rgba(255,100,100,.1);border:1px solid rgba(255,100,100,.35);' +
+        'color:#ff9999;border-radius:10px;padding:.65rem .85rem;margin-bottom:1rem;' +
+        'font-family:Josefin Sans,sans-serif;font-size:.62rem;letter-spacing:.06em;text-align:center;';
+      banner.textContent = 'This session has been archived — read-only.';
+      var card = document.getElementById('rating-card');
+      if (card) card.insertBefore(banner, card.children[1] || null);
+    }
+    if (rateBtn)  { rateBtn.disabled = true; rateBtn.style.opacity = '.4'; rateBtn.style.pointerEvents = 'none'; }
+    if (guessBtn) { guessBtn.disabled = true; guessBtn.style.opacity = '.4'; guessBtn.style.pointerEvents = 'none'; }
+    stopCountdown();
+    var cdArea = document.getElementById('countdown-area');
+    if (cdArea) cdArea.style.display = 'none';
+  } else {
+    if (banner) banner.remove();
+    if (rateBtn)  { rateBtn.disabled = false; rateBtn.style.opacity = ''; rateBtn.style.pointerEvents = ''; }
+    if (guessBtn) { guessBtn.disabled = false; guessBtn.style.opacity = ''; guessBtn.style.pointerEvents = ''; }
+  }
+}
+
 function getTaster() {
   var el = document.getElementById('taster-name');
   // Fall back to localStorage if hidden input not yet set
@@ -3251,6 +3396,8 @@ async function openRating(idx) {
 
   document.getElementById('rating-card').classList.remove('hidden');
   document.getElementById('rating-card').scrollIntoView({behavior: 'smooth', block: 'start'});
+  // Init autocomplete on guess fields (idempotent — skips if already wired)
+  initGuessAC();
 }
 
 function renderRevealArea(idx, data) {
@@ -3424,6 +3571,7 @@ async function submitRating() {
   const score = Math.round(rawScore);   // schema: integer, not float
   const notes = document.getElementById('taste-notes').value.trim();
   const s = await dbGet('sessions/' + tasteCode);
+  if (s.archived) { showAlert('rate-alert', 'error', 'This session has been archived — ratings can no longer be changed.'); return; }
   const wine = s.wines[tasteWineIdx];
   if (!wine.ratings) wine.ratings = [];
   const ei = wine.ratings.findIndex(r => r.taster === taster);
@@ -3559,7 +3707,7 @@ function renderResults(c, sess) {
 
     var avgHTML = ''; // removed — score shown in image card
 
-    var thumbSrc = w.image ? w.image : '';
+        var thumbSrc = w.image ? w.image : '';
     var subParts = [w.type, w.country, w.grapes].filter(Boolean);
 
     // Ratings shown in modal — not in card
@@ -3661,6 +3809,8 @@ async function exportJSON() {
 // ═══════════════════════════════════════
 async function loadHistory() {
   _aiDataCtx = null; // invalidate AI cache on reload
+  const hlEarly = document.getElementById('history-list');
+  if (hlEarly) hlEarly.innerHTML = spinnerHTML('Loading history…');
   let archive = await dbGet('archive') || {};
   if (!useCloud) {
     const localSess = LOCAL.sessions || {};
@@ -3783,7 +3933,7 @@ async function loadHistory() {
       <div style="font-family:'Josefin Sans',sans-serif;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--smoke);margin-bottom:.65rem;">All-time top wines (by avg score)</div>
       ${(() => {
         _clubWines = allWines.filter(w => (w.ratings || []).length).map(w => {
-        const wr = w.ratings || [];
+          const wr = w.ratings || [];
           const wn = wr.map(r => r.system === '100' ? r.score : r.system === '20' ? (r.score/20)*100 : (r.score/5)*100);
           const wa = Math.round(wn.reduce((a,b)=>a+b)/wn.length*10)/10;
           // Sort ratings highest to lowest (normalised)
@@ -3810,7 +3960,7 @@ async function loadHistory() {
                 <div style="display:flex;align-items:baseline;gap:.25rem;margin-top:.3rem;">
                   <span style="font-family:Playfair Display,serif;font-weight:700;font-size:1.1rem;color:var(--gold);">${wa}</span>
                   <span style="font-family:Josefin Sans,sans-serif;font-size:.48rem;letter-spacing:.06em;color:var(--smoke);">/100 avg</span>
-          </div>
+                </div>
               </div>
               <div class="res-wine-tap-hint">tap for info</div>
             </div>
@@ -4188,8 +4338,8 @@ function renderSessionMap(containerId, legendId, session) {
       region:      w.region      || '',
       host:        session.host  || '',
       session:     session.name  || '',
-      score:       avg
-      // tasterCount: r.length
+      score:       avg,
+      tasterCount: r.length
     };
   });
   renderMap(containerId, pins);
@@ -5202,6 +5352,7 @@ async function submitGuess() {
     return;
   }
   const s = await dbGet('sessions/' + tasteCode);
+  if (s.archived) { showAlert('game-alert', 'error', 'This session has been archived — guesses can no longer be changed.'); return; }
   const wine = s.wines[tasteWineIdx];
   if (!wine) return;
 
@@ -5707,6 +5858,49 @@ function closeWineModal() {
   document.body.style.overflow = '';
 }
 
+// ═══════════════════════════════════════
+//  SWIPE NAVIGATION BETWEEN TABS
+// ═══════════════════════════════════════
+(function() {
+  var startX = 0, startY = 0, startTarget = null, tracking = false;
+
+  var IGNORE_SELECTOR = 'input,textarea,select,button,.ac-drop,.member-btn,' +
+    '#wine-info-modal,#welcome-overlay,.wine-info-sheet,.countdown-ring-container,' +
+    '.timer-input,.ai-messages,.ai-input-row,canvas,a';
+
+  document.addEventListener('touchstart', function(e) {
+    if (e.touches.length !== 1) { tracking = false; return; }
+    var t = e.touches[0];
+    startTarget = e.target;
+    // Don't track swipes that start on interactive/scrollable elements
+    if (startTarget.closest && startTarget.closest(IGNORE_SELECTOR)) { tracking = false; return; }
+    startX = t.clientX; startY = t.clientY;
+    tracking = true;
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e) {
+    if (!tracking) return;
+    tracking = false;
+    var t = e.changedTouches[0];
+    var dx = t.clientX - startX;
+    var dy = t.clientY - startY;
+    // Require a clear, mostly-horizontal swipe
+    if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+
+    var activePanel = document.querySelector('.panel.active');
+    if (!activePanel) return;
+    var curId = activePanel.id.replace('tab-', '');
+    var idx = TAB_ORDER.indexOf(curId);
+    if (idx < 0) return;
+
+    if (dx < 0 && idx < TAB_ORDER.length - 1) {
+      showTab(TAB_ORDER[idx + 1], 'fwd');
+    } else if (dx > 0 && idx > 0) {
+      showTab(TAB_ORDER[idx - 1], 'back');
+    }
+  }, { passive: true });
+})();
+
 // ── BOOT ──
 FB_URL = 'https://vintosserv2-default-rtdb.europe-west1.firebasedatabase.app';
 useCloud = true;
@@ -5739,7 +5933,7 @@ renderHostPanel();
 <div id="welcome-overlay">
   <div class="welcome-card">
     <div class="welcome-logo"><svg class="ico" style="width:2.5rem;height:2.5rem;"><use href="#ico-bottle-red"/></svg></div>
-    <div class="welcome-title">Vintosserne</div>
+    <div class="welcome-title">Vino Society</div>
     <div class="welcome-sub">Who are you?</div>
     <div class="member-grid">
           <button class="member-btn" onclick="selectMember('Nichlas')">Nichlas</button>
