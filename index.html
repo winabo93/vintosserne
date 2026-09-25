@@ -1006,7 +1006,23 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.56rem;
 .wine-info-img{
   width:90px;height:110px;border-radius:10px;object-fit:cover;
   border:2px solid var(--gold);box-shadow:0 8px 24px rgba(0,0,0,.5);flex-shrink:0;
+  cursor:pointer;padding:0;background:none;display:block;transition:transform .15s;
 }
+.wine-info-img:active{transform:scale(.96);}
+
+/* ── IMAGE LIGHTBOX ── */
+#img-lightbox{
+  display:none;position:fixed;inset:0;z-index:9998;
+  background:rgba(6,2,4,.94);backdrop-filter:blur(6px);
+  align-items:center;justify-content:center;padding:1.2rem;
+}
+#img-lightbox.open{display:flex;animation:fadeIn .2s ease;}
+#img-lightbox img{
+  max-width:100%;max-height:85vh;border-radius:12px;
+  box-shadow:0 20px 60px rgba(0,0,0,.6);
+  transition:transform .2s ease;touch-action:none;
+}
+#img-lightbox .wine-info-close{position:absolute;top:calc(env(safe-area-inset-top,0px) + .9rem);right:1rem;}
 .wine-info-img-placeholder{
   width:72px;height:90px;border-radius:10px;
   background:rgba(201,168,76,.06);border:1px solid var(--gb);
@@ -2579,7 +2595,9 @@ function validateLookups(ids, clearInvalid) {
     else if (!firstBad) firstBad = el;
   });
   if (firstBad) {
-    showToast('Choose ' + (LOOKUP_LABELS[firstBad.dataset.lookup] || 'a value') + ' from the list', 'error');
+    const label = LOOKUP_LABELS[firstBad.dataset.lookup] || 'value';
+    const bad = firstBad.value.trim();
+    showToast((bad ? '"' + bad + '" isn\'t a recognised ' + label : 'Choose a ' + label) + ' — pick one from the dropdown list.', 'error');
     firstBad.focus();
     return false;
   }
@@ -5978,7 +5996,7 @@ function showWineModal(wineOrIdx, _fromStack) {
   _currentModalWine = w;
 
   var imgHtml = w.image
-    ? '<img src="' + w.image + '" class="wine-info-img" alt="' + w.name + '">'
+    ? '<img src="' + w.image + '" class="wine-info-img" alt="' + w.name + '" onclick="openImgLightbox(this.src)">'
     : '<div class="wine-info-img-placeholder">' + (TE[w.type] || '<svg class="ico" style="width:2rem;height:2rem;"><use href="#ico-bottle-red"/></svg>') + '</div>';
 
   var meta = [
@@ -6091,6 +6109,41 @@ function showWineModal(wineOrIdx, _fromStack) {
   document.body.style.overflow = 'hidden';
   var sh = document.getElementById('wine-info-sheet'); if (sh) { sh.style.transform = ''; sh.scrollTop = 0; }
 }
+
+var _lightboxPushed = false;
+function openImgLightbox(src) {
+  var lb = document.getElementById('img-lightbox');
+  var im = document.getElementById('img-lightbox-img');
+  if (!lb || !im) return;
+  im.src = src; im.style.transform = '';
+  lb.classList.add('open');
+  try { history.pushState({ lightbox: true }, ''); _lightboxPushed = true; } catch(e) {}
+}
+function closeImgLightbox(fromPop) {
+  var lb = document.getElementById('img-lightbox');
+  if (lb) lb.classList.remove('open');
+  if (!fromPop && _lightboxPushed) { _lightboxPushed = false; history.back(); }
+  else _lightboxPushed = false;
+}
+(function() {
+  var y0 = null, dy = 0;
+  document.addEventListener('touchstart', function(e) {
+    if (!e.target.closest || !e.target.closest('#img-lightbox-img')) { y0 = null; return; }
+    y0 = e.touches[0].clientY; dy = 0;
+  }, { passive: true });
+  document.addEventListener('touchmove', function(e) {
+    if (y0 === null) return;
+    dy = e.touches[0].clientY - y0;
+    var im = document.getElementById('img-lightbox-img');
+    if (im && dy > 0) im.style.transform = 'translateY(' + dy + 'px) scale(' + Math.max(.75, 1 - dy / 600) + ')';
+  }, { passive: true });
+  document.addEventListener('touchend', function() {
+    if (y0 === null) return;
+    var im = document.getElementById('img-lightbox-img');
+    if (dy > 90) closeImgLightbox(); else if (im) im.style.transform = '';
+    y0 = null; dy = 0;
+  }, { passive: true });
+})();
 
 function showTasterDetail(taster, _fromStack) {
   if (!_fromStack) { var _w = _currentModalWine; _sheetStack.push(function(){ _currentModalWine = _w; showTasterDetail(taster, true); }); }
@@ -6261,7 +6314,7 @@ function showToast(msg, type) {
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(t._tm);
-  t._tm = setTimeout(function(){ t.classList.remove('show'); }, 2400);
+  t._tm = setTimeout(function(){ t.classList.remove('show'); }, type === 'error' ? 3400 : 2400);
 }
 
 async function renderSessionPicker(targetId, mode) {
@@ -6292,6 +6345,8 @@ function pickTasteSession(code) {
 
 // Hardware / browser back button navigates inside the app
 window.addEventListener('popstate', function(e) {
+  var lbEl = document.getElementById('img-lightbox');
+  if (lbEl && lbEl.classList.contains('open')) { closeImgLightbox(true); return; }
   var modal = document.getElementById('wine-info-modal');
   if (modal && modal.classList.contains('open')) {
     if (_sheetStack.length > 1) {
@@ -6393,6 +6448,10 @@ renderHostPanel();
   </div>
 </div>
 
+<div id="img-lightbox" onclick="if(event.target===this)closeImgLightbox()">
+  <button class="wine-info-close" onclick="closeImgLightbox()" aria-label="Close image">✕</button>
+  <img id="img-lightbox-img" src="" alt="">
+</div>
 <div id="wine-info-modal" onclick="if(event.target===this)closeWineModal()">
   <div class="wine-info-sheet" id="wine-info-sheet">
     <div class="wine-info-handle"></div>
