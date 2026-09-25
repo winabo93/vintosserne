@@ -1208,13 +1208,6 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.56rem;
 .taster-clickable{cursor:pointer;transition:opacity .15s;display:flex;align-items:center;gap:.3rem;}
 .taster-clickable:active{opacity:.6;}
 .taster-clickable .chev{font-size:.7rem;opacity:.4;}
-.detail-back-btn{
-  display:inline-flex;align-items:center;gap:.35rem;
-  background:none;border:none;color:var(--smoke);cursor:pointer;
-  font-family:'Josefin Sans',sans-serif;font-size:.6rem;letter-spacing:.1em;
-  text-transform:uppercase;padding:.3rem 0;margin-bottom:.9rem;
-}
-.detail-back-btn:active{color:var(--gold);}
 .detail-crit-row{margin-bottom:.65rem;}
 .detail-crit-lbl{display:flex;justify-content:space-between;font-family:'Josefin Sans',sans-serif;
   font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;color:var(--smoke);margin-bottom:.25rem;}
@@ -6015,10 +6008,9 @@ function showTasterDetail(taster) {
     : '';
 
   cnt.innerHTML =
-    '<button class="detail-back-btn" onclick="showWineModal(_currentModalWine)">‹ Back to ' + w.name + '</button>'
-    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.3rem;">'
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.3rem;">'
       + '<div class="wine-info-title" style="font-size:1.15rem;">' + taster + '</div>'
-      + '<button class="wine-info-close" onclick="closeWineModal()">✕</button>'
+      + '<button class="wine-info-close" onclick="showWineModal(_currentModalWine)" title="Back to wine">✕</button>'
     + '</div>'
     + '<div style="font-family:Josefin Sans,sans-serif;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke);margin-bottom:1rem;">' + w.name + (w.vintage ? ' ' + w.vintage : '') + '</div>'
     + ratingDetailHtml
