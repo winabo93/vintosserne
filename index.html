@@ -1646,6 +1646,7 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.56rem;
 
 <!-- ══════════ HOST ══════════ -->
 <div id="tab-host" class="panel">
+  <button class="btn btn-outline btn-sm" onclick="exitHost()" style="margin-bottom:.85rem;"><svg class="ico"><use href="#ico-delete"/></svg> Close Host</button>
   <div id="host-new">
     <div class="card">
       <div class="card-title"><svg class="ico"><use href="#ico-bottle-red"/></svg> Create Tasting Session</div>
@@ -2647,7 +2648,15 @@ function spinnerHTML(label) {
 
 var TAB_ORDER = ['taste','results','history','map','ai'];
 
+var _lastNonHostTab = 'taste';
+
 function showTab(n, direction) {
+  // Remember where we came from, so Host's back button can return there
+  var curActive = document.querySelector('.panel.active');
+  if (curActive) {
+    var curId = curActive.id.replace('tab-', '');
+    if (curId !== 'host' && TAB_ORDER.indexOf(curId) >= 0) _lastNonHostTab = curId;
+  }
   // Stop results listener when navigating away
   if (n !== 'results' && resListener) { resListener(); resListener = null; }
   // When returning to taste tab, re-sync the countdown with live data
@@ -2669,17 +2678,21 @@ function showTab(n, direction) {
     }
   }
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  TAB_ORDER.forEach((t, i) => {
-    if (t === n) {
-      document.querySelectorAll('.tab-btn')[i].classList.add('active');
-      var panelEl = document.getElementById('tab-' + t);
-      panelEl.classList.remove('slide-fwd', 'slide-back');
-      if (direction === 'fwd') panelEl.classList.add('slide-fwd');
-      else if (direction === 'back') panelEl.classList.add('slide-back');
-      panelEl.classList.add('active');
-    }
-  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active', 'slide-fwd', 'slide-back'));
+  // Highlight the matching bottom-nav button, if this tab is part of the nav row
+  var navIdx = TAB_ORDER.indexOf(n);
+  if (navIdx >= 0) {
+    var navBtn = document.querySelectorAll('.tab-btn')[navIdx];
+    if (navBtn) navBtn.classList.add('active');
+  }
+  // Show the panel regardless of whether it lives in the bottom nav
+  // (the Host panel is reached via the header FAB, not TAB_ORDER)
+  var panelEl = document.getElementById('tab-' + n);
+  if (panelEl) {
+    if (direction === 'fwd') panelEl.classList.add('slide-fwd');
+    else if (direction === 'back') panelEl.classList.add('slide-back');
+    panelEl.classList.add('active');
+  }
   // Update header subtitle for orientation, and scroll to top on section change
   var SECTION_META = {
     host:    'Host · Create &amp; manage tastings',
@@ -5900,6 +5913,10 @@ function closeWineModal() {
     }
   }, { passive: true });
 })();
+
+function exitHost() {
+  showTab(_lastNonHostTab || 'taste');
+}
 
 // ── BOOT ──
 FB_URL = 'https://vintosserv2-default-rtdb.europe-west1.firebasedatabase.app';
