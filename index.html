@@ -1020,7 +1020,7 @@ header p{font-family:'Josefin Sans',sans-serif;font-size:.56rem;
 #img-lightbox img{
   max-width:100%;max-height:85vh;border-radius:12px;
   box-shadow:0 20px 60px rgba(0,0,0,.6);
-  transition:transform .2s ease;touch-action:none;
+  touch-action:none;will-change:transform;transform-origin:center center;
 }
 #img-lightbox .wine-info-close{position:absolute;top:calc(env(safe-area-inset-top,0px) + .9rem);right:1rem;}
 .wine-info-img-placeholder{
@@ -6115,33 +6115,100 @@ function openImgLightbox(src) {
   var lb = document.getElementById('img-lightbox');
   var im = document.getElementById('img-lightbox-img');
   if (!lb || !im) return;
-  im.src = src; im.style.transform = '';
+  im.src = src;
+  if (window._resetLightboxZoom) window._resetLightboxZoom();
   lb.classList.add('open');
   try { history.pushState({ lightbox: true }, ''); _lightboxPushed = true; } catch(e) {}
 }
 function closeImgLightbox(fromPop) {
+  if (!fromPop && _lightboxPushed) { _lightboxPushed = false; history.back(); return; }
+  _lightboxPushed = false;
   var lb = document.getElementById('img-lightbox');
   if (lb) lb.classList.remove('open');
-  if (!fromPop && _lightboxPushed) { _lightboxPushed = false; history.back(); }
-  else _lightboxPushed = false;
+  if (window._resetLightboxZoom) window._resetLightboxZoom();
 }
 (function() {
-  var y0 = null, dy = 0;
+  var scale = 1, tx = 0, ty = 0;
+  var startScale = 1, startDist = 0, startMidX = 0, startMidY = 0, startTx = 0, startTy = 0;
+  var dragging = false, dragX = 0, dragY = 0, dragStartTx = 0, dragStartTy = 0;
+  var swipeY0 = null, swipeDy = 0;
+  var lastTapTime = 0, lastTapX = 0, lastTapY = 0;
+
+  function getImg() { return document.getElementById('img-lightbox-img'); }
+  function apply(withTransition) {
+    var el = getImg(); if (!el) return;
+    el.style.transition = withTransition ? 'transform .2s ease' : 'none';
+    el.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + scale + ')';
+  }
+  window._resetLightboxZoom = function() {
+    scale = 1; tx = 0; ty = 0; startDist = 0; dragging = false; swipeY0 = null; lastTapTime = 0;
+    var el = getImg(); if (el) { el.style.transition = 'none'; el.style.transform = ''; }
+  };
+  function dist(a, b) { return Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY); }
+  function mid(a, b) { return { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 }; }
+
   document.addEventListener('touchstart', function(e) {
-    if (!e.target.closest || !e.target.closest('#img-lightbox-img')) { y0 = null; return; }
-    y0 = e.touches[0].clientY; dy = 0;
+    if (!e.target.closest || !e.target.closest('#img-lightbox-img')) return;
+    if (e.touches.length === 2) {
+      swipeY0 = null; dragging = false;
+      startDist = dist(e.touches[0], e.touches[1]);
+      startScale = scale;
+      var m = mid(e.touches[0], e.touches[1]);
+      startMidX = m.x; startMidY = m.y; startTx = tx; startTy = ty;
+    } else if (e.touches.length === 1) {
+      var now = Date.now();
+      var px = e.touches[0].clientX, py = e.touches[0].clientY;
+      var closeEnough = Math.hypot(px - lastTapX, py - lastTapY) < 40;
+      if (now - lastTapTime < 300 && closeEnough) {
+        lastTapTime = 0; swipeY0 = null; dragging = false;
+        if (scale > 1) { scale = 1; tx = 0; ty = 0; } else { scale = 2.5; }
+        apply(true);
+        return;
+      }
+      lastTapTime = now; lastTapX = px; lastTapY = py;
+      if (scale > 1) {
+        dragging = true; dragX = e.touches[0].clientX; dragY = e.touches[0].clientY;
+        dragStartTx = tx; dragStartTy = ty; swipeY0 = null;
+      } else {
+        swipeY0 = e.touches[0].clientY; swipeDy = 0; dragging = false;
+      }
+    }
   }, { passive: true });
+
   document.addEventListener('touchmove', function(e) {
-    if (y0 === null) return;
-    dy = e.touches[0].clientY - y0;
-    var im = document.getElementById('img-lightbox-img');
-    if (im && dy > 0) im.style.transform = 'translateY(' + dy + 'px) scale(' + Math.max(.75, 1 - dy / 600) + ')';
+    if (!getImg()) return;
+    if (e.touches.length === 2 && startDist > 0) {
+      var d = dist(e.touches[0], e.touches[1]);
+      var m = mid(e.touches[0], e.touches[1]);
+      scale = Math.min(4, Math.max(1, startScale * (d / startDist)));
+      tx = startTx + (m.x - startMidX); ty = startTy + (m.y - startMidY);
+      apply(false);
+      return;
+    }
+    if (e.touches.length === 1 && scale > 1) {
+      if (!dragging) { dragging = true; dragX = e.touches[0].clientX; dragY = e.touches[0].clientY; dragStartTx = tx; dragStartTy = ty; }
+      tx = dragStartTx + (e.touches[0].clientX - dragX);
+      ty = dragStartTy + (e.touches[0].clientY - dragY);
+      apply(false);
+      return;
+    }
+    if (swipeY0 !== null && e.touches.length === 1) {
+      swipeDy = e.touches[0].clientY - swipeY0;
+      var el = getImg();
+      if (el && swipeDy > 0) { el.style.transition = 'none'; el.style.transform = 'translateY(' + swipeDy + 'px) scale(' + Math.max(.75, 1 - swipeDy / 600) + ')'; }
+    }
   }, { passive: true });
-  document.addEventListener('touchend', function() {
-    if (y0 === null) return;
-    var im = document.getElementById('img-lightbox-img');
-    if (dy > 90) closeImgLightbox(); else if (im) im.style.transform = '';
-    y0 = null; dy = 0;
+
+  document.addEventListener('touchend', function(e) {
+    if (e.touches.length > 0) return;
+    startDist = 0;
+    if (dragging) { dragging = false; return; }
+    if (swipeY0 !== null) {
+      if (swipeDy > 90) closeImgLightbox();
+      else apply(true);
+      swipeY0 = null; swipeDy = 0;
+    }
+    if (scale < 1) { scale = 1; apply(true); }
   }, { passive: true });
 })();
 
@@ -6262,7 +6329,7 @@ function closeWineModal(fromPop) {
 
   var IGNORE_SELECTOR = 'input,textarea,select,button,.ac-drop,.member-btn,' +
     '#wine-info-modal,#welcome-overlay,.wine-info-sheet,.countdown-ring-container,' +
-    '.timer-input,.ai-messages,.ai-input-row,canvas,a';
+    '#img-lightbox,.timer-input,.ai-messages,.ai-input-row,canvas,a';
 
   document.addEventListener('touchstart', function(e) {
     if (e.touches.length !== 1) { tracking = false; return; }
