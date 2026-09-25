@@ -3641,24 +3641,14 @@ async function loadResults(codeOverride) {
   localStorage.setItem('vino_last_res_code', c);
 
   resListener = dbListen(resPath, function(data) {
-    console.log('[loadResults] callback data=', data ? 'ok' : 'null', 'wines=', data ? (data.wines||[]).length : 0);
     if (!data) return;
     renderResults(c, data);
   });
-  console.log('[loadResults] listener started on', resPath);
 }
 
 
 function renderResults(c, sess) {
-  console.log('[renderResults] called, sess=', sess ? sess.name : 'null', 'wines=', (sess.wines||[]).length);
   document.getElementById('res-sess-name').textContent = sess.name;
-  document.getElementById('res-code-badge').textContent = 'Code ' + c;
-  // Live indicator
-  var liveEl = document.getElementById('res-live-indicator');
-  if (liveEl) {
-    liveEl.style.display = 'inline';
-    liveEl.innerHTML = '<span style="color:#7dffb0;margin-right:.25rem;">●</span>Live';
-  }
   document.getElementById('res-content').dataset.code = c;
   var hasAny = false;
   var notes = [];
