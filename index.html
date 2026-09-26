@@ -3884,7 +3884,12 @@ function tabTap(n) {
   }
   if (n === 'taste') {
     var rc = document.getElementById('rating-card');
-    if (rc && !rc.classList.contains('hidden')) { saveDraft(); backToSelector(); }
+    if (rc && !rc.classList.contains('hidden')) saveDraft();   // unsent changes survive
+    if (tasteCode) resetTaste();                              // → active sessions list
+  }
+  if (n === 'results') {
+    var rcont = document.getElementById('res-content');
+    if (rcont && !rcont.classList.contains('hidden')) clearResults();   // → sessions list
   }
   showTab(n);
 }
