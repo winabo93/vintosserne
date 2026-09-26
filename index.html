@@ -1280,6 +1280,24 @@ input.lk-invalid,.field input.lk-invalid,.guess-input.lk-invalid{border-color:#f
 .hist-host-row:active{background:rgba(201,168,76,.1);border-color:var(--gold);}
 .hist-chev{color:var(--gold);opacity:.6;font-size:1.2rem;}
 
+/* ── S1 host progress · S2 reveal next · S7 wine nav · S8 rank ── */
+.wrow-prog{font-family:'Josefin Sans',sans-serif;font-size:.52rem;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--smoke);margin-top:.15rem;}
+.wrow-prog b{color:var(--pale-gold);font-weight:600;}
+.wrow-prog.all-done b{color:#7dffb0;}
+.btn-reveal-next{width:100%;margin-bottom:.45rem;}
+.rate-nav{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin:-.35rem 0 .9rem;}
+.rate-nav button{background:none;border:1px solid var(--gb);color:var(--cream);border-radius:18px;
+  padding:.35rem .8rem;font-family:'Josefin Sans',sans-serif;font-size:.58rem;letter-spacing:.1em;
+  text-transform:uppercase;cursor:pointer;min-height:34px;}
+.rate-nav button:disabled{opacity:.25;cursor:default;}
+.rate-nav button:not(:disabled):active{border-color:var(--gold);color:var(--gold);}
+.rate-pos{font-family:'Josefin Sans',sans-serif;font-size:.56rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--smoke);}
+.game-rank{margin-top:.7rem;text-align:center;font-family:'Josefin Sans',sans-serif;font-size:.62rem;
+  letter-spacing:.1em;text-transform:uppercase;color:#c8c8ff;}
+.game-rank b{color:#7dffb0;font-size:.8rem;}
+
 /* ── MISC ── */
 .alert{padding:.7rem .9rem;border-radius:8px;font-size:.88rem;margin:.55rem 0;display:none;}
 .alert.error{background:rgba(180,30,30,.2);border:1px solid rgba(180,30,30,.4);color:#ffaaaa;display:block;}
@@ -1806,6 +1824,7 @@ input.lk-invalid,.field input.lk-invalid,.guess-input.lk-invalid{border-color:#f
       <div class="wine-list" id="wine-list-host"></div>
       <p id="no-wines" style="text-align:center;color:var(--smoke);padding:.7rem;font-style:italic;font-size:.93rem;">No wines yet. Add your first wine below.</p>
       <div id="bulk-controls" class="hidden" style="display:none;margin-top:.55rem;padding-top:.55rem;border-top:1px solid var(--gb);">
+        <button class="btn btn-reveal btn-reveal-next" id="reveal-next-btn" onclick="revealNext()"><svg class="ico"><use href="#ico-reveal"/></svg> <span id="reveal-next-lbl">Reveal next</span></button>
         <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
           <button class="btn btn-reveal btn-sm" style="flex:1;" onclick="bulkReveal(true)"><svg class="ico"><use href="#ico-reveal"/></svg> Reveal All</button>
           <button class="btn btn-hide btn-sm" style="flex:1;" onclick="bulkReveal(false)"><svg class="ico"><use href="#ico-blind"/></svg> Hide All</button>
@@ -1860,6 +1879,11 @@ input.lk-invalid,.field input.lk-invalid,.guess-input.lk-invalid{border-color:#f
     </div>
     <div id="rating-card" class="card hidden">
       <div class="card-title" id="rating-title"><svg class="ico"><use href="#ico-bottle-red"/></svg> Rating Wine</div>
+      <div class="rate-nav">
+        <button id="rate-prev" onclick="rateNav(-1)" aria-label="Previous wine">‹ Prev</button>
+        <span class="rate-pos" id="rate-pos"></span>
+        <button id="rate-next" onclick="rateNav(1)" aria-label="Next wine">Next ›</button>
+      </div>
       <div id="wine-reveal-area" style="margin-bottom:1.3rem;"></div>
       <!-- Blind guessing game — only shown when wine is not yet revealed -->
       <div id="blind-game-section" class="hidden">
@@ -2418,18 +2442,22 @@ function saveLocal() { try { localStorage.setItem('vino_v5', JSON.stringify(LOCA
 
 function setLocal(path, val) {
   const parts = path.split('/').filter(Boolean);
-  let cur = LOCAL;
+  let cur = LOCAL, parent = null, pkey = null;
   for (let i = 0; i < parts.length - 1; i++) {
     if (!cur[parts[i]] || typeof cur[parts[i]] !== 'object') cur[parts[i]] = {};
+    // A named key under an array (e.g. ratings/Nichlas) would be dropped by JSON — convert to object
+    if (Array.isArray(cur[parts[i]]) && !/^\d+$/.test(parts[i + 1])) cur[parts[i]] = Object.assign({}, cur[parts[i]]);
     cur = cur[parts[i]];
   }
-  cur[parts[parts.length - 1]] = val;
+  // Store a private copy so later cache edits never mutate objects the UI is holding
+  cur[parts[parts.length - 1]] = (val && typeof val === 'object') ? JSON.parse(JSON.stringify(val)) : val;
 }
 function getLocal(path) {
   const parts = path.split('/').filter(Boolean);
   let cur = LOCAL;
   for (const p of parts) { if (cur == null || typeof cur !== 'object') return null; cur = cur[p]; }
-  return cur ?? null;
+  if (cur == null) return null;
+  return (typeof cur === 'object') ? normalizeData(JSON.parse(JSON.stringify(cur))) : cur;
 }
 
 // ── Firebase REST helpers ──
@@ -2445,7 +2473,57 @@ async function fbSet(path, val) {
 async function fbGet(path) {
   const r = await fetch(`${FB_URL}/${path}.json`);
   if (!r.ok) throw new Error('fbGet ' + r.status);
-  return r.json();
+  return normalizeData(await r.json());
+}
+
+// Multi-path update: only the listed child paths change, so concurrent writers never overwrite each other
+async function fbPatch(path, updates) {
+  const r = await fetch(`${FB_URL}/${path}.json`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates)
+  });
+  if (!r.ok) throw new Error('fbPatch ' + r.status);
+}
+
+// Firebase key for a taster (keys may not contain . # $ [ ] /)
+function fbKey(name) { return String(name || 'unknown').replace(/[.#$\[\]\/]/g, '_'); }
+
+// Ratings/guesses are stored keyed by taster (so each person writes only their own slot).
+// Older data stored them as arrays. Normalise both shapes to arrays for the rest of the app,
+// de-duplicate per taster (keyed entry wins over legacy array entry), and score any
+// guesses on already-revealed wines so results are always complete.
+function _toList(v, preferKeyed) {
+  if (!v) return [];
+  if (Array.isArray(v)) return v.filter(x => x != null);
+  const keys = Object.keys(v);
+  if (!preferKeyed) return keys.sort((a, b) => (+a) - (+b)).map(k => v[k]).filter(x => x != null);
+  const byTaster = {}, order = [];
+  keys.forEach(k => {
+    const e = v[k]; if (!e) return;
+    const t = e.taster || k, keyed = !/^\d+$/.test(k);
+    if (!(t in byTaster)) order.push(t);
+    if (!(t in byTaster) || keyed || !byTaster[t].keyed) byTaster[t] = { e, keyed };
+  });
+  return order.map(t => byTaster[t].e);
+}
+function normalizeWine(w) {
+  if (!w || typeof w !== 'object') return w;
+  if (w.ratings !== undefined) w.ratings = _toList(w.ratings, true);
+  if (w.guesses !== undefined) w.guesses = _toList(w.guesses, true);
+  if (w.revealed && w.guesses && typeof scoreGuess === 'function') {
+    w.guesses = w.guesses.map(g => (g && !g.scored) ? scoreGuess(g, w) : g);
+  }
+  return w;
+}
+function normalizeData(v) {
+  if (!v || typeof v !== 'object') return v;
+  if (v.wines !== undefined) { v.wines = _toList(v.wines, false).map(normalizeWine); return v; }
+  Object.keys(v).forEach(k => {
+    const x = v[k];
+    if (x && typeof x === 'object' && x.wines !== undefined) normalizeData(x);
+  });
+  return v;
 }
 
 async function fbDelete(path) {
@@ -2453,6 +2531,14 @@ async function fbDelete(path) {
 }
 
 // ── Unified DB API ──
+async function dbPatch(path, updates) {
+  Object.keys(updates).forEach(k => setLocal(path + '/' + k, updates[k]));
+  saveLocal();
+  if (useCloud) {
+    try { await fbPatch(path, updates); }
+    catch(e) { setConnBar('offline'); console.warn('dbPatch failed:', e.message); }
+  }
+}
 async function dbSet(path, val) {
   setLocal(path, val); saveLocal();       // write cache immediately
   if (useCloud) {
@@ -2890,7 +2976,7 @@ function schemaTime(d) {
 
 async function createSession() {
   const name = document.getElementById('sess-name-inp').value.trim() || 'Wine Evening';
-  const host = document.getElementById('sess-host-inp').value.trim();
+  let host   = document.getElementById('sess-host-inp').value.trim();
   const pw   = document.getElementById('sess-pass-inp').value.trim();
   if (!host) host = localStorage.getItem('vino_member_name') || 'Host';
   if (!pw)   { showAlert('host-alert', 'error', 'Please set a host password.'); return; }
@@ -2912,7 +2998,7 @@ async function createSession() {
   sessionStorage.setItem('host_auth_' + code, '1');
   showAlert('host-alert', 'success', `Session "${name}" created! Code: ${code}`);
   document.getElementById('sess-pass-inp').value = '';
-  document.getElementById('sess-host-inp').value = '';
+  document.getElementById('sess-host-inp').value = localStorage.getItem('vino_member_name') || host;
   renderHostPanel();
 }
 
@@ -2995,6 +3081,7 @@ function cancelHostAuth() {
   document.getElementById('host-auth-overlay').style.display = 'none';
 }
 function closeSession() {
+  stopHostLive();
   stopHostTimerTick();
   activeCode = null;
   renderHostPanel();
@@ -3065,6 +3152,7 @@ function renderOverview(s) {
           <div class="wrow-body">
             <div class="wrow-name">${w.name}${w.vintage ? ' ' + w.vintage : ''}</div>
             ${meta ? `<div class="wrow-meta">${meta}</div>` : ''}
+            <div class="wrow-prog" id="wine-prog-${i}">${wineProgressHTML(w, sessionTasters(s))}</div>
             </div>
           <span class="status-dot ${w.revealed ? 'revealed' : 'blind'}"></span>
           <div class="wine-row-actions">
@@ -3081,6 +3169,8 @@ function renderOverview(s) {
   const fa = document.getElementById('wine-form');
   fa.innerHTML = wineFormHTML();
   initFormAC();
+  updateRevealNext(s);
+  startHostLive();
   // Start live tick for any wines with active timers
   startHostTimerTick(wines);
 }
@@ -3089,7 +3179,7 @@ async function toggleWineTimer(i, enabled) {
   const s = await dbGet('sessions/' + activeCode);
   s.wines[i].guessTimer = enabled ? 600 : 0;
   s.wines[i].guessTimerStart = null;
-  await dbSet('sessions/' + activeCode + '/wines', s.wines);
+  await dbPatch('sessions/' + activeCode, { ['wines/' + i + '/guessTimer']: s.wines[i].guessTimer, ['wines/' + i + '/guessTimerStart']: null });
   renderOverview(s);
 }
 
@@ -3100,14 +3190,14 @@ async function startWineTimer(i) {
   const secs = Math.round(mins * 60);
   s.wines[i].guessTimer = secs;
   s.wines[i].guessTimerStart = Date.now();
-  await dbSet('sessions/' + activeCode + '/wines', s.wines);
+  await dbPatch('sessions/' + activeCode, { ['wines/' + i + '/guessTimer']: secs, ['wines/' + i + '/guessTimerStart']: s.wines[i].guessTimerStart });
   renderOverview(s);
 }
 
 async function stopWineTimer(i) {
   const s = await dbGet('sessions/' + activeCode);
   s.wines[i].guessTimerStart = null;
-  await dbSet('sessions/' + activeCode + '/wines', s.wines);
+  await dbPatch('sessions/' + activeCode, { ['wines/' + i + '/guessTimerStart']: null });
   renderOverview(s);
 }
 
@@ -3149,18 +3239,30 @@ function stopHostTimerTick() {
   _hostTimerWines = [];
 }
 
+// Build the update that reveals/hides wine i; on reveal, score every locked-in guess (B2)
+function revealUpdates(wine, i, val, updates) {
+  updates['wines/' + i + '/revealed'] = val;
+  if (val) {
+    (wine.guesses || []).forEach(g => {
+      if (g && !g.scored) updates['wines/' + i + '/guesses/' + fbKey(g.taster)] = scoreGuess(g, wine);
+    });
+  }
+  return updates;
+}
+
 async function toggleReveal(i, val) {
   const s = await dbGet('sessions/' + activeCode);
-  s.wines[i].revealed = val;
-  await dbSet('sessions/' + activeCode + '/wines', s.wines);
-  renderOverview(s);
+  const upd = revealUpdates(s.wines[i], i, val, {});
+  await dbPatch('sessions/' + activeCode, upd);
+  renderOverview(await dbGet('sessions/' + activeCode));
 }
 
 async function bulkReveal(val) {
   const s = await dbGet('sessions/' + activeCode);
-  (s.wines || []).forEach(w => w.revealed = val);
-  await dbSet('sessions/' + activeCode + '/wines', s.wines);
-  renderOverview(s);
+  const upd = {};
+  (s.wines || []).forEach((w, i) => revealUpdates(w, i, val, upd));
+  await dbPatch('sessions/' + activeCode, upd);
+  renderOverview(await dbGet('sessions/' + activeCode));
 }
 
 async function addWine() {
@@ -3191,7 +3293,8 @@ async function addWine() {
     guessTimer: 0,  // stored in seconds internally
     guessTimerStart: null
   });
-  await dbSet('sessions/' + activeCode + '/wines', s.wines);
+  const newIdx = s.wines.length - 1;
+  await dbPatch('sessions/' + activeCode, { ['wines/' + newIdx]: s.wines[newIdx] });
   showAlert('wf-alert', 'success', `"${name}" added (blind). ${s.wines.length} wine(s) in session.`);
   clearWineForm();
   renderOverview(s);
@@ -3275,9 +3378,13 @@ async function unlockSession() {
   stopCountdown();
   var cdArea = document.getElementById('countdown-area');
   if (cdArea) cdArea.style.display = 'none';
+  window._prevRevealed = null;
   tasteListener = dbListen('sessions/' + c, data => {
     if (!data) return;
+    window._tasteData = data;
     lockTasteIfArchived(data.archived);
+    notifyReveals(data);
+    updateRateNav(tasteWineIdx, (data.wines || []).length);
     refreshWineSelector(data);
     if (tasteWineIdx !== null && !document.getElementById('rating-card').classList.contains('hidden')) {
       renderRevealArea(tasteWineIdx, data);
@@ -3297,7 +3404,11 @@ async function unlockSession() {
       if (gameSection && w) {
         const existing = taster && (w.guesses || []).find(g => g.taster === taster);
         if (existing && existing.scored) {
-          // Already scored — keep showing result, nothing to do
+          // Show the result if it isn't on screen yet (reveal just happened), else refresh the rank
+          const ra = document.getElementById('game-result-area');
+          if (!ra || !ra.querySelector('.game-total-bar')) {
+            gameSection.classList.remove('hidden'); resetGameUI(); showGameResult(existing, w);
+          } else updateGameRank();
         } else if (existing && !existing.scored && w.revealed) {
           // Just revealed with locked guesses — score them now
           gameSection.classList.remove('hidden');
@@ -3461,6 +3572,177 @@ function lockTasteIfArchived(isArchived) {
   }
 }
 
+// ═══ S1 · host progress ═══
+function sessionTasters(s) {
+  const set = new Set();
+  (s && s.wines || []).forEach(w => {
+    _toList(w.ratings, true).forEach(r => r && r.taster && set.add(r.taster));
+    _toList(w.guesses, true).forEach(g => g && g.taster && set.add(g.taster));
+  });
+  return set.size;
+}
+function wineProgressHTML(w, total) {
+  const r = _toList(w.ratings, true).length, g = _toList(w.guesses, true).length;
+  if (!r && !g) return 'No ratings yet';
+  const den = Math.max(total, r);
+  return '<b>' + r + '/' + den + '</b> rated' + (g ? ' · <b>' + g + '</b> guess' + (g !== 1 ? 'es' : '') : '');
+}
+var _hostLive = null, _hostLiveCode = null;
+function startHostLive() {
+  if (_hostLiveCode === activeCode && _hostLive) return;
+  stopHostLive();
+  if (!activeCode) return;
+  _hostLiveCode = activeCode;
+  _hostLive = dbListen('sessions/' + activeCode, function(s) {
+    if (!s || _hostLiveCode !== activeCode) return;
+    const total = sessionTasters(s);
+    (s.wines || []).forEach((w, i) => {
+      const el = document.getElementById('wine-prog-' + i);
+      if (!el) return;
+      el.innerHTML = wineProgressHTML(w, total);
+      el.classList.toggle('all-done', total > 0 && (w.ratings || []).length >= total);
+    });
+    updateRevealNext(s);
+  });
+}
+function stopHostLive() { if (_hostLive) { _hostLive(); } _hostLive = null; _hostLiveCode = null; }
+
+// ═══ S2 · reveal next ═══
+function updateRevealNext(s) {
+  const btn = document.getElementById('reveal-next-btn'), lbl = document.getElementById('reveal-next-lbl');
+  if (!btn || !lbl) return;
+  const i = (s && s.wines || []).findIndex(w => !w.revealed);
+  if (i < 0) { btn.style.display = 'none'; return; }
+  btn.style.display = '';
+  lbl.textContent = 'Reveal next · Wine #' + (i + 1);
+}
+async function revealNext() {
+  const s = await dbGet('sessions/' + activeCode);
+  const i = (s.wines || []).findIndex(w => !w.revealed);
+  if (i < 0) return;
+  await toggleReveal(i, true);
+  showToast('Wine #' + (i + 1) + ' revealed');
+}
+
+// ═══ S7 · previous / next wine ═══
+function updateRateNav(idx, count) {
+  const p = document.getElementById('rate-prev'), n = document.getElementById('rate-next'), pos = document.getElementById('rate-pos');
+  if (!p || !n || idx === null || idx === undefined) return;
+  p.disabled = idx <= 0; n.disabled = idx >= count - 1;
+  if (pos) pos.textContent = (idx + 1) + ' / ' + count;
+}
+function rateNav(d) {
+  if (tasteWineIdx === null) return;
+  const count = ((window._tasteData || {}).wines || []).length;
+  const ni = tasteWineIdx + d;
+  if (ni < 0 || ni >= count) return;
+  saveDraft();
+  openRating(ni);
+}
+
+// ═══ S6 · drafts (unsent sliders, notes and guesses survive tab switches / phone lock) ═══
+// A draft only exists while the screen differs from what was last opened/submitted.
+var _draftBase = { rating: null, guess: null };
+function draftKey(idx) { return 'vino_draft_' + tasteCode + '_' + idx + '_' + getTaster(); }
+function _snapRating() {
+  const sl = {};
+  document.querySelectorAll('#crit-grid input[type=range]').forEach(el => { sl[el.id] = el.value; });
+  const n = document.getElementById('taste-notes');
+  return { sliders: sl, notes: n ? n.value : '' };
+}
+function _snapGuess() {
+  const gc = document.getElementById('g-country');
+  if (!gc || gc.disabled) return null;             // guess locked or not available
+  const g = {};
+  ['g-country','g-region','g-appel','g-grape','g-vintage'].forEach(id => { const e = document.getElementById(id); if (e) g[id] = e.value; });
+  return g;
+}
+function saveDraft() {
+  if (tasteWineIdx === null || !tasteCode) return;
+  const r = _snapRating(), g = _snapGuess();
+  const d = {
+    rating: JSON.stringify(r) !== _draftBase.rating ? r : null,
+    guess:  (g && JSON.stringify(g) !== _draftBase.guess) ? g : null
+  };
+  try {
+    if (!d.rating && !d.guess) localStorage.removeItem(draftKey(tasteWineIdx));
+    else localStorage.setItem(draftKey(tasteWineIdx), JSON.stringify(d));
+  } catch(e) {}
+}
+function clearDraft(part) {
+  // The submitted state becomes the new baseline for that part
+  if (part === 'rating') _draftBase.rating = JSON.stringify(_snapRating());
+  else { const g = _snapGuess(); _draftBase.guess = g ? JSON.stringify(g) : null; }
+  saveDraft();
+  if (part === 'guess') {                          // guess is locked now; drop any stored guess draft
+    try { const k = draftKey(tasteWineIdx), d = JSON.parse(localStorage.getItem(k) || 'null');
+      if (d) { d.guess = null; if (!d.rating) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(d)); } } catch(e) {}
+  }
+}
+function restoreDraft(idx) {
+  // Baseline = what the screen shows from saved data, before applying any draft
+  _draftBase.rating = JSON.stringify(_snapRating());
+  const g0 = _snapGuess(); _draftBase.guess = g0 ? JSON.stringify(g0) : null;
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem(draftKey(idx)) || 'null'); } catch(e) {}
+  if (!d) return;
+  let restored = false;
+  if (d.rating) {
+    Object.entries(d.rating.sliders || {}).forEach(([id, v]) => { const el = document.getElementById(id); if (el && el.value !== v) { el.value = v; restored = true; } });
+    const n = document.getElementById('taste-notes');
+    if (n && d.rating.notes != null && d.rating.notes !== n.value) { n.value = d.rating.notes; restored = true; }
+    if (typeof updScores === 'function') updScores();
+  }
+  if (d.guess && g0) {
+    Object.entries(d.guess).forEach(([id, v]) => { const el = document.getElementById(id); if (el && v && el.value !== v) { el.value = v; restored = true; } });
+  }
+  if (restored) showToast('Unsaved changes restored');
+  else { try { localStorage.removeItem(draftKey(idx)); } catch(e) {} }
+}
+['input', 'change', 'focusout'].forEach(ev => document.addEventListener(ev, function(e) {
+  if (e.target && e.target.closest && e.target.closest('#rating-card')) saveDraft();
+}));
+document.addEventListener('visibilitychange', function() { if (document.hidden) saveDraft(); });
+
+// ═══ S8 · rank after reveal ═══
+function guessStandings(data) {
+  const tot = {};
+  (data && data.wines || []).forEach(w => (w.guesses || []).forEach(g => {
+    if (g && g.scored) tot[g.taster] = (tot[g.taster] || 0) + (g.points || 0);
+  }));
+  return tot;
+}
+function myRank(data, me) {
+  const tot = guessStandings(data);
+  if (!(me in tot)) return null;
+  const mine = tot[me], vals = Object.values(tot);
+  return { rank: 1 + vals.filter(v => v > mine).length, of: vals.length, pts: mine };
+}
+function updateGameRank() {
+  const ra = document.getElementById('game-result-area');
+  if (!ra || !ra.querySelector('.game-total-bar')) return;
+  const r = myRank(window._tasteData, getTaster());
+  let el = document.getElementById('game-rank');
+  if (!r) { if (el) el.remove(); return; }
+  if (!el) { el = document.createElement('div'); el.id = 'game-rank'; el.className = 'game-rank'; ra.appendChild(el); }
+  el.innerHTML = 'Session standing · <b>#' + r.rank + '</b> of ' + r.of + ' · ' + r.pts + 'p total';
+}
+function notifyReveals(data) {
+  const now = new Set();
+  (data.wines || []).forEach((w, i) => { if (w.revealed) now.add(i); });
+  const prev = window._prevRevealed;
+  window._prevRevealed = now;
+  if (!prev) return;                         // first load: don't announce old reveals
+  const me = getTaster();
+  now.forEach(i => {
+    if (prev.has(i) || i === tasteWineIdx) return;   // already known, or on screen (result shows inline)
+    const g = (data.wines[i].guesses || []).find(x => x.taster === me);
+    if (!g || !g.scored) return;
+    const r = myRank(data, me);
+    showToast('Wine #' + (i + 1) + ' revealed — your guess: ' + g.points + 'p' + (r ? ' · #' + r.rank + ' of ' + r.of : ''));
+  });
+}
+
 function getTaster() {
   var el = document.getElementById('taster-name');
   // Fall back to localStorage if hidden input not yet set
@@ -3542,6 +3824,9 @@ async function openRating(idx) {
   document.getElementById('rating-card').scrollIntoView({behavior: 'smooth', block: 'start'});
   // Init autocomplete on guess fields (idempotent — skips if already wired)
   initGuessAC();
+  window._tasteData = data;
+  updateRateNav(idx, (data.wines || []).length);
+  restoreDraft(idx);
 }
 
 function renderRevealArea(idx, data) {
@@ -3735,9 +4020,9 @@ async function submitRating() {
     time:      schemaTime(),        // "HH:MM:SS"
     breakdown                       // {app, nose, palate, ...}
   };
-  if (ei >= 0) wine.ratings[ei] = entry; else wine.ratings.push(entry);
-  await dbSet('sessions/' + tasteCode + '/wines', s.wines);
+  await dbPatch('sessions/' + tasteCode, { ['wines/' + tasteWineIdx + '/ratings/' + fbKey(taster)]: entry });
   showAlert('rate-alert', 'success', `Score ${score} saved${ei >= 0 ? ' (updated)' : ''}. Thank you, ${taster}!`);
+  clearDraft('rating');
   // Keep the card visible — taster can review their rating and navigate tabs freely
 }
 
@@ -4637,7 +4922,12 @@ async function saveEditWine(idx) {
     notes:        document.getElementById('ew-notes').value.trim(),
     image:        document.getElementById('ew-img-data').value || w.image || null
   });
-  await dbSet('sessions/' + activeCode + '/wines', s.wines);
+  const nw = s.wines[idx], upd = {};
+  ['name','vintage','type','country','region','appellation','classification','grapes','abv','price','notes','image']
+    .forEach(f => { upd['wines/' + idx + '/' + f] = (nw[f] === undefined ? null : nw[f]); });
+  // Host corrected the answer after reveal → re-score everyone's guess against the new answer
+  if (nw.revealed) (nw.guesses || []).forEach(g => { if (g) upd['wines/' + idx + '/guesses/' + fbKey(g.taster)] = scoreGuess(g, nw); });
+  await dbPatch('sessions/' + activeCode, upd);
   closeEditWine(idx);
   renderOverview(s);
   showAlert('wf-alert', 'success', 'Wine #' + (idx + 1) + ' updated.');
@@ -5522,11 +5812,10 @@ async function submitGuess(force) {
 
   // Save/replace this taster's guess
   if (!wine.guesses) wine.guesses = [];
-  const gi = wine.guesses.findIndex(g => g.taster === taster);
-  if (gi >= 0) wine.guesses[gi] = guess; else wine.guesses.push(guess);
-  await dbSet('sessions/' + tasteCode + '/wines', s.wines);
+  await dbPatch('sessions/' + tasteCode, { ['wines/' + tasteWineIdx + '/guesses/' + fbKey(taster)]: guess });
 
   // Lock inputs and show badge
+  clearDraft('guess');
   populateGuessUI(guess, wine);
   showAlert('game-alert','success','Guesses locked in! Await the host reveal.');
 }
@@ -5555,13 +5844,12 @@ async function scoreAndShowGuess(guess, wine) {
   const scored = scoreGuess(guess, wine);
   const s = await dbGet('sessions/' + tasteCode);
   if (!s) return;
-  const gi = (s.wines[tasteWineIdx].guesses || []).findIndex(g => g.taster === guess.taster);
-  if (gi >= 0) s.wines[tasteWineIdx].guesses[gi] = scored;
-  await dbSet('sessions/' + tasteCode + '/wines', s.wines);
+  await dbPatch('sessions/' + tasteCode, { ['wines/' + tasteWineIdx + '/guesses/' + fbKey(guess.taster)]: scored });
   showGameResult(scored, wine);
 }
 
 function showGameResult(guess, wine) {
+  setTimeout(updateGameRank, 0);
   const resultArea = document.getElementById('game-result-area');
   if (!resultArea) return;
 
@@ -6350,6 +6638,12 @@ function closeWineModal(fromPop) {
     // Require a clear, mostly-horizontal swipe
     if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
 
+    var rc = document.getElementById('rating-card');
+    if (rc && !rc.classList.contains('hidden') && startTarget && startTarget.closest && startTarget.closest('#rating-card')) {
+      rateNav(dx < 0 ? 1 : -1);   // swipe within the rating screen = next / previous wine
+      return;
+    }
+
     var activePanel = document.querySelector('.panel.active');
     if (!activePanel) return;
     var curId = activePanel.id.replace('tab-', '');
@@ -6445,7 +6739,10 @@ window.addEventListener('popstate', function(e) {
   document.addEventListener('touchend', function() {
     if (y0 === null) return;
     var sh = document.getElementById('wine-info-sheet');
-    if (dy > 90) closeWineModal(); else if (sh) sh.style.transform = '';
+    if (dy > 90) {
+      if (sh) { sh.style.transform = ''; sh.scrollTop = 0; }
+      sheetBack();   // one level back (wine → session → host list → closed), same as ✕
+    } else if (sh) sh.style.transform = '';
     y0 = null; dy = 0;
   }, { passive: true });
 })();
