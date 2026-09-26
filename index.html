@@ -1749,8 +1749,8 @@ input.lk-invalid,.field input.lk-invalid,.guess-input.lk-invalid{border-color:#f
 </header>
 
 <div class="tabs">
-  <button class="tab-btn active" onclick="showTab('taste')"><span><span class="tab-icon"><svg class="ico"><use href="#ico-taste"/></svg></span><span class="tab-label">Taste</span></span></button>
-  <button class="tab-btn" onclick="showTab('results')"><span><span class="tab-icon"><svg class="ico"><use href="#ico-results"/></svg></span><span class="tab-label">Results</span></span></button>
+  <button class="tab-btn active" onclick="tabTap('taste')"><span><span class="tab-icon"><svg class="ico"><use href="#ico-taste"/></svg></span><span class="tab-label">Taste</span></span></button>
+  <button class="tab-btn" onclick="tabTap('results')"><span><span class="tab-icon"><svg class="ico"><use href="#ico-results"/></svg></span><span class="tab-label">Results</span></span></button>
   <button class="tab-btn" onclick="showTab('history')"><span><span class="tab-icon"><svg class="ico"><use href="#ico-history"/></svg></span><span class="tab-label">History</span></span></button>
   <button class="tab-btn" onclick="showTab('map')"><span><span class="tab-icon"><svg class="ico"><use href="#ico-map"/></svg></span><span class="tab-label">Map</span></span></button>
   <button class="tab-btn" onclick="showTab('ai')"><span><span class="tab-icon"><svg class="ico"><use href="#ico-ai"/></svg></span><span class="tab-label">AI</span></span></button>
@@ -3872,6 +3872,21 @@ function renderRevealArea(idx, data) {
       </div>
     </div>`;
   }
+}
+
+// Tapping a bottom tab = go to that tab's first level (like native apps). Swiping keeps your place.
+function tabTap(n) {
+  var modal = document.getElementById('wine-info-modal');
+  if (modal && modal.classList.contains('open')) {
+    closeWineModal(true);                                   // close immediately (no async back-step)
+    var cur = document.querySelector('.panel.active');
+    try { history.replaceState({ tab: cur ? cur.id.replace('tab-', '') : n }, ''); } catch(e) {}
+  }
+  if (n === 'taste') {
+    var rc = document.getElementById('rating-card');
+    if (rc && !rc.classList.contains('hidden')) { saveDraft(); backToSelector(); }
+  }
+  showTab(n);
 }
 
 function backToSelector() { document.getElementById('rating-card').classList.add('hidden'); tasteWineIdx = null; }
