@@ -1298,6 +1298,34 @@ input.lk-invalid,.field input.lk-invalid,.guess-input.lk-invalid{border-color:#f
   letter-spacing:.1em;text-transform:uppercase;color:#c8c8ff;}
 .game-rank b{color:#7dffb0;font-size:.8rem;}
 
+/* ── S9 · MEMBER PROFILE ── */
+.prof-hero{display:flex;align-items:center;gap:.9rem;margin-bottom:1.1rem;}
+.prof-avatar{width:58px;height:58px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--burgundy),var(--deep-wine));border:2px solid var(--gold);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Playfair Display',serif;font-style:italic;font-size:1.6rem;color:var(--pale-gold);}
+.prof-name{font-family:'Playfair Display',serif;font-size:1.35rem;color:var(--cream);line-height:1.15;}
+.prof-sub{font-family:'Josefin Sans',sans-serif;font-size:.54rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--smoke);margin-top:.25rem;}
+.prof-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:1.2rem;}
+.prof-stat{background:rgba(255,255,255,.03);border:1px solid var(--gb);border-radius:12px;
+  padding:.65rem .4rem;text-align:center;}
+.prof-stat-num{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:700;color:var(--gold);line-height:1;}
+.prof-stat-lbl{font-family:'Josefin Sans',sans-serif;font-size:.48rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--smoke);margin-top:.35rem;}
+.prof-stat-delta{font-family:'Josefin Sans',sans-serif;font-size:.5rem;margin-top:.2rem;}
+.prof-stat-delta.up{color:#7dffb0;} .prof-stat-delta.down{color:#ff9999;} .prof-stat-delta.flat{color:var(--smoke);}
+.prof-section{margin-bottom:1.2rem;}
+.prof-fav{display:flex;justify-content:space-between;align-items:baseline;gap:.6rem;
+  padding:.55rem 0;border-bottom:1px solid rgba(255,255,255,.05);}
+.prof-fav:last-child{border-bottom:none;}
+.prof-fav-lbl{font-family:'Josefin Sans',sans-serif;font-size:.54rem;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke);}
+.prof-fav-val{font-family:'Playfair Display',serif;font-size:.98rem;color:var(--cream);text-align:right;}
+.prof-fav-val small{display:block;font-family:'Josefin Sans',sans-serif;font-size:.5rem;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--smoke);margin-top:.15rem;}
+.prof-empty{text-align:center;padding:2rem 1rem;color:var(--smoke);font-style:italic;line-height:1.6;}
+.prof-switch{width:100%;margin-top:.4rem;}
+
 /* ── MISC ── */
 .alert{padding:.7rem .9rem;border-radius:8px;font-size:.88rem;margin:.55rem 0;display:none;}
 .alert.error{background:rgba(180,30,30,.2);border:1px solid rgba(180,30,30,.4);color:#ffaaaa;display:block;}
@@ -1739,7 +1767,7 @@ input.lk-invalid,.field input.lk-invalid,.guess-input.lk-invalid{border-color:#f
 
 
 <header>
-  <button class="member-avatar" id="member-avatar" onclick="changeMember()" aria-label="Switch member">?</button>
+  <button class="member-avatar" id="member-avatar" onclick="openProfile()" aria-label="Your tasting profile">?</button>
   <button class="host-fab" id="host-fab" onclick="toggleHost()" aria-label="Host — create and manage tastings">
     <svg class="ico"><use id="host-fab-ico" href="#ico-host"/></svg>
   </button>
@@ -6677,6 +6705,151 @@ function closeWineModal(fromPop) {
     }
   }, { passive: true });
 })();
+
+// ═══════════════════════════════════════
+//  S9 · MEMBER PROFILE (personal stats)
+// ═══════════════════════════════════════
+function escHtml(s) {
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function _r1(x) { return Math.round(x * 10) / 10; }
+
+// Pure: all sessions (code → session, normalised) + member name → stats object. No DOM access.
+function computeMemberStats(allSessions, me) {
+  const GF = ['country', 'region', 'appellation', 'grape', 'vintage'];
+  const st = {
+    sessions: 0, hosted: 0, winesRated: 0, avg: null, clubAvg: null,
+    favGrape: null, favCountry: null, favType: null, top: [],
+    guesses: 0, guessAvg: null, best: null, wins: 0,
+    field: GF.reduce((o, f) => (o[f] = { hit: 0, tries: 0 }, o), {})
+  };
+  const mine = [], club = [], byGrape = {}, byCountry = {}, byType = {};
+  let guessPts = 0;
+  Object.keys(allSessions || {}).forEach(code => {
+    const s = allSessions[code]; if (!s || !s.wines) return;
+    if (s.host === me) st.hosted++;
+    let took = false;
+    const sessTot = {};
+    s.wines.forEach((w, wi) => {
+      (w.ratings || []).forEach(r => {
+        if (!r || typeof r.score !== 'number') return;
+        const n = normScore(r); club.push(n);
+        if (r.taster !== me) return;
+        took = true; mine.push(n);
+        st.top.push({ n, code, wi, name: w.name, vintage: w.vintage, session: s.name });
+        const add = (map, k) => { if (!k) return; (map[k] = map[k] || []).push(n); };
+        add(byGrape, w.grapes); add(byCountry, w.country); add(byType, w.type);
+      });
+      (w.guesses || []).forEach(g => {
+        if (!g || !g.scored) return;
+        sessTot[g.taster] = (sessTot[g.taster] || 0) + (g.points || 0);
+        if (g.taster !== me) return;
+        took = true; st.guesses++; guessPts += (g.points || 0);
+        if (!st.best || g.points > st.best.points) st.best = { points: g.points, code, wi, name: w.name, vintage: w.vintage, session: s.name };
+        GF.forEach(f => {
+          const rf = (g.result || {})[f];
+          if (rf && String(rf.guess || '').trim()) { st.field[f].tries++; if (rf.hit) st.field[f].hit++; }
+        });
+      });
+    });
+    if (took) st.sessions++;
+    const vals = Object.values(sessTot);
+    if (me in sessTot && sessTot[me] > 0 && sessTot[me] === Math.max.apply(null, vals)) st.wins++;
+  });
+  const avg = a => a.length ? _r1(a.reduce((x, y) => x + y, 0) / a.length) : null;
+  st.winesRated = mine.length; st.avg = avg(mine); st.clubAvg = avg(club);
+  st.guessAvg = st.guesses ? _r1(guessPts / st.guesses) : null;
+  // Favourite = highest average, preferring groups with ≥2 wines so one lucky bottle doesn't dominate
+  const fav = map => {
+    const e = Object.entries(map).map(([k, v]) => ({ k, avg: avg(v), count: v.length }));
+    if (!e.length) return null;
+    const pool = e.some(x => x.count >= 2) ? e.filter(x => x.count >= 2) : e;
+    return pool.sort((a, b) => b.avg - a.avg || b.count - a.count)[0];
+  };
+  st.favGrape = fav(byGrape); st.favCountry = fav(byCountry); st.favType = fav(byType);
+  st.top = st.top.sort((a, b) => b.n - a.n).slice(0, 3);
+  return st;
+}
+
+var _profileCache = null;   // { name, html } — lets the ✕/back stack re-render without refetching
+
+async function _loadAllSessions() {
+  const [arch, live] = await Promise.all([dbGet('archive'), dbGet('sessions')]);
+  const all = Object.assign({}, live || {});
+  Object.keys(arch || {}).forEach(k => { all[k] = arch[k]; });   // archived copy is the final one
+  _histArchive = Object.assign({}, _histArchive, all);            // wine rows below can open via openHistWine
+  return all;
+}
+
+function _profileHTML(me, st) {
+  const initial = escHtml((me.trim()[0] || '?').toUpperCase());
+  const hero = '<div class="prof-hero"><div class="prof-avatar">' + initial + '</div><div style="flex:1;min-width:0;">'
+    + '<div class="prof-name">' + escHtml(me) + '</div>'
+    + '<div class="prof-sub">' + st.sessions + ' session' + (st.sessions !== 1 ? 's' : '') + ' · ' + st.winesRated + ' wine' + (st.winesRated !== 1 ? 's' : '') + ' rated'
+    + (st.hosted ? ' · hosted ' + st.hosted : '') + '</div></div>'
+    + '<button class="wine-info-close" onclick="sheetBack()" aria-label="Close">✕</button></div>';
+  const switchBtn = '<button class="btn btn-outline prof-switch" onclick="closeWineModal(true);changeMember()">Switch member</button>';
+  if (!st.winesRated && !st.guesses) {
+    return hero + '<div class="prof-empty">No tastings yet.<br>Your stats appear after your first rating or blind guess.</div>' + switchBtn;
+  }
+  // Headline numbers
+  let delta = '';
+  if (st.avg !== null && st.clubAvg !== null) {
+    const d = _r1(st.avg - st.clubAvg);
+    delta = '<div class="prof-stat-delta ' + (d > 0.4 ? 'up' : d < -0.4 ? 'down' : 'flat') + '">'
+      + (Math.abs(d) <= 0.4 ? '≈ club avg' : (d > 0 ? '+' : '') + d + ' vs club') + '</div>';
+  }
+  const pill = (num, lbl, extra) => '<div class="prof-stat"><div class="prof-stat-num">' + num + '</div><div class="prof-stat-lbl">' + lbl + '</div>' + (extra || '') + '</div>';
+  const stats = '<div class="prof-stats">'
+    + pill(st.avg !== null ? st.avg : '—', 'Avg score', delta)
+    + pill(st.guessAvg !== null ? st.guessAvg : '—', 'Guess avg', st.guesses ? '<div class="prof-stat-delta flat">of ' + GUESS_MAX + ' · ' + st.guesses + ' guess' + (st.guesses !== 1 ? 'es' : '') + '</div>' : '')
+    + pill(st.wins, 'Game wins', '<div class="prof-stat-delta flat">sessions won</div>')
+    + '</div>';
+  // Favourites
+  const favRow = (lbl, f) => f ? '<div class="prof-fav"><div class="prof-fav-lbl">' + lbl + '</div><div class="prof-fav-val">' + escHtml(f.k)
+    + '<small>avg ' + f.avg + ' · ' + f.count + ' wine' + (f.count !== 1 ? 's' : '') + '</small></div></div>' : '';
+  const favs = (st.favGrape || st.favCountry || st.favType)
+    ? '<div class="prof-section"><div class="section-lbl">Favourites</div>' + favRow('Grape', st.favGrape) + favRow('Country', st.favCountry) + favRow('Style', st.favType) + '</div>' : '';
+  // Top wines (tap → wine detail; ✕ returns here)
+  const top = st.top.length ? '<div class="prof-section"><div class="section-lbl">Your top wines</div>'
+    + st.top.map(t => '<button class="sess-chip" onclick="openHistWine(\'' + t.code + '\',' + t.wi + ')">'
+        + '<div style="min-width:0;"><div class="sess-chip-name">' + escHtml(t.name) + (t.vintage ? ' ' + escHtml(t.vintage) : '') + '</div>'
+        + '<div class="sess-chip-meta">' + escHtml(t.session || '') + '</div></div>'
+        + '<div class="sess-chip-code">' + _r1(t.n) + '</div></button>').join('') + '</div>' : '';
+  // Blind game
+  let game = '';
+  if (st.guesses) {
+    const LBL = { country: 'Country', region: 'Region', appellation: 'Appellation', grape: 'Grape', vintage: 'Vintage' };
+    const bars = Object.keys(LBL).filter(f => st.field[f].tries).map(f => {
+      const x = st.field[f], pct = Math.round(x.hit / x.tries * 100);
+      return '<div class="detail-crit-row"><div class="detail-crit-lbl"><span>' + LBL[f] + '</span><b>' + pct + '%<span style="font-size:.55rem;opacity:.7;"> · ' + x.hit + '/' + x.tries + '</span></b></div>'
+        + '<div class="detail-crit-bar-bg"><div class="detail-crit-bar-fill" style="width:' + pct + '%;"></div></div></div>';
+    }).join('');
+    const best = st.best ? '<button class="sess-chip" onclick="openHistWine(\'' + st.best.code + '\',' + st.best.wi + ')">'
+      + '<div style="min-width:0;"><div class="sess-chip-meta" style="margin:0 0 .2rem;">Best guess</div><div class="sess-chip-name">' + escHtml(st.best.name) + (st.best.vintage ? ' ' + escHtml(st.best.vintage) : '') + '</div></div>'
+      + '<div class="sess-chip-code">' + st.best.points + 'p</div></button>' : '';
+    game = '<div class="prof-section"><div class="section-lbl"><svg class="ico" style="width:.85em;height:.85em;vertical-align:-1px;"><use href="#ico-spy"/></svg> Blind game</div>'
+      + best + '<div style="margin-top:.7rem;">' + bars + '</div></div>';
+  }
+  return hero + stats + favs + top + game + switchBtn;
+}
+
+function openProfile() {
+  _profileCache = null;
+  const me = getTaster();
+  if (!me) { changeMember(); return; }
+  sheetPush(function renderProfile() {
+    const cnt = document.getElementById('wine-info-content'); if (!cnt) return;
+    if (_profileCache && _profileCache.name === me) { cnt.innerHTML = _profileCache.html; openSheet(); return; }
+    cnt.innerHTML = sheetHeader(escHtml(me), 'Your tasting profile') + spinnerHTML('Crunching your numbers…');
+    openSheet();
+    _loadAllSessions().then(all => {
+      const html = _profileHTML(me, computeMemberStats(all, me));
+      _profileCache = { name: me, html: html };
+      if (_sheetStack[_sheetStack.length - 1] === renderProfile) cnt.innerHTML = html;   // user may have navigated on
+    }).catch(() => { cnt.innerHTML = sheetHeader(escHtml(me), '') + '<div class="prof-empty">Couldn’t load your stats. Check your connection and try again.</div>'; });
+  });
+}
 
 function changeMember() {
   var ov = document.getElementById('welcome-overlay');
