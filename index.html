@@ -1326,6 +1326,18 @@ input.lk-invalid,.field input.lk-invalid,.guess-input.lk-invalid{border-color:#f
 .prof-empty{text-align:center;padding:2rem 1rem;color:var(--smoke);font-style:italic;line-height:1.6;}
 .prof-switch{width:100%;margin-top:.4rem;}
 
+/* ── SHEET LEVELS (L1 label · L3 slide · L4 back icon) ── */
+.lvl-label{font-family:'Josefin Sans',sans-serif;font-size:.5rem;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--gold);opacity:.85;margin-bottom:.2rem;}
+.lvl-sub{font-family:'Josefin Sans',sans-serif;font-size:.54rem;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--smoke);margin-top:.3rem;line-height:1.5;}
+.wine-info-close.is-back{font-size:1.35rem;line-height:1;padding-bottom:2px;}
+#wine-info-content.sheet-in-fwd{animation:sheetInFwd .28s cubic-bezier(.22,1,.36,1);}
+#wine-info-content.sheet-in-back{animation:sheetInBack .28s cubic-bezier(.22,1,.36,1);}
+@keyframes sheetInFwd{from{opacity:0;transform:translateX(42px)}to{opacity:1;transform:none}}
+@keyframes sheetInBack{from{opacity:0;transform:translateX(-42px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){#wine-info-content.sheet-in-fwd,#wine-info-content.sheet-in-back{animation:none;}}
+
 /* ── MISC ── */
 .alert{padding:.7rem .9rem;border-radius:8px;font-size:.88rem;margin:.55rem 0;display:none;}
 .alert.error{background:rgba(180,30,30,.2);border:1px solid rgba(180,30,30,.4);color:#ffaaaa;display:block;}
@@ -1348,8 +1360,42 @@ input.lk-invalid,.field input.lk-invalid,.guess-input.lk-invalid{border-color:#f
   background:rgba(10,4,8,.9);backdrop-filter:blur(6px);
   align-items:center;justify-content:center;padding:1.2rem;}
 
+/* ── iPHONE HOME-SCREEN APP: SAFE AREAS (notch, status bar, home indicator) ── */
+:root{
+  --sat:env(safe-area-inset-top,0px);   --sab:env(safe-area-inset-bottom,0px);
+  --sal:env(safe-area-inset-left,0px);  --sar:env(safe-area-inset-right,0px);
+}
+/* Header clears the status bar / notch; avatar + Host button stay centred on the visible part */
+header{
+  padding-top:calc(.55rem + var(--sat));
+  padding-left:calc(1rem + var(--sal));
+  padding-right:calc(1rem + var(--sar));
+}
+.member-avatar{top:calc(50% + var(--sat) / 2);left:calc(.85rem + var(--sal));}
+.host-fab{top:calc(50% + var(--sat) / 2);right:calc(.85rem + var(--sar));}
+/* Tab bar grows by the home-indicator height instead of losing it from the buttons */
+.tabs{
+  height:calc(var(--tab-h) + var(--sab));
+  padding-left:var(--sal);padding-right:var(--sar);
+}
+/* Content, overlays and sheets respect side insets (landscape) and the notch */
+.panel{padding-left:calc(1rem + var(--sal));padding-right:calc(1rem + var(--sar));}
+#welcome-overlay,#host-auth-overlay{
+  padding:calc(1.2rem + var(--sat)) calc(1.2rem + var(--sar)) calc(1.2rem + var(--sab)) calc(1.2rem + var(--sal));
+}
+.wine-info-sheet{max-height:calc(100vh - var(--sat) - 12px);}
+@supports (height:100dvh){ .wine-info-sheet{max-height:calc(100dvh - var(--sat) - 12px);} }
+#img-lightbox{padding:calc(1.2rem + var(--sat)) calc(1.2rem + var(--sar)) calc(1.2rem + var(--sab)) calc(1.2rem + var(--sal));}
+#img-lightbox .wine-info-close{right:calc(1rem + var(--sar));}
+
+/* Phone sideways: compact one-line header so content gets the height */
+@media (orientation:landscape) and (max-height:500px){
+  header .logo-mark, header p{display:none;}
+  header{padding-top:calc(.7rem + var(--sat));padding-bottom:.7rem;}
+}
+
 /* ── DESKTOP ENHANCEMENTS ── */
-@media(min-width:640px){
+@media(min-width:640px) and (hover:hover) and (pointer:fine){
   header{padding:1.6rem 2rem 1.1rem;}
   .logo-mark{font-size:1.8rem;}
   /* On tablet+ move tabs back to top */
@@ -4198,7 +4244,7 @@ function renderResults(c, sess) {
       : '';
 
     return '<div style="margin-bottom:.9rem;">'
-      + '<button class="res-wine-img-btn" onclick="showWineModal(_resWines[' + i + '])">'
+      + '<button class="res-wine-img-btn" onclick="showWineModal(_resWines[' + i + '], false, _resCtx(' + i + '))">'
       + '<div class="res-wine-img-card">'
       + (thumbSrc
           ? '<img src="' + thumbSrc + '" class="res-wine-img-thumb-lg" alt="' + w.name + '">'
@@ -6228,14 +6274,37 @@ function showWineFromAttr(el) {
   try { showWineModal(JSON.parse(decodeURIComponent(el.dataset.wine))); } catch(e) { console.warn('showWineFromAttr error', e); }
 }
 
-var _currentModalWine = null;
+var _currentModalWine = null, _currentModalCtx = null;
+function _resCtx(i) {
+  var n = document.getElementById('res-sess-name');
+  return { idx: i, count: (_resWines || []).length, session: n ? n.textContent : '' };
+}
 var _sheetStack = [];
 var _histArchive = {}, _histByHost = {};
 
-function sheetPush(renderFn) { _sheetStack.push(renderFn); renderFn(); }
+// L3: slide the sheet content in from the right (deeper) or the left (back)
+function animateSheet(dir) {
+  var el = document.getElementById('wine-info-content'); if (!el) return;
+  el.classList.remove('sheet-in-fwd', 'sheet-in-back');
+  void el.offsetWidth;                                   // restart the animation
+  el.classList.add(dir === 'back' ? 'sheet-in-back' : 'sheet-in-fwd');
+}
+// L4: first level closes (✕), deeper levels step back (‹) — same button, same place
+function sheetCloseBtn() {
+  var deep = _sheetStack.length > 1;
+  return '<button class="wine-info-close' + (deep ? ' is-back' : '') + '" onclick="sheetBack()" aria-label="' + (deep ? 'Back' : 'Close') + '">' + (deep ? '‹' : '✕') + '</button>';
+}
+// L1: small level label above the title
+function lvlLabel(t) { return '<div class="lvl-label">' + t + '</div>'; }
+
+function sheetPush(renderFn) {
+  var deeper = _sheetStack.length > 0;
+  _sheetStack.push(renderFn); renderFn();
+  if (deeper) animateSheet('fwd');
+}
 function sheetBack() {
   _sheetStack.pop();
-  if (_sheetStack.length) { _sheetStack[_sheetStack.length - 1](); }
+  if (_sheetStack.length) { _sheetStack[_sheetStack.length - 1](); animateSheet('back'); }
   else closeWineModal();
 }
 function openSheet() {
@@ -6249,11 +6318,11 @@ function openSheet() {
   document.body.style.overflow = 'hidden';
   var sh = document.getElementById('wine-info-sheet'); if (sh) { sh.style.transform = ''; sh.scrollTop = 0; }
 }
-function sheetHeader(title, sub) {
+function sheetHeader(title, sub, level) {
   return '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.6rem;margin-bottom:1rem;">'
-    + '<div style="min-width:0;"><div class="wine-info-title" style="font-size:1.2rem;">' + title + '</div>'
-    + (sub ? '<div class="sess-chip-meta" style="margin-top:.25rem;">' + sub + '</div>' : '') + '</div>'
-    + '<button class="wine-info-close" onclick="sheetBack()" aria-label="Back">✕</button></div>';
+    + '<div style="min-width:0;">' + (level ? lvlLabel(level) : '') + '<div class="wine-info-title" style="font-size:1.2rem;">' + title + '</div>'
+    + (sub ? '<div class="lvl-sub">' + sub + '</div>' : '') + '</div>'
+    + sheetCloseBtn() + '</div>';
 }
 function normScore(r) { return r.system==='100'?r.score:r.system==='20'?(r.score/20)*100:(r.score/5)*100; }
 function avgOf(rs) { if (!rs.length) return null; var n = rs.map(normScore); return Math.round(n.reduce(function(a,b){return a+b;})/n.length*10)/10; }
@@ -6262,7 +6331,7 @@ function openHostSheet(host) {
   sheetPush(function() {
     var cnt = document.getElementById('wine-info-content'); if (!cnt) return;
     var codes = _histByHost[host] || [];
-    cnt.innerHTML = sheetHeader(host, codes.length + ' session' + (codes.length !== 1 ? 's' : ''))
+    cnt.innerHTML = sheetHeader(escHtml(host), codes.length + ' session' + (codes.length !== 1 ? 's' : '') + ' hosted', 'Host')
       + codes.map(function(code) {
           var s = _histArchive[code] || {};
           var wines = s.wines || [];
@@ -6295,7 +6364,7 @@ function openHistSession(code) {
         + '<div class="sess-chip-meta">' + [w.country, w.grapes].filter(Boolean).join(' · ') + '</div></div>'
         + '<div class="sess-chip-code">' + (a !== null ? a : '—') + '</div></button>';
     }).join('');
-    cnt.innerHTML = sheetHeader(s.name || 'Session', [s.host, s.created].filter(Boolean).join(' · '))
+    cnt.innerHTML = sheetHeader(escHtml(s.name || 'Session'), [s.host ? 'Hosted by ' + escHtml(s.host) : '', s.created].filter(Boolean).join(' · '), 'Session')
       + '<div class="hist-stats" style="margin-bottom:1rem;">' + stat(wines.length,'Wines') + stat(tasters,'Tasters') + stat(avg !== null ? avg : '—','Avg') + '</div>'
       + (gTop ? '<div class="section-lbl">Best blind guesser · <span style="color:var(--pale-gold);">' + gTop[0] + ' ' + gTop[1] + 'p</span></div>' : '')
       + '<div class="section-lbl">Wines</div>' + rows;
@@ -6305,7 +6374,7 @@ function openHistSession(code) {
 
 function openHistWine(code, i) {
   var s = _histArchive[code]; if (!s || !s.wines || !s.wines[i]) return;
-  showWineModal(s.wines[i]);
+  showWineModal(s.wines[i], false, { idx: i, count: s.wines.length, session: s.name });
 }
 
 
@@ -6313,8 +6382,11 @@ function escAttr(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
-function showWineModal(wineOrIdx, _fromStack) {
-  if (!_fromStack) { _sheetStack.push(function(){ showWineModal(wineOrIdx, true); }); }
+function showWineModal(wineOrIdx, _fromStack, ctx) {
+  var _deeper = !_fromStack && _sheetStack.length > 0;
+  if (!_fromStack) { _sheetStack.push(function(){ showWineModal(wineOrIdx, true, ctx); }); }
+  _currentModalCtx = ctx || null;
+  if (_deeper) setTimeout(function(){ animateSheet('fwd'); }, 0);
   // Accept either a wine object (legacy) or an index into _resWines
   var w = (typeof wineOrIdx === 'number') ? _resWines[wineOrIdx] : wineOrIdx;
   if (!w) return;
@@ -6427,10 +6499,12 @@ function showWineModal(wineOrIdx, _fromStack) {
     '<div class="wine-info-hero">'
       + imgHtml
       + '<div style="flex:1;min-width:0;">'
-        + '<div class="wine-info-title">' + w.name + '</div>'
-        + (w.vintage ? '<div class="wine-info-vintage">' + w.vintage + '</div>' : '')
+        + lvlLabel('Wine')
+        + '<div class="wine-info-title">' + escHtml(w.name) + '</div>'
+        + (w.vintage ? '<div class="wine-info-vintage">' + escHtml(w.vintage) + '</div>' : '')
+        + (ctx ? '<div class="lvl-sub">' + [ctx.count ? 'Wine ' + (ctx.idx + 1) + ' of ' + ctx.count : '', ctx.session ? escHtml(ctx.session) : ''].filter(Boolean).join(' · ') + '</div>' : '')
       + '</div>'
-      + '<button class="wine-info-close" onclick="sheetBack()">✕</button>'
+      + sheetCloseBtn()
     + '</div>'
     + metaHtml
     + notesHtml
@@ -6549,7 +6623,9 @@ function closeImgLightbox(fromPop) {
 })();
 
 function showTasterDetail(taster, _fromStack) {
-  if (!_fromStack) { var _w = _currentModalWine; _sheetStack.push(function(){ _currentModalWine = _w; showTasterDetail(taster, true); }); }
+  var _deeper = !_fromStack && _sheetStack.length > 0;
+  if (!_fromStack) { var _w = _currentModalWine, _cx = _currentModalCtx; _sheetStack.push(function(){ _currentModalWine = _w; _currentModalCtx = _cx; showTasterDetail(taster, true); }); }
+  if (_deeper) setTimeout(function(){ animateSheet('fwd'); }, 0);
   var w = _currentModalWine;
   var cnt = document.getElementById('wine-info-content');
   if (!w || !cnt) return;
@@ -6635,11 +6711,14 @@ function showTasterDetail(taster, _fromStack) {
     : '';
 
   cnt.innerHTML =
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.3rem;">'
-      + '<div class="wine-info-title" style="font-size:1.15rem;">' + taster + '</div>'
-      + '<button class="wine-info-close" onclick="sheetBack()" title="Back">✕</button>'
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.6rem;margin-bottom:1rem;">'
+      + '<div style="min-width:0;">' + lvlLabel('Taster')
+        + '<div class="wine-info-title" style="font-size:1.15rem;">' + escHtml(taster) + '</div>'
+        + '<div class="lvl-sub">' + escHtml(w.name) + (w.vintage ? ' ' + escHtml(w.vintage) : '')
+          + (_currentModalCtx && _currentModalCtx.session ? ' · ' + escHtml(_currentModalCtx.session) : '') + '</div>'
+      + '</div>'
+      + sheetCloseBtn()
     + '</div>'
-    + '<div style="font-family:Josefin Sans,sans-serif;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--smoke);margin-bottom:1rem;">' + w.name + (w.vintage ? ' ' + w.vintage : '') + '</div>'
     + ratingDetailHtml
     + guessDetailHtml
     + emptyHtml;
@@ -6784,10 +6863,10 @@ async function _loadAllSessions() {
 function _profileHTML(me, st) {
   const initial = escHtml((me.trim()[0] || '?').toUpperCase());
   const hero = '<div class="prof-hero"><div class="prof-avatar">' + initial + '</div><div style="flex:1;min-width:0;">'
-    + '<div class="prof-name">' + escHtml(me) + '</div>'
+    + lvlLabel('Profile') + '<div class="prof-name">' + escHtml(me) + '</div>'
     + '<div class="prof-sub">' + st.sessions + ' session' + (st.sessions !== 1 ? 's' : '') + ' · ' + st.winesRated + ' wine' + (st.winesRated !== 1 ? 's' : '') + ' rated'
     + (st.hosted ? ' · hosted ' + st.hosted : '') + '</div></div>'
-    + '<button class="wine-info-close" onclick="sheetBack()" aria-label="Close">✕</button></div>';
+    + sheetCloseBtn() + '</div>';
   const switchBtn = '<button class="btn btn-outline prof-switch" onclick="closeWineModal(true);changeMember()">Switch member</button>';
   if (!st.winesRated && !st.guesses) {
     return hero + '<div class="prof-empty">No tastings yet.<br>Your stats appear after your first rating or blind guess.</div>' + switchBtn;
@@ -6841,7 +6920,7 @@ function openProfile() {
   sheetPush(function renderProfile() {
     const cnt = document.getElementById('wine-info-content'); if (!cnt) return;
     if (_profileCache && _profileCache.name === me) { cnt.innerHTML = _profileCache.html; openSheet(); return; }
-    cnt.innerHTML = sheetHeader(escHtml(me), 'Your tasting profile') + spinnerHTML('Crunching your numbers…');
+    cnt.innerHTML = sheetHeader(escHtml(me), 'Your tasting profile', 'Profile') + spinnerHTML('Crunching your numbers…');
     openSheet();
     _loadAllSessions().then(all => {
       const html = _profileHTML(me, computeMemberStats(all, me));
@@ -6904,7 +6983,7 @@ window.addEventListener('popstate', function(e) {
   var modal = document.getElementById('wine-info-modal');
   if (modal && modal.classList.contains('open')) {
     if (_sheetStack.length > 1) {
-      _sheetStack.pop(); _sheetStack[_sheetStack.length - 1]();
+      _sheetStack.pop(); _sheetStack[_sheetStack.length - 1](); animateSheet('back');
       try { history.pushState({ modal: true }, ''); _modalPushed = true; } catch(err) {}
     } else { closeWineModal(true); }
     return;
