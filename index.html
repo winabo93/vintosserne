@@ -1628,6 +1628,43 @@ header.show-title h1{opacity:1;transform:none;}
 .empty-note{color:var(--smoke);font-size:.95rem;line-height:1.6;padding:1.4rem 0;}
 .empty-note b{color:var(--cream);font-weight:600;}
 @media (max-width:359px){ header h1{display:none;} }
+/* ═══ TASTE HOME ═══ */
+#tab-taste:has(#unlock-screen:not(.hidden)) > .page-title{display:none;}
+.taste-hero{position:relative;margin:0 -.35rem;}
+.th-map svg{display:block;width:100%;height:auto;
+  -webkit-mask-image:linear-gradient(to bottom,#000 78%,transparent 100%);mask-image:linear-gradient(to bottom,#000 78%,transparent 100%);
+  animation:thFade .9s ease-out both;}
+@keyframes thFade{from{opacity:0}to{opacity:1}}
+.th-map .land{fill:var(--cream);opacity:.2;}
+.th-map .pin .dot{fill:var(--straw);opacity:.85;transition:fill .3s,opacity .3s,transform .3s;transform-box:fill-box;transform-origin:center;}
+.th-map .pin .halo{fill:var(--claret-lt);opacity:0;transition:opacity .3s,transform .3s;transform-box:fill-box;transform-origin:center;}
+.th-map svg.focus .pin:not(.hl) .dot{opacity:.62;}
+.th-map .pin.hl .dot{fill:var(--claret-lt);opacity:1;transform:scale(1.35);}
+.th-map .pin.hl .halo{opacity:.28;transform:scale(1.6);}
+.th-map-wrap{position:relative;}
+.th-cap{position:absolute;right:.35rem;top:.1rem;font-size:.76rem;color:var(--smoke);min-height:1em;}
+.th-cap i{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--straw);margin-right:5px;vertical-align:1px;}
+.th-cap i.l{background:var(--claret-lt);margin-left:10px;}
+.th-fact{padding:.9rem .35rem 0;}
+.fact-text{font-family:var(--f-label);font-weight:500;font-size:1.62rem;line-height:1.22;letter-spacing:-.012em;color:var(--cream);
+  hyphens:none;-webkit-hyphens:none;text-wrap:balance;min-height:calc(1.62rem * 1.22 * 2);}
+.fact-more{display:inline-flex;align-items:center;gap:.35rem;margin-top:.55rem;padding:.3rem 0;min-height:36px;background:none;border:0;
+  color:var(--smoke);font-family:var(--f-ui);font-size:.82rem;font-weight:500;cursor:pointer;}
+.fact-more svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;}
+.fact-more:active{color:var(--cream);}
+#unlock-screen .card{margin-top:1.3rem;}
+.now-card{background:var(--oak);border:1px solid var(--gb);border-radius:20px;padding:1.1rem 1.1rem 1rem;margin-bottom:.6rem;}
+.now-name{font-family:var(--f-label);font-weight:500;font-size:1.45rem;line-height:1.15;color:var(--cream);}
+.now-meta{color:var(--smoke);font-size:.84rem;margin-top:.25rem;}
+.now-prog{display:flex;justify-content:space-between;gap:.5rem;margin:1rem 0 .4rem;font-size:.84rem;color:var(--smoke);}
+.now-prog b{color:var(--cream);font-weight:600;}
+.now-track{height:6px;border-radius:3px;background:var(--barrel);overflow:hidden;}
+.now-fill{height:100%;background:var(--straw);border-radius:3px;transition:width .4s;}
+.now-cta{width:100%;margin-top:1rem;min-height:48px;font-size:.95rem;border-radius:14px;}
+.home-empty{color:var(--smoke);font-size:.95rem;margin-bottom:1rem;}
+.home-last{display:block;margin-top:1rem;background:none;border:0;padding:.3rem 0;color:var(--smoke);font-family:var(--f-ui);font-size:.9rem;text-align:left;cursor:pointer;}
+.home-last b{color:var(--cream);font-weight:500;}
+@media (prefers-reduced-motion:reduce){ .th-map svg{animation:none;} .th-map .pin *{transition:none;} }
 /* ═══════════ /V2 ═══════════ */
 </style>
 </head>
@@ -2111,6 +2148,13 @@ header.show-title h1{opacity:1;transform:none;}
 <div id="tab-taste" class="panel active">
   <h2 class="page-title">Taste</h2>
   <div id="unlock-screen">
+    <div class="taste-hero">
+      <div class="th-map-wrap"><div class="th-map" id="th-map"></div><div class="th-cap" id="th-cap"></div></div>
+      <div class="page-title-proxy th-fact">
+        <div class="fact-text" id="th-fact-text">&nbsp;</div>
+        <button class="fact-more" id="th-more" onclick="nextHomeFact()" style="display:none"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/></svg>Another fact</button>
+      </div>
+    </div>
     <div class="card">
       <!-- CODE ENTRY (hidden for now — to re-enable, remove the .code-entry rule "display:none" in the CSS) -->
       <div class="code-entry" style="text-align:center;padding:1rem .5rem .3rem;">
@@ -4176,7 +4220,7 @@ function resetTaste() {
   document.getElementById('unlock-screen').classList.remove('hidden');
   document.getElementById('rating-card').classList.add('hidden');
   document.getElementById('unlock-alert').className = 'alert';
-  renderSessionPicker('taste-picker', 'taste');
+  renderTasteHome();
 }
 
 // ═══════════════════════════════════════
@@ -6436,6 +6480,7 @@ Be precise. Use official names. Return only the JSON object, no other text.`;
 const CLUB_MEMBERS = ['Nichlas', 'William', 'Nikoline', 'Mathilde', 'Mathilda', 'Carl Christian', 'Sylvester', 'Karoline'];
 
 function selectMember(name) {
+  setTimeout(function(){ _factOffset = 0; if (typeof renderTasteHome === 'function' && !tasteCode) renderTasteHome(); }, 0);
   if (!name) return;
   name = name.trim();
   if (!name) return;
@@ -7171,6 +7216,230 @@ async function renderSessionPicker(targetId, mode) {
       }).join('');
 }
 
+// ═══════════════════════════════════════
+//  TASTE HOME — daily club fact + origin map + "Now tasting"
+// ═══════════════════════════════════════
+var LAND_ENC = '000007004001fff80000003001ff0000000|800002f99fc07ff800000061dffffefe000|07ffffa04ce07fe0000ff006bffffffffdc|f5fffffff0687f09003fc7ffffffffffffc|11ffffffc8307800007bffffffffffffffc|03ffffff81c0180001f7ffffffffffff8e0|0040ffff81f8000010b3fffffffffff0300|01003ffff0fc000010e7ffffffffffc0700|00000ffffdff000039fffffffffffff0600|000007fffffd00001bffffffffffffe8000|000007ffffd380000fffffffffffffe0000|000003fffffc000007ffafffffffffc0000|000007ffffc000003c6f07ffffffff18000|000007ffff8000003896ffffffffee10000|000003ffff0000003824ffffffffe200000|000001ffff0000001f801fffffffe2e0000|000000fffc0000003fe41ffffffff100000|0000003fec0000003fffff7ffffff000000|0000005f04000000ffffdf3ffffff000000|0000002f00000001ffffefa1ffffe000000|0000000702000001ffffeff0fe7f8000000|0040000730400001fffff7e07c7d0000000|00000001e0000001fffff3c0783c0000000|0000000038000001fffffb00301e0800000|0000000008400001fffffc8030160400000|0000000006fc0000ffffff8000102400000|0000000001fe00007fffff0008000400000|0000000000ffc000007ffe0000284000000|0000000001ffc000007ffc000019e200000|0000000003fff000007ff8000009d080000|0000000003fffe00003ff800000450f8000|0000000003ffff00003ff0000002003c000|0000000001ffff00003ff00000000402000|0000000001fffe00003ff80000000080000|0000000000fffc00003ff88000000188000|00000000007ffc00003ff30000000ff8000|00000000003ffc00003fe30000000ffc000|00000000003ff800001fe30000007ffe000|00000000003fe000001fc20000007fff000|00000000003fe000001fc00000007fff000|00000000003fc000000f800000007fff000|00000000003f8000000f00000000387f000|00000000007e0000000000000000003e000|00000000007e0000000000000000001c008|00000000007800000000000000000000000|00000000007000000000000000000004010|00000000006000000000000000000000060|0000000000f000000000000000000000000|0000000000e000000000000000000000000|00000000006000000000000000000000000|00000000000000000000000000000000000';   // 2.6° dotted land grid (Natural Earth 110m), rows from 74°N, 1 bit per cell
+var COUNTRY_CENTROIDS = {
+  'France':[46.5,2.5],'Italy':[42.8,12.5],'Spain':[40.2,-3.7],'Portugal':[39.6,-8.0],'Germany':[50.5,9.5],'Austria':[47.6,14.1],
+  'Switzerland':[46.8,8.2],'Hungary':[47.1,19.4],'Greece':[39.3,22.0],'Croatia':[45.1,15.4],'Slovenia':[46.1,14.8],'Czech Republic':[49.8,15.5],
+  'Slovakia':[48.7,19.7],'Romania':[45.9,24.9],'Bulgaria':[42.7,25.3],'Serbia':[44.0,20.9],'Moldova':[47.2,28.5],'Georgia':[42.0,43.5],
+  'Armenia':[40.1,45.0],'Lebanon':[33.9,35.9],'Israel':[31.4,35.0],'Turkey':[39.0,35.2],'Cyprus':[35.0,33.2],'Malta':[35.9,14.4],
+  'Luxembourg':[49.8,6.1],'Belgium':[50.6,4.6],'Netherlands':[52.2,5.5],'Denmark':[56.0,10.0],'Sweden':[59.5,15.0],'Norway':[61.0,9.0],
+  'England':[52.5,-1.2],'Wales':[52.3,-3.7],'United Kingdom':[52.5,-1.5],'Scotland':[56.6,-4.0],'Ireland':[53.2,-8.0],'Poland':[52.0,19.4],
+  'Lithuania':[55.3,23.9],'Ukraine':[48.8,31.3],'North Macedonia':[41.6,21.7],'Montenegro':[42.7,19.3],'Albania':[41.1,20.1],'Kosovo':[42.6,20.9],
+  'Bosnia and Herzegovina':[44.0,17.8],'Belarus':[53.7,28.0],'Azerbaijan':[40.3,47.7],'Kazakhstan':[48.0,67.0],'Russia':[45.0,39.0],
+  'United States':[39.0,-98.0],'Canada':[45.5,-75.0],'Mexico':[23.6,-102.5],'Argentina':[-34.0,-65.0],'Chile':[-35.5,-71.5],'Uruguay':[-32.8,-56.0],
+  'Brazil':[-29.5,-51.5],'Peru':[-13.0,-76.0],'Bolivia':[-21.5,-64.7],'South Africa':[-33.5,19.5],'Morocco':[33.8,-6.0],'Tunisia':[36.5,10.0],
+  'Algeria':[36.0,3.0],'Australia':[-34.5,142.0],'New Zealand':[-41.5,174.0],'Japan':[36.0,138.5],'China':[38.0,106.0],'India':[19.0,74.0],
+  'South Korea':[36.5,127.8],'Thailand':[14.5,101.0]
+};
+var _homeCache = null;   // { all, pins, facts } — rebuilt on each render of the Taste home
+var _factOffset = 0;
+
+function _dayKey() { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+function _hash(s) { var h = 2166136261; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+
+// Where a wine goes on the map: its saved location, else its country's centre
+function winePinKey(w) {
+  if (w && w.location && isFinite(w.location.lat) && isFinite(w.location.lng))
+    return 'p:' + (Math.round(w.location.lat * 2) / 2) + ',' + (Math.round(w.location.lng * 2) / 2);
+  if (w && COUNTRY_CENTROIDS[w.country]) return 'c:' + w.country;
+  return null;
+}
+function _pinLatLng(key) {
+  if (key.indexOf('p:') === 0) { var a = key.slice(2).split(','); return [+a[0], +a[1]]; }
+  return COUNTRY_CENTROIDS[key.slice(2)] || null;
+}
+
+// Pure: every session (code → session) + member → { pins, facts }
+function computeClubFacts(all, me) {
+  var pins = {}, wines = [];
+  Object.keys(all || {}).forEach(function(code) {
+    var s = all[code]; if (!s || !s.wines) return;
+    s.wines.forEach(function(w) {
+      var k = winePinKey(w);
+      if (k) pins[k] = (pins[k] || 0) + 1;
+      wines.push({ w: w, s: s, key: k });
+    });
+  });
+  var keysWhere = function(pred) { var o = {}; wines.forEach(function(x) { if (x.key && pred(x.w)) o[x.key] = 1; }); return Object.keys(o); };
+  var avg = function(a) { return a.length ? Math.round(a.reduce(function(p, q) { return p + q; }, 0) / a.length * 10) / 10 : null; };
+  var facts = [];
+  var byGrape = {}, byCountry = {}, byTaster = {}, guessTot = {}, hosted = {}, top = null;
+  wines.forEach(function(x) {
+    (x.w.ratings || []).forEach(function(r) {
+      if (!r || typeof r.score !== 'number') return;
+      var n = normScore(r);
+      if (x.w.grapes) (byGrape[x.w.grapes] = byGrape[x.w.grapes] || []).push(n);
+      if (x.w.country) (byCountry[x.w.country] = byCountry[x.w.country] || []).push(n);
+      (byTaster[r.taster] = byTaster[r.taster] || []).push(n);
+    });
+    (x.w.guesses || []).forEach(function(g) { if (g && g.scored) guessTot[g.taster] = (guessTot[g.taster] || 0) + (g.points || 0); });
+    var wa = avg((x.w.ratings || []).filter(function(r){ return r && typeof r.score === 'number'; }).map(normScore));
+    if (wa !== null && (!top || wa > top.a)) top = { a: wa, x: x };
+  });
+  Object.keys(all || {}).forEach(function(c) { var h = all[c] && all[c].host; if (h) hosted[h] = (hosted[h] || 0) + 1; });
+  var best = function(map, min) {
+    var e = Object.keys(map).map(function(k) { return { k: k, a: avg(map[k]), n: map[k].length }; }).filter(function(o) { return o.n >= (min || 1); });
+    return e.sort(function(a, b) { return b.a - a.a || b.n - a.n; })[0] || null;
+  };
+  var E = escHtml;
+  // ── Club facts ──
+  var g = best(byGrape, 2);
+  if (g) facts.push({ id: 'fav-grape', t: E(g.k) + ' is the club’s favourite grape, averaging&nbsp;' + g.a + '.', hl: keysWhere(function(w){ return w.grapes === g.k; }), cap: E(g.k) });
+  var c = best(byCountry, 2);
+  if (c) facts.push({ id: 'fav-country', t: 'The club’s best-scoring country is ' + E(c.k) + ', averaging&nbsp;' + c.a + '.', hl: keysWhere(function(w){ return w.country === c.k; }), cap: E(c.k) });
+  var cs = Object.keys(byCountry).map(function(k) { return { k: k, a: avg(byCountry[k]), n: byCountry[k].length }; }).filter(function(o){ return o.n >= 2; }).sort(function(a, b){ return b.n - a.n; });
+  if (cs.length >= 2) {
+    var d = Math.round((cs[0].a - cs[1].a) * 10) / 10, hi = d >= 0 ? cs[0] : cs[1], lo = d >= 0 ? cs[1] : cs[0];
+    if (Math.abs(d) >= 0.5) facts.push({ id: 'compare', t: 'Wines from ' + E(hi.k) + ' score ' + Math.abs(d) + '&nbsp;points above ' + E(lo.k) + '.', hl: keysWhere(function(w){ return w.country === hi.k; }), cap: E(hi.k) });
+  }
+  var nPins = Object.keys(pins).length, nCountries = Object.keys(byCountry).length;
+  if (nPins >= 2) facts.push({ id: 'reach', t: 'Wines from ' + nPins + ' places in ' + nCountries + '&nbsp;countr' + (nCountries === 1 ? 'y' : 'ies') + ' so&nbsp;far.', hl: 'all', cap: null });
+  if (top) facts.push({ id: 'top-wine', t: 'The best-rated wine so far: ' + E(top.x.w.name) + (top.x.w.vintage ? ' ' + E(top.x.w.vintage) : '') + ', at&nbsp;' + top.a + '.', hl: top.x.key ? [top.x.key] : [], cap: top.x.w.country ? E(top.x.w.country) : null });
+  var _lead = function(map) {                       // clear leader only — ties make no fact
+    var k = Object.keys(map).sort(function(a, b){ return map[b] - map[a]; });
+    return (k.length && (k.length === 1 || map[k[0]] > map[k[1]])) ? k[0] : null;
+  };
+  var gl = _lead(guessTot);
+  if (gl && guessTot[gl] > 0) facts.push({ id: 'blind-leader', t: E(gl) + ' leads the blind game with ' + guessTot[gl] + '&nbsp;points.', hl: [], cap: null });
+  var gen = best(byTaster, 3);
+  var gens = Object.keys(byTaster).filter(function(k){ return byTaster[k].length >= 3; }).map(function(k){ return avg(byTaster[k]); }).sort(function(a, b){ return b - a; });
+  if (gen && gens.length >= 2 && gens[0] > gens[1]) facts.push({ id: 'generous', t: E(gen.k) + ' is the most generous scorer, averaging&nbsp;' + gen.a + '.', hl: [], cap: null });
+  var hh = _lead(hosted);
+  if (hh && hosted[hh] >= 2) facts.push({ id: 'host', t: E(hh) + ' has hosted the most tastings: ' + hosted[hh] + '.', hl: [], cap: null });
+  // ── Personal facts ──
+  if (me) {
+    var st = computeMemberStats(all, me);
+    if (st.best && st.best.points > 0) {
+      var bw = (all[st.best.code] || {}).wines ? all[st.best.code].wines[st.best.wi] : null;
+      var bk = bw ? winePinKey(bw) : null;
+      facts.push({ id: 'my-best', t: 'Your best blind guess scored ' + st.best.points + ' on ' + E(st.best.name) + '.', hl: bk ? [bk] : [], cap: bw && bw.country ? E(bw.country) : null, me: 1 });
+    }
+    if (st.favGrape && st.favGrape.count >= 2) facts.push({ id: 'my-grape', t: 'Your favourite grape is ' + E(st.favGrape.k) + ', averaging&nbsp;' + st.favGrape.avg + '.', hl: keysWhere(function(w){ return w.grapes === st.favGrape.k; }), cap: E(st.favGrape.k), me: 1 });
+    if (st.avg !== null && st.clubAvg !== null && st.winesRated >= 3) {
+      var dd = Math.round((st.avg - st.clubAvg) * 10) / 10;
+      if (Math.abs(dd) >= 0.5) facts.push({ id: 'my-vs-club', t: 'You score ' + Math.abs(dd) + '&nbsp;points ' + (dd > 0 ? 'above' : 'below') + ' the club average.', hl: [], cap: null, me: 1 });
+    }
+    if (st.winesRated >= 2) {
+      var myKeys = {}, myC = {};
+      wines.forEach(function(x){ if ((x.w.ratings || []).some(function(r){ return r && r.taster === me; })) { if (x.key) myKeys[x.key] = 1; if (x.w.country) myC[x.w.country] = 1; } });
+      var nc = Object.keys(myC).length;
+      facts.push({ id: 'my-count', t: 'You’ve rated ' + st.winesRated + ' wines from ' + nc + '&nbsp;countr' + (nc === 1 ? 'y' : 'ies') + '.', hl: Object.keys(myKeys), cap: 'Yours', me: 1 });
+    }
+  }
+  return { pins: pins, facts: facts };
+}
+
+// Same fact all day for this member; "Another fact" steps through the rest
+function dailyFactIndex(n, me) { return n ? _hash(_dayKey() + '|' + (me || '')) % n : 0; }
+
+var _landSvg = null;
+function _landDots() {
+  if (_landSvg) return _landSvg;
+  var STEP = 2.6, out = '';
+  LAND_ENC.split('|').forEach(function(row, r) {
+    var lat = 74 - r * STEP;
+    for (var i = 0; i < row.length; i++) {
+      var v = parseInt(row[i], 16);
+      for (var b = 0; b < 4; b++) if (v & (8 >> b)) {
+        var lon = -180 + STEP / 2 + (i * 4 + b) * STEP;
+        if (lon >= -133 && lon <= 180 && lat <= 72 && lat >= -48) out += '<circle cx="' + (lon + 133).toFixed(1) + '" cy="' + (72 - lat).toFixed(1) + '" r=".78"/>';
+      }
+    }
+  });
+  return (_landSvg = out);
+}
+function renderHomeMap(pins) {
+  var box = document.getElementById('th-map'); if (!box) return;
+  var p = Object.keys(pins).map(function(k) {
+    var ll = _pinLatLng(k); if (!ll) return '';
+    var x = (ll[1] + 133).toFixed(1), y = (72 - ll[0]).toFixed(1), r = (1.9 + 0.42 * Math.min(pins[k], 6)).toFixed(2);
+    return '<g class="pin" data-k="' + escHtml(k) + '"><circle class="halo" cx="' + x + '" cy="' + y + '" r="' + (r * 2.8).toFixed(1) + '"/><circle class="dot" cx="' + x + '" cy="' + y + '" r="' + r + '"/></g>';
+  }).join('');
+  box.innerHTML = '<svg viewBox="0 0 313 120" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><g class="land">' + _landDots() + '</g>' + p + '</svg>';
+}
+function showHomeFact() {
+  var el = document.getElementById('th-fact-text'), capEl = document.getElementById('th-cap'), more = document.getElementById('th-more');
+  if (!el || !_homeCache) return;
+  var F = _homeCache.facts;
+  if (!F.length) { el.innerHTML = 'Your club’s story starts with the first tasting.'; if (more) more.style.display = 'none'; if (capEl) capEl.innerHTML = ''; return; }
+  if (more) more.style.display = F.length > 1 ? '' : 'none';
+  // Today's fact is remembered by id, so it stays put all day even as the list or numbers change
+  var me = getTaster(), day = _dayKey(), base = -1, saved = null;
+  try { saved = JSON.parse(localStorage.getItem('vino_daily_fact') || 'null'); } catch(e) {}
+  if (saved && saved.day === day && saved.me === me) base = F.findIndex(function(x){ return x.id === saved.id; });
+  if (base < 0) {
+    base = dailyFactIndex(F.length, me);
+    try { localStorage.setItem('vino_daily_fact', JSON.stringify({ day: day, me: me, id: F[base].id })); } catch(e) {}
+  }
+  var f = F[(base + _factOffset) % F.length];
+  el.innerHTML = f.t;
+  var svg = document.querySelector('#th-map svg');
+  if (svg) {
+    var focus = Array.isArray(f.hl) && f.hl.length > 0;
+    svg.classList.toggle('focus', focus);
+    svg.querySelectorAll('.pin').forEach(function(g) { g.classList.toggle('hl', focus && f.hl.indexOf(g.getAttribute('data-k')) >= 0); });
+  }
+  if (capEl) capEl.innerHTML = Object.keys(_homeCache.pins).length ? '<i></i>Tasted' + (f.cap && Array.isArray(f.hl) && f.hl.length ? '<i class="l"></i>' + f.cap : '') : '';
+}
+function nextHomeFact() { _factOffset++; showHomeFact(); }
+
+function _myProgress(s, me) {
+  var n = (s.wines || []).length, rated = 0, guessed = 0;
+  (s.wines || []).forEach(function(w) {
+    if ((w.ratings || []).some(function(r){ return r && r.taster === me; })) rated++;
+    if ((w.guesses || []).some(function(g){ return g && g.taster === me; })) guessed++;
+  });
+  return { n: n, rated: rated, guessed: guessed };
+}
+function _niceDate(d) {
+  var t = _parseDMY(d); if (!t) return escHtml(d || '');
+  var dt = new Date(t), M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return dt.getDate() + ' ' + M[dt.getMonth()] + (dt.getFullYear() !== new Date().getFullYear() ? ' ' + dt.getFullYear() : '');
+}
+function _parseDMY(d) { var p = String(d || '').split('/'); return p.length === 3 ? new Date(+p[2], +p[1] - 1, +p[0]).getTime() : 0; }
+
+async function renderTasteHome() {
+  var el = document.getElementById('taste-picker'); if (!el) return;
+  var all = await _loadAllSessions();
+  var me = getTaster();
+  var live = Object.keys(all).filter(function(k){ var s = all[k]; return s && !s.archived && (s.wines || []).length; });
+  _homeCache = computeClubFacts(all, me);
+  renderHomeMap(_homeCache.pins);
+  showHomeFact();
+  if (live.length) {
+    // "Now tasting" = the one you're already in, else the newest
+    live.sort(function(a, b) {
+      var pa = _myProgress(all[a], me).rated, pb = _myProgress(all[b], me).rated;
+      return (pb > 0) - (pa > 0) || _parseDMY(all[b].created) - _parseDMY(all[a].created);
+    });
+    var k = live[0], s = all[k], pr = _myProgress(s, me), pct = pr.n ? Math.round(pr.rated / pr.n * 100) : 0;
+    var rest = live.slice(1).map(function(c) {
+      var o = all[c], n = (o.wines || []).length;
+      return '<button class="sess-chip" onclick="pickTasteSession(\'' + c + '\')"><div style="min-width:0;"><div class="sess-chip-name">' + escHtml(o.name || 'Tasting') + '</div>'
+        + '<div class="sess-chip-meta">' + (o.host ? escHtml(o.host) + ' · ' : '') + n + ' wine' + (n !== 1 ? 's' : '') + '</div></div><span class="hist-chev">›</span></button>';
+    }).join('');
+    el.innerHTML = '<div class="section-lbl" style="margin-top:0;">Now tasting</div>'
+      + '<div class="now-card"><div class="now-name">' + escHtml(s.name || 'Tasting') + '</div>'
+      + '<div class="now-meta">' + (s.host ? 'Hosted by ' + escHtml(s.host) + ' · ' : '') + pr.n + ' wine' + (pr.n !== 1 ? 's' : '') + '</div>'
+      + '<div class="now-prog"><span>' + (pr.rated ? 'You’ve rated <b>' + pr.rated + ' of ' + pr.n + '</b>' : 'You haven’t rated yet') + '</span>'
+      + (pr.guessed ? '<span>' + pr.guessed + ' blind guess' + (pr.guessed !== 1 ? 'es' : '') + '</span>' : '') + '</div>'
+      + '<div class="now-track"><div class="now-fill" style="width:' + pct + '%"></div></div>'
+      + '<button class="btn btn-primary now-cta" onclick="pickTasteSession(\'' + k + '\')">' + (pr.rated ? 'Continue tasting' : 'Start tasting') + '</button></div>'
+      + rest;
+  } else {
+    var arch = Object.keys(all).filter(function(k){ return all[k] && all[k].archived; })
+      .sort(function(a, b){ return _parseDMY(all[b].created) - _parseDMY(all[a].created); });
+    var last = arch[0] ? all[arch[0]] : null;
+    el.innerHTML = '<div class="home-empty">No tasting tonight.</div>'
+      + '<button class="btn btn-primary" onclick="toggleHost()">New tasting</button>'
+      + (last ? '<button class="home-last" onclick="openHistSession(\'' + arch[0] + '\')">Last tasting: <b>' + escHtml(last.name || 'Tasting') + '</b>' + (last.created ? ', ' + _niceDate(last.created) : '') + ' ›</button>' : '');
+  }
+  updateTopBar();
+}
+
 function pickTasteSession(code) {
   String(code).split('').forEach(function(ch, i) { if (digits[i]) digits[i].value = ch; });
   unlockSession();
@@ -7227,7 +7496,8 @@ function toggleHost() {
 // Top bar: transparent at the top; frosted + small page title once the large title scrolls away
 function updateTopBar() {
   var h = document.querySelector('header'); if (!h) return;
-  var pt = document.querySelector('.panel.active .page-title');
+  var pt = document.querySelector('.panel.active .page-title-proxy');
+  if (!pt || !pt.offsetParent) pt = document.querySelector('.panel.active .page-title');
   var hb = h.getBoundingClientRect().bottom;
   var passed = pt ? pt.getBoundingClientRect().bottom <= hb + 2 : window.scrollY > 40;
   h.classList.toggle('scrolled', window.scrollY > 2);
@@ -7262,7 +7532,7 @@ renderHostPanel();
   }
   // else overlay stays visible
   try { history.replaceState({ tab: 'taste' }, ''); } catch(e) {}
-  renderSessionPicker('taste-picker', 'taste');
+  renderTasteHome();
 })();
 
 // Auto-unlock from QR URL param
