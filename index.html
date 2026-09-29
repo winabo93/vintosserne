@@ -1665,6 +1665,22 @@ header.show-title h1{opacity:1;transform:none;}
 .home-last{display:block;margin-top:1rem;background:none;border:0;padding:.3rem 0;color:var(--smoke);font-family:var(--f-ui);font-size:.9rem;text-align:left;cursor:pointer;}
 .home-last b{color:var(--cream);font-weight:500;}
 @media (prefers-reduced-motion:reduce){ .th-map svg{animation:none;} .th-map .pin *{transition:none;} }
+/* ═══ TASTING SESSION SCREEN ═══ */
+#tab-taste:has(#taste-screen:not(.hidden)) > .page-title{display:none;}
+.ts-back{margin:.1rem 0 .15rem -.2rem;}
+.ts-title{font-family:var(--f-label);font-weight:500;font-size:2rem;letter-spacing:-.018em;line-height:1.1;color:var(--cream);margin:0;}
+.ts-meta{color:var(--smoke);font-size:.88rem;margin:.35rem 0 1.1rem;}
+.ts-prog{margin-bottom:1rem;}
+.ts-prog .now-prog{margin-top:0;}
+.ts-cta{margin:0 0 1.2rem;}
+.ts-done{display:flex;align-items:center;gap:.45rem;color:var(--straw);font-size:.88rem;font-weight:500;margin:-.2rem 0 1.1rem;}
+.ts-done .ico{width:15px;height:15px;}
+.ts-live{width:100%;margin-top:.9rem;min-height:48px;border-radius:14px;gap:.5rem;}
+.ts-live .ico{width:17px;height:17px;}
+.start-tasting-cta{display:none;}
+#tab-results:has(#res-content:not(.hidden)) > .page-title{display:none;}
+.res-head{margin-bottom:1.3rem;}
+.res-head .ts-meta{margin-bottom:0;}
 /* ═══════════ /V2 ═══════════ */
 </style>
 </head>
@@ -2049,7 +2065,6 @@ header.show-title h1{opacity:1;transform:none;}
 
 <div class="tabs">
   <button class="tab-btn active" onclick="tabTap('taste')"><span><span class="tab-icon"><svg class="ico"><use href="#ico-taste"/></svg></span><span class="tab-label">Taste</span></span></button>
-  <button class="tab-btn" onclick="tabTap('results')"><span><span class="tab-icon"><svg class="ico"><use href="#ico-results"/></svg></span><span class="tab-label">Results</span></span></button>
   <button class="tab-btn" onclick="showTab('history')"><span><span class="tab-icon"><svg class="ico"><use href="#ico-history"/></svg></span><span class="tab-label">History</span></span></button>
   <button class="tab-btn" onclick="showTab('map')"><span><span class="tab-icon"><svg class="ico"><use href="#ico-map"/></svg></span><span class="tab-label">Map</span></span></button>
   <button class="tab-btn" onclick="showTab('ai')"><span><span class="tab-icon"><svg class="ico"><use href="#ico-ai"/></svg></span><span class="tab-label">AI</span></span></button>
@@ -2150,7 +2165,7 @@ header.show-title h1{opacity:1;transform:none;}
   <div id="unlock-screen">
     <div class="taste-hero">
       <div class="th-map-wrap"><div class="th-map" id="th-map"></div><div class="th-cap" id="th-cap"></div></div>
-      <div class="page-title-proxy th-fact">
+      <div class="page-title-proxy th-fact" data-bar="Taste">
         <div class="fact-text" id="th-fact-text">&nbsp;</div>
         <button class="fact-more" id="th-more" onclick="nextHomeFact()" style="display:none"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/></svg>Another fact</button>
       </div>
@@ -2173,18 +2188,13 @@ header.show-title h1{opacity:1;transform:none;}
   </div>
   <div id="taste-screen" class="hidden">
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.45rem;margin-bottom:1rem;">
-        <div>
-          <div style="font-family:'Schibsted Grotesk',sans-serif;font-size:.76rem;letter-spacing:.01em;text-transform:uppercase;color:var(--smoke);">Session</div>
-          <div style="font-family:'Newsreader',serif;font-size:1.2rem;" id="taste-sess-name">—</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:.65rem;flex-wrap:wrap;">
-          <button class="btn-back" onclick="resetTaste()">‹ Change</button>
-        </div>
-      </div>
+      <button class="btn-back ts-back" onclick="resetTaste()">‹ All tastings</button>
+      <h3 class="ts-title page-title-proxy" id="taste-sess-name" data-bar="">—</h3>
+      <div class="ts-meta" id="taste-sess-meta"></div>
       <input type="hidden" id="taster-name" value="">
       <input type="hidden" id="taster-name-other" value="">
       <div id="wine-selector" class="wine-selector"></div>
+      <button class="btn btn-outline ts-live" onclick="openLiveResults()"><svg class="ico"><use href="#ico-results"/></svg> Live results</button>
     </div>
     <div id="rating-card" class="card hidden">
       <div class="card-title" id="rating-title"><svg class="ico"><use href="#ico-bottle-red"/></svg> Rating Wine</div>
@@ -2283,11 +2293,11 @@ header.show-title h1{opacity:1;transform:none;}
       <div id="res-alert" class="alert"></div>
     </div>
     <div id="res-content" class="hidden">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.45rem;margin-bottom:1.2rem;">
-        <div style="font-family:'Newsreader',serif;font-size:1.3rem;font-weight:500;" id="res-sess-name">—</div>
-        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
-
-          <button class="btn-back" onclick="clearResults()">‹ Change</button>
+      <div class="res-head">
+        <button class="btn-back ts-back" onclick="resultsBack()">‹ Back</button>
+        <h3 class="ts-title page-title-proxy" id="res-sess-name" data-bar="Live results">—</h3>
+        <div class="ts-meta">Live results · updates as people rate</div>
+        <div style="display:none;">
           <!-- <button class="btn btn-primary btn-sm" onclick="exportResults()"><svg class="ico"><use href="#ico-export"/></svg> Export</button> -->
           <!-- <button class="btn btn-outline btn-sm" onclick="exportJSON()"><svg class="ico"><use href="#ico-export"/></svg> JSON Backup</button> -->
         </div>
@@ -3165,17 +3175,23 @@ function spinnerHTML(label) {
   return '<div class="spin-wrap"><div class="spin-ring"></div><div class="spin-label">' + (label || 'Loading…') + '</div></div>';
 }
 
-var TAB_ORDER = ['taste','results','history','map','ai'];
+var TAB_ORDER = ['taste','history','map','ai'];
 
 var _navFromPop = false;
 var _lastNonHostTab = 'taste';
 
+var _resReturn = 'taste';
 function showTab(n, direction) {
+  if (n === 'results') {
+    var _cur = document.querySelector('.panel.active');
+    var _cid = _cur ? _cur.id.replace('tab-', '') : 'taste';
+    if (_cid !== 'results' && _cid !== 'host') _resReturn = _cid;
+  }
   // Remember where we came from, so Host's back button can return there
   var curActive = document.querySelector('.panel.active');
   if (curActive) {
     var curId = curActive.id.replace('tab-', '');
-    if (curId !== 'host' && TAB_ORDER.indexOf(curId) >= 0) _lastNonHostTab = curId;
+    if (curId !== 'host' && (TAB_ORDER.indexOf(curId) >= 0 || curId === 'results')) _lastNonHostTab = curId;
   }
   // Stop results listener when navigating away
   if (n !== 'results' && resListener) { resListener(); resListener = null; }
@@ -3200,7 +3216,7 @@ function showTab(n, direction) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active', 'slide-fwd', 'slide-back'));
   // Highlight the matching bottom-nav button, if this tab is part of the nav row
-  var navIdx = TAB_ORDER.indexOf(n);
+  var navIdx = TAB_ORDER.indexOf(n === 'results' ? 'taste' : n);   // Results belongs to tasting
   if (navIdx >= 0) {
     var navBtn = document.querySelectorAll('.tab-btn')[navIdx];
     if (navBtn) navBtn.classList.add('active');
@@ -3690,6 +3706,7 @@ async function unlockSession() {
   tasteCode = c;
   localStorage.setItem('vino_last_res_code', c);  // propagate to Results tab
   document.getElementById('taste-sess-name').textContent = sess.name;
+  document.getElementById('taste-sess-name').dataset.bar = sess.name;
   if (tasteListener) tasteListener();
   stopCountdown();
   var cdArea = document.getElementById('countdown-area');
@@ -3750,24 +3767,23 @@ function refreshWineSelector(data) {
   const allDone = wines.length > 0 && taster && wines.every(w => (w.ratings || []).some(r => r.taster === taster));
   const anyDone = taster && wines.some(w => (w.ratings || []).some(r => r.taster === taster));
 
-  // CTA header: "Start Tasting" if none done yet, compact label if in progress
-  const ctaHTML = wines.length === 0 ? '' : !anyDone
-    ? `<div class="start-tasting-cta">
-        <div class="start-tasting-cta-label">Ready to taste?</div>
-        <div class="start-tasting-cta-name">${taster ? taster + ' · ' : ''}${wines.length} wine${wines.length !== 1 ? 's' : ''} to rate</div>
-        <button class="btn-start-tasting" onclick="openRating(0)">
-          <svg class="ico" style="width:1rem;height:1rem;margin-right:.4rem;vertical-align:middle;"><use href="#ico-glass"/></svg>
-          Start Tasting
-        </button>
-       </div>`
-    : allDone
-    ? `<div style="font-family:'Schibsted Grotesk',sans-serif;font-size:.76rem;letter-spacing:.01em;text-transform:uppercase;color:#7dffb0;margin-bottom:.6rem;text-align:center;">
-        ✓ All wines rated — tap to update
-       </div>`
-    : `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.65rem;padding:.5rem .2rem;">
-        <div style="font-family:'Schibsted Grotesk',sans-serif;font-size:.76rem;letter-spacing:.01em;text-transform:uppercase;color:var(--smoke);">Continue tasting</div>
-        <div style="font-family:'Schibsted Grotesk',sans-serif;font-size:.76rem;letter-spacing:.01em;text-transform:uppercase;color:rgba(226,194,125,.5);">${wines.filter(w=>(w.ratings||[]).some(r=>r.taster===taster)).length}/${wines.length} rated</div>
-       </div>`;
+  // Progress + one main action (same pattern as the "Now tasting" card on the Taste home)
+  const ratedN = taster ? wines.filter(w => (w.ratings || []).some(r => r.taster === taster)).length : 0;
+  const guessN = taster ? wines.filter(w => (w.guesses || []).some(g => g && g.taster === taster)).length : 0;
+  const nextIdx = wines.findIndex(w => !(taster && (w.ratings || []).some(r => r.taster === taster)));
+  const metaEl = document.getElementById('taste-sess-meta');
+  if (metaEl) metaEl.textContent = [data.host ? 'Hosted by ' + data.host : '', wines.length + ' wine' + (wines.length !== 1 ? 's' : '')].filter(Boolean).join(' · ');
+  const pct = wines.length ? Math.round(ratedN / wines.length * 100) : 0;
+  const liveBtn = document.querySelector('.ts-live');
+  if (liveBtn) { liveBtn.classList.toggle('btn-primary', allDone); liveBtn.classList.toggle('btn-outline', !allDone); }
+  const nextLabel = nextIdx < 0 ? '' : (wines[nextIdx].revealed ? escHtml(wines[nextIdx].name) : 'Wine ' + (nextIdx + 1));
+  const ctaHTML = wines.length === 0 ? '' :
+    '<div class="ts-prog"><div class="now-prog"><span>' + (ratedN ? 'You’ve rated <b>' + ratedN + ' of ' + wines.length + '</b>' : 'You haven’t rated yet') + '</span>'
+    + (guessN ? '<span>' + guessN + ' blind guess' + (guessN !== 1 ? 'es' : '') + '</span>' : '') + '</div>'
+    + '<div class="now-track"><div class="now-fill" style="width:' + pct + '%"></div></div></div>'
+    + (allDone
+        ? '<div class="ts-done">✓ All wines rated</div>'
+        : '<button class="btn btn-primary now-cta ts-cta" onclick="openRating(' + nextIdx + ')">' + (anyDone ? 'Continue with ' + nextLabel : 'Start tasting') + '</button>');
 
   document.getElementById('wine-selector').innerHTML = ctaHTML + '<div class="wine-selector-wines">' + wines.map((w, i) => {
     const done = taster && (w.ratings || []).some(r => r.taster === taster);
@@ -7015,6 +7031,7 @@ function closeWineModal(fromPop) {
     var activePanel = document.querySelector('.panel.active');
     if (!activePanel) return;
     var curId = activePanel.id.replace('tab-', '');
+    if (curId === 'results') { if (dx > 0) resultsBack(); return; }   // swipe right = back
     var idx = TAB_ORDER.indexOf(curId);
     if (idx < 0) return;
 
@@ -7500,6 +7517,8 @@ function updateTopBar() {
   if (!pt || !pt.offsetParent) pt = document.querySelector('.panel.active .page-title');
   var hb = h.getBoundingClientRect().bottom;
   var passed = pt ? pt.getBoundingClientRect().bottom <= hb + 2 : window.scrollY > 40;
+  var t1 = h.querySelector('h1');
+  if (t1 && pt) { var bt = pt.dataset && pt.dataset.bar ? pt.dataset.bar : (document.querySelector('.panel.active .page-title') || {}).textContent; if (bt && t1.textContent !== bt) t1.textContent = bt; }
   h.classList.toggle('scrolled', window.scrollY > 2);
   h.classList.toggle('show-title', passed);
 }
@@ -7511,6 +7530,12 @@ function updateTopBar() {
   }, { passive: true });
   window.addEventListener('resize', updateTopBar, { passive: true });
 })();
+
+function openLiveResults() {
+  if (tasteCode) localStorage.setItem('vino_last_res_code', tasteCode);
+  showTab('results', 'fwd');
+}
+function resultsBack() { showTab(_resReturn || 'taste', 'back'); }
 
 function exitHost() {
   showTab(_lastNonHostTab || 'taste');
