@@ -1700,7 +1700,7 @@ header.show-title h1{opacity:1;transform:none;}
 .leaflet-tooltip.vm-lbl{background:none;border:0;box-shadow:none;color:var(--cream);font:600 .76rem var(--f-ui);text-shadow:0 1px 3px #000,0 0 8px #000;padding:0;white-space:nowrap;}
 .leaflet-tooltip.vm-lbl.big{font-family:var(--f-label);font-size:.9rem;font-weight:500;}
 .leaflet-tooltip.vm-lbl.muted{color:rgba(243,236,229,.6);font-weight:500;font-size:.76rem;}
-.leaflet-tooltip.vm-lbl:before{display:none;}
+.leaflet-tooltip.vm-lbl:before,.leaflet-tooltip-bottom.vm-lbl:before{display:none;}
 #vmap .leaflet-control-attribution{background:rgba(28,21,25,.7);color:var(--smoke);font-size:10px;}
 #vmap .leaflet-control-attribution a{color:var(--smoke);}
 #vmap .leaflet-control-zoom a{background:var(--barrel);color:var(--cream);border-color:var(--gb);}
@@ -2355,11 +2355,6 @@ header.show-title h1{opacity:1;transform:none;}
   <div class="vmap-sub" id="vmap-sub">&nbsp;</div>
   <div class="vmap-wrap">
     <div id="vmap"></div>
-    <div class="vmap-chips">
-      <span class="vchip on"><span class="sw"></span>Appellations</span>
-      <button class="vchip" id="vchip-dots" onclick="vmToggleDots()">Dots</button>
-    </div>
-    <div class="vmap-legend"><span><i class="t"></i>Tasted</span><span><i class="n"></i>Not yet</span></div>
     <div class="vmap-msg" id="vmap-msg" style="display:none;"></div>
   </div>
 </div>
@@ -5919,8 +5914,9 @@ function renderAIMarkdown(md) {
 // ═══════════════════════════════════════
 //  MAP TAB — wine regions & appellations (vector, no tile server)
 //  Data: WineRegions (CC0) + Natural Earth, embedded as #vmap-data (polyline-encoded)
+//  Every area is drawn in one style; every tasted wine is a dot on the top layer.
 // ═══════════════════════════════════════
-var _vm = { map: null, data: null, regs: null, apps: null, dots: null, showDots: false, idx: null };
+var _vm = { map: null, data: null, regs: null, apps: null, dots: null, idx: null };
 
 function _vmLoadLeaflet() {
   if (window.L && window.L.map) return Promise.resolve();
@@ -5952,6 +5948,8 @@ function _vmData() {
   if (_vm.data) return _vm.data;
   var el = document.getElementById('vmap-data');
   _vm.data = el ? JSON.parse(el.textContent) : { apps: [], regs: [], land: [], landEU: [], borders: [], rivers: [] };
+  // Source data quirk: a Burgundy shape filed under Bordeaux
+  _vm.data.apps = _vm.data.apps.filter(function(f){ return !(f[0][0] === 'Crémant de Bourgogne' && f[0][1] === 'Bordeaux'); });
   return _vm.data;
 }
 // ── Matching the app's names to map areas ──
@@ -5987,9 +5985,9 @@ function vmMatchWine(w) {
   }
   return null;
 }
-// ── Club wines per area / place ──
+// ── Club wines per area, and where each wine's dot goes ──
 function _vmCollect(all) {
-  var D = _vmData(), A = {}, R = {}, P = {}, unmatched = 0;
+  var D = _vmData(), A = {}, R = {}, P = {};
   var regByName = {};
   D.regs.forEach(function(f, i){ regByName[_vmCountry(f[0][2]) + '|' + _vmKey(f[0][0])] = i; });
   Object.keys(all || {}).forEach(function(code) {
@@ -6003,19 +6001,19 @@ function _vmCollect(all) {
         (A[m.i] = A[m.i] || []).push(item);
         var af = D.apps[m.i][0], ri = regByName[_vmCountry(af[2]) + '|' + _vmKey(af[1])];
         if (ri !== undefined) (R[ri] = R[ri] || []).push(item);   // appellation counts towards its region
-      } else if (m) {
-        (R[m.i] = R[m.i] || []).push(item);
-      } else unmatched++;
-      var pk = winePinKey(w);
-      if (pk) (P[pk] = P[pk] || { items: [], matched: 0 }).items.push(item), (m ? P[pk].matched++ : 0);
+      } else if (m) (R[m.i] = R[m.i] || []).push(item);
+      // Dot position: saved location → matched area → country centre
+      var key = null, label = null;
+      if (w.location && isFinite(w.location.lat) && isFinite(w.location.lng)) { key = winePinKey(w); label = w.location.label || null; }
+      else if (m) { key = m.layer + ':' + m.i; label = D[m.layer][m.i][0][0]; }
+      else if (COUNTRY_CENTROIDS[w.country]) { key = 'c:' + w.country; label = w.country; }
+      if (key) (P[key] = P[key] || { items: [], label: label }).items.push(item);
     });
   });
-  return { A: A, R: R, P: P, unmatched: unmatched };
+  return { A: A, R: R, P: P };
 }
-function _vmStyle(tasted, zi) {
-  return tasted ? { color: '#e3788f', weight: zi ? 1.4 : 1.2, fillColor: '#b83a55', fillOpacity: zi ? .5 : .55 }
-                : { color: 'rgba(226,194,125,.42)', weight: zi ? .8 : .7, fillColor: '#e2c27d', fillOpacity: zi ? 0 : .03, dashArray: zi ? '3 3' : '2 3' };
-}
+var VM_STYLE = { color: '#e3788f', weight: 1.1, fillColor: '#b83a55', fillOpacity: .38 };
+var VM_STYLE_APP = { color: '#e3788f', weight: 1, fillColor: '#b83a55', fillOpacity: .24 };   // appellations overlap, so lighter
 var VM_SHORT = { 'St. Émilion Grand Cru': 'St-Émilion GC', 'Côtes de Bordeaux Saint Macaire': 'Côtes de Bdx St-Macaire',
   'Premières Côtes de Bordeaux': '1ères Côtes de Bdx', 'Vinho Regional Península de Setúbal': 'Península de Setúbal' };
 function _vmLabel(n) { return (VM_SHORT[n] || n).replace(/ (DOCG|DOC|IGT)$/, ''); }
@@ -6023,24 +6021,26 @@ function _vmLabel(n) { return (VM_SHORT[n] || n).replace(/ (DOCG|DOC|IGT)$/, '')
 function _vmBuildBase() {
   var D = _vmData(), map = _vm.map;
   map.createPane('vmBase'); map.getPane('vmBase').style.zIndex = 250;
+  map.createPane('vmDots'); map.getPane('vmDots').style.zIndex = 700;     // above areas and labels
   var r = L.canvas({ pane: 'vmBase', padding: .5 });
   var land = { stroke: false, fillColor: '#2a2126', fillOpacity: 1, interactive: false, renderer: r, pane: 'vmBase' };
   D.land.concat(D.landEU).forEach(function(f) { L.polygon(f[1].map(function(p){ return p.map(_vmDecode); }), land).addTo(map); });
   D.borders.forEach(function(s) { L.polyline(_vmDecode(s), { color: 'rgba(243,236,229,.16)', weight: 1, dashArray: '3 3', interactive: false, renderer: r, pane: 'vmBase' }).addTo(map); });
   D.rivers.forEach(function(s) { L.polyline(_vmDecode(s), { color: '#3b3a4c', weight: 1.2, interactive: false, renderer: r, pane: 'vmBase' }).addTo(map); });
+  _vm.dotR = L.svg({ pane: 'vmDots' });
 }
 function _vmBuildAreas(col) {
   var D = _vmData(), map = _vm.map;
   if (_vm.regs) map.removeLayer(_vm.regs);
   if (_vm.apps) map.removeLayer(_vm.apps);
+  _vm.byKey = {};
   var mk = function(list, stats, level) {
     var g = L.layerGroup();
     list.forEach(function(f, i) {
-      var items = stats[i] || [], zi = level === 'apps';
-      var poly = L.polygon(f[1].map(function(p){ return p.map(_vmDecode); }), _vmStyle(items.length > 0, zi));
-      poly._vm = { name: f[0][0], region: f[0][1], country: f[0][2], level: level, items: items };
+      var poly = L.polygon(f[1].map(function(p){ return p.map(_vmDecode); }), level === 'apps' ? VM_STYLE_APP : VM_STYLE);
+      poly._vm = { name: f[0][0], region: f[0][1], country: f[0][2], level: level, items: stats[i] || [] };
       poly.on('click', function() { vmOpenArea(poly._vm); });
-      if (items.length) poly.bindTooltip(_vmLabel(f[0][0]), { permanent: true, direction: 'center', className: 'vm-lbl big' });
+      _vm.byKey[level + ':' + i] = poly;
       g.addLayer(poly);
     });
     return g;
@@ -6051,37 +6051,38 @@ function _vmBuildAreas(col) {
 function _vmBuildDots(col) {
   var map = _vm.map;
   if (_vm.dots) map.removeLayer(_vm.dots);
-  var g = L.layerGroup();
+  var g = L.featureGroup();
   Object.keys(col.P).forEach(function(k) {
-    var p = col.P[k], ll = _pinLatLng(k); if (!ll) return;
-    var onlyUnmatched = p.matched < p.items.length;   // places with wines that have no area on the map
-    var m = L.circleMarker(ll, { radius: 4 + Math.min(p.items.length, 6) * 1.2, color: '#1c1519', weight: 1.5, fillColor: '#e2c27d', fillOpacity: .95, pane: 'markerPane' });
-    m._vm = { name: p.items[0].w.location && p.items[0].w.location.label ? p.items[0].w.location.label : (p.items[0].w.country || 'Place'), level: 'dot', items: p.items, always: onlyUnmatched };
-    m.on('click', function() { vmOpenArea(m._vm); });
+    var p = col.P[k], ll = null;
+    if (k.indexOf('p:') === 0 || k.indexOf('c:') === 0) ll = _pinLatLng(k);
+    else if (_vm.byKey[k]) ll = _vm.byKey[k].getBounds().getCenter();
+    if (!ll) return;
+    var n = p.items.length;
+    var m = L.circleMarker(ll, { radius: 5 + Math.min(n, 6) * 1.2, color: '#1c1519', weight: 2, fillColor: '#e2c27d', fillOpacity: 1,
+      pane: 'vmDots', renderer: _vm.dotR, bubblingMouseEvents: false });
+    m._vm = { name: p.label || 'Wines', level: 'dot', items: p.items };
+    m.on('click', function(e) { if (e && e.originalEvent) L.DomEvent.stop(e.originalEvent); vmOpenArea(m._vm); });
     g.addLayer(m);
   });
-  _vm.dots = g;
+  _vm.dots = g.addTo(map);
 }
 function _vmSync() {
   var map = _vm.map; if (!map) return;
-  var z = map.getZoom(), zi = z >= 7;
-  if (zi) { if (map.hasLayer(_vm.regs)) map.removeLayer(_vm.regs); if (!map.hasLayer(_vm.apps)) _vm.apps.addTo(map); }
-  else { if (map.hasLayer(_vm.apps)) map.removeLayer(_vm.apps); if (!map.hasLayer(_vm.regs)) _vm.regs.addTo(map); }
-  // Dots: all when toggled on; otherwise only places whose wines have no area on the map (so nothing disappears)
-  if (_vm.dots) {
-    if (!map.hasLayer(_vm.dots)) _vm.dots.addTo(map);
-    _vm.dots.eachLayer(function(m) { var show = _vm.showDots || m._vm.always; m.setStyle({ opacity: show ? 1 : 0, fillOpacity: show ? .95 : 0 }); m.options.interactive = show; if (m._path) m._path.style.pointerEvents = show ? '' : 'none'; });
-  }
-  // Untasted appellation names appear only when zoomed in close, and only for areas in view
-  if (zi) {
-    var b = map.getBounds(), close = z >= 9.2;
-    _vm.apps.eachLayer(function(l) {
-      if (l._vm.items.length) return;
-      var want = close && b.intersects(l.getBounds());
-      if (want && !l.getTooltip()) l.bindTooltip(_vmLabel(l._vm.name), { permanent: true, direction: 'center', className: 'vm-lbl muted' });
-      else if (!want && l.getTooltip()) l.unbindTooltip();
-    });
-  }
+  var z = map.getZoom(), zi = z >= 7, show = zi ? _vm.apps : _vm.regs, hide = zi ? _vm.regs : _vm.apps;
+  if (map.hasLayer(hide)) { hide.eachLayer(function(l){ if (l.getTooltip()) l.unbindTooltip(); }); map.removeLayer(hide); }
+  if (!map.hasLayer(show)) show.addTo(map);
+  // Name every area in view (lazily, so off-screen areas cost nothing); the collision pass thins them out
+  var b = map.getBounds().pad(.1);
+  show.eachLayer(function(l) {
+    var want = b.intersects(l.getBounds());
+    // Areas with a dot get their name just below it, so the dot never covers the label
+    var hasDot = l._vm.items.length > 0 && !(l._vm.items[0].w.location && isFinite(l._vm.items[0].w.location.lat));
+    if (want && !l.getTooltip()) l.bindTooltip(_vmLabel(l._vm.name), hasDot
+      ? { permanent: true, direction: 'bottom', offset: [0, 7], className: 'vm-lbl big' }
+      : { permanent: true, direction: 'center', className: 'vm-lbl big' });
+    else if (!want && l.getTooltip()) l.unbindTooltip();
+  });
+  if (_vm.dots) _vm.dots.bringToFront();
   _vmDeclutter();
 }
 // Labels: most-tasted first, then larger areas; hide any that would overlap
@@ -6104,12 +6105,7 @@ function _vmDeclutter() {
     if (hit) it.el.style.visibility = 'hidden'; else shown.push(r);
   });
 }
-function vmToggleDots() {
-  _vm.showDots = !_vm.showDots;
-  var c = document.getElementById('vchip-dots'); if (c) c.classList.toggle('on', _vm.showDots);
-  _vmSync();
-}
-// Area / place sheet — joins the shared sheet stack (✕/‹, swipe-down, back gesture)
+// Area / dot sheet — joins the shared sheet stack (✕/‹, swipe-down, back gesture)
 function vmOpenArea(info) {
   sheetPush(function() {
     var cnt = document.getElementById('wine-info-content'); if (!cnt) return;
@@ -6117,10 +6113,10 @@ function vmOpenArea(info) {
     var rated = ws.filter(function(x){ return x.avg !== null; });
     var avg = rated.length ? Math.round(rated.reduce(function(s, x){ return s + x.avg; }, 0) / rated.length * 10) / 10 : '—';
     var tastings = new Set(ws.map(function(x){ return x.code; })).size;
-    var lvl = info.level === 'apps' ? 'Appellation' : info.level === 'regs' ? 'Region' : 'Place';
+    var lvl = info.level === 'apps' ? 'Appellation' : info.level === 'regs' ? 'Region' : 'Wines here';
     var where = info.level === 'dot' ? '' : [info.level === 'apps' ? info.region : '', info.country === 'USA' ? 'United States' : info.country].filter(Boolean).map(escHtml).join(' · ');
     var stat = function(v, l){ return '<div class="stat-pill"><div class="stat-num">' + v + '</div><div class="stat-lbl">' + l + '</div></div>'; };
-    cnt.innerHTML = sheetHeader(escHtml(info.name), ws.length ? 'Tasted by the club' + (where ? ' · ' + where : '') : 'Not tasted yet' + (where ? ' · ' + where : ''), lvl)
+    cnt.innerHTML = sheetHeader(escHtml(info.name), (ws.length ? 'Tasted by the club' : 'Not tasted yet') + (where ? ' · ' + where : ''), lvl)
       + (ws.length
           ? '<div class="hist-stats" style="margin-bottom:1rem;">' + stat(ws.length, 'Wines') + stat(avg, 'Club avg') + stat(tastings, 'Tastings') + '</div>'
             + '<div class="section-lbl">Wines</div>'
@@ -6152,18 +6148,18 @@ async function loadMapTab() {
   var all = await _loadAllSessions();
   var col = _vmCollect(all);
   _vmBuildAreas(col); _vmBuildDots(col);
-  var nA = Object.keys(col.A).length, nR = Object.keys(col.R).length, nW = Object.keys(col.P).reduce(function(s, k){ return s + col.P[k].items.length; }, 0);
-  if (sub) sub.textContent = (nA || nR) ? (nA + ' appellation' + (nA !== 1 ? 's' : '') + ' and ' + nR + ' region' + (nR !== 1 ? 's' : '') + ' tasted') : 'Wine regions of the world. Tasted areas light up here.';
+  var nW = 0; Object.keys(col.P).forEach(function(k){ nW += col.P[k].items.length; });
+  var nA = Object.keys(col.A).length;
+  if (sub) sub.textContent = nW ? (nW + ' wine' + (nW !== 1 ? 's' : '') + ' tasted' + (nA ? ' · from ' + nA + ' appellation' + (nA !== 1 ? 's' : '') + ' on the map' : '')) : 'Wine regions of the world. Your tasted wines appear as dots.';
   setTimeout(function() {
     _vm.map.invalidateSize();
     if (first) {
-      // Open where most of the club's wines come from (usually Europe); pinch out for the rest
-      var pts = [], EU = L.latLngBounds([34, -12], [62, 32]), inEU = 0, total = 0;
-      _vm.regs.eachLayer(function(l){ var n = l._vm.items.length; if (!n) return; var b = l.getBounds(); pts.push({ b: b, n: n }); total += n; if (EU.contains(b.getCenter())) inEU += n; });
-      _vm.dots.eachLayer(function(m){ if (!m._vm.always) return; var ll = m.getLatLng(), n = m._vm.items.length; pts.push({ b: L.latLngBounds([ll, ll]), n: n }); total += n; if (EU.contains(ll)) inEU += n; });
-      if (!pts.length) _vm.apps.eachLayer(function(l){ if (l._vm.items.length) pts.push({ b: l.getBounds(), n: l._vm.items.length }); });
-      var use = (total && inEU / total >= .5) ? pts.filter(function(p){ return EU.contains(p.b.getCenter()); }) : pts;
-      if (use.length) { var bb = use[0].b; use.forEach(function(p){ bb = bb.extend(p.b); }); _vm.map.fitBounds(bb.pad(.3), { maxZoom: 6 }); }
+      // Open where most of the club's wines are (usually Europe); pinch out for the rest
+      var EU = L.latLngBounds([34, -12], [62, 32]), pts = [], inEU = 0;
+      _vm.dots.eachLayer(function(m){ var ll = m.getLatLng(), n = m._vm.items.length; pts.push({ ll: ll, n: n }); if (EU.contains(ll)) inEU += n; });
+      var total = pts.reduce(function(s, p){ return s + p.n; }, 0);
+      var use = (total && inEU / total >= .5) ? pts.filter(function(p){ return EU.contains(p.ll); }) : pts;
+      if (use.length) _vm.map.fitBounds(L.latLngBounds(use.map(function(p){ return p.ll; })).pad(.35), { maxZoom: 6 });
     }
     _vmSync();
   }, 30);
