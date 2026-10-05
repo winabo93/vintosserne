@@ -1708,6 +1708,81 @@ header.show-title h1{opacity:1;transform:none;}
 .vm-dot{display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--straw);border:2px solid #1c1519;
   box-shadow:0 1px 4px rgba(0,0,0,.5);color:#1c1519;font:700 .62rem/1 var(--f-ui);pointer-events:none;transition:transform .12s;}
 .vm-dot-hit:active .vm-dot{transform:scale(1.15);}
+/* ═══ HOST (New tasting · lineup) ═══ */
+#tab-host:has(#host-overview:not(.hidden)) > .page-title{display:none;}
+#tab-host .form-grid{grid-template-columns:1fr 1fr;gap:.8rem .7rem;}
+#tab-host .form-grid .full{grid-column:1/-1;}
+.field-hint{color:var(--smoke);font-size:.78rem;line-height:1.45;margin-top:.4rem;}
+.lbl-sub{font-weight:400;color:var(--smoke);margin-left:.3rem;}
+.hp-cta{width:100%;min-height:48px;border-radius:14px;font-size:.95rem;margin-top:1rem;}
+.hp-wide{width:100%;min-height:46px;border-radius:14px;}
+.hp-chip-end{display:flex;align-items:center;gap:.6rem;color:var(--smoke);flex-shrink:0;}
+.hp-chip-end .ico{width:14px;height:14px;opacity:.7;}
+#prev-sess-section{margin-top:.4rem;}
+/* share card */
+.hp-share{display:flex;align-items:center;justify-content:space-between;gap:1rem;background:var(--oak);border:1px solid var(--gb);
+  border-radius:18px;padding:.9rem 1rem;margin-bottom:1rem;}
+.hp-share-lbl{color:var(--smoke);font-size:.78rem;font-weight:500;}
+.hp-code{font-family:var(--f-ui);font-weight:700;font-size:1.9rem;letter-spacing:.12em;color:var(--straw);font-variant-numeric:tabular-nums;line-height:1.1;}
+.hp-share-btns{display:flex;gap:.45rem;}
+.hp-share-btns .btn{min-height:38px;}
+#qr-area{margin:-.3rem 0 1rem;}
+/* reveal controls */
+#bulk-controls .hp-cta{margin-top:0;}
+.hp-row2{display:grid;grid-template-columns:1fr 1fr;gap:.45rem;margin-top:.45rem;}
+.hp-row2 .btn{min-height:40px;}
+.hp-sec{margin-top:1.6rem;}
+/* lineup rows */
+.wine-row.hrow{padding:0;overflow:hidden;margin-bottom:.6rem;}
+.hrow-main{display:flex;align-items:flex-start;gap:.8rem;padding:.9rem 1rem .75rem;cursor:pointer;}
+.hrow-num{width:28px;height:28px;border-radius:50%;background:var(--barrel);color:var(--cream);display:flex;align-items:center;justify-content:center;
+  font:600 .8rem var(--f-ui);flex-shrink:0;margin-top:.1rem;font-variant-numeric:tabular-nums;}
+.hrow.is-rev .hrow-num{background:rgba(226,194,125,.16);color:var(--straw);}
+.hrow-thumb{width:40px;height:40px;border-radius:10px;object-fit:cover;flex-shrink:0;}
+.hrow-body{flex:1;min-width:0;}
+.hrow-name{font-family:var(--f-label);font-weight:500;font-size:1.05rem;line-height:1.25;color:var(--cream);}
+.hrow-meta{color:var(--smoke);font-size:.8rem;margin-top:.2rem;line-height:1.4;}
+.hrow .wrow-prog{margin-top:.35rem;font-size:.78rem;}
+.hrow-pill{flex-shrink:0;font:600 .7rem var(--f-ui);padding:.25rem .55rem;border-radius:999px;margin-top:.1rem;}
+.hrow-pill.blind{background:rgba(185,173,245,.14);color:var(--lav);}
+.hrow-pill.rev{background:rgba(226,194,125,.14);color:var(--straw);}
+.hrow-actions{display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.55rem 1rem .65rem;border-top:1px solid var(--gb);}
+.hrow-actions .timer-row{background:none;border:0;padding:0;margin:0;flex:1;min-width:0;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;}
+.hrow-actions .timer-toggle-label{display:flex;align-items:center;gap:.45rem;font:500 .8rem var(--f-ui);color:var(--smoke);cursor:pointer;}
+.hrow-actions .timer-config{display:flex;align-items:center;gap:.35rem;}
+.hrow-actions .timer-input{width:54px;min-height:32px;padding:.2rem .4rem;border-radius:8px;background:var(--barrel);border:1px solid transparent;color:var(--cream);font:500 .8rem var(--f-ui);}
+.hrow-btns{display:flex;align-items:center;gap:.4rem;flex-shrink:0;}
+.hrow-btns .btn{min-height:36px;padding:0 .75rem;}
+.hrow-btns .wbtn{width:36px;height:36px;}
+.hrow-reveal{border-color:rgba(227,120,143,.55) !important;color:var(--cream);}
+/* iOS-style switch */
+.hp-switch{-webkit-appearance:none;appearance:none;width:34px;height:20px;border-radius:10px;background:var(--barrel);position:relative;cursor:pointer;
+  transition:background .2s;flex-shrink:0;margin:0;border:1px solid var(--gb);}
+.hp-switch::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--cream);transition:transform .2s;}
+.hp-switch:checked{background:var(--claret);border-color:var(--claret);}
+.hp-switch:checked::after{transform:translateX(14px);}
+.hp-switch:focus-visible{outline:2px solid var(--claret-lt);outline-offset:2px;}
+/* add wine + danger zone */
+#add-wine-toggle{margin-top:.2rem;}
+#add-wine-card{margin-top:.6rem;}
+.hp-danger{margin-top:2.2rem;padding-top:.2rem;}
+.hp-del{display:block;width:100%;margin-top:.9rem;padding:.7rem;background:none;border:0;color:#ff8f9f;font:500 .88rem var(--f-ui);cursor:pointer;border-radius:12px;}
+.hp-del:active{background:rgba(255,120,140,.08);}
+.edit-form-wrap .hp-del{margin-top:.5rem;}
+.hrow-actions .timer-btn-start,.hrow-actions .timer-btn-stop{min-height:32px;padding:0 .7rem;border-radius:8px;font:600 .78rem var(--f-ui);cursor:pointer;
+  background:transparent;border:1px solid rgba(227,120,143,.55);color:var(--cream);}
+.hrow-actions .timer-btn-stop{border-color:var(--gb);color:var(--smoke);}
+.hrow-actions .timer-status{font:600 .78rem var(--f-ui);font-variant-numeric:tabular-nums;}
+.hrow-actions .timer-status.running{color:var(--straw);} .hrow-actions .timer-status.expired{color:var(--smoke);}
+/* Dropdown + info popup in the app palette */
+.ac-drop{background:var(--barrel);border:1px solid var(--gb);border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.6);}
+.ac-item{font-family:var(--f-ui);border-bottom:1px solid var(--gb);}
+.ac-item:hover,.ac-item.hi{background:rgba(227,120,143,.14);color:var(--cream);}
+.ac-item em{color:var(--straw);}
+.ac-drop::-webkit-scrollbar-thumb{background:rgba(243,236,229,.2);}
+.ac-info{display:flex;flex-direction:column;gap:.15rem;padding:.7rem .85rem;background:rgba(255,107,107,.09);border-bottom:1px solid var(--gb);}
+.ac-info b{font-weight:600;font-size:.86rem;color:#ffb3bd;line-height:1.35;word-break:break-word;}
+.ac-info span{font-size:.8rem;color:var(--smoke);}
 /* ═══════════ /V2 ═══════════ */
 </style>
 </head>
@@ -2102,47 +2177,44 @@ header.show-title h1{opacity:1;transform:none;}
   <h2 class="page-title">Host</h2>
   <div id="host-new">
     <div class="card">
-      <div class="card-title"><svg class="ico"><use href="#ico-bottle-red"/></svg> New session</div>
+      <div class="card-title">New tasting</div>
       <div class="form-grid">
         <div class="field full">
-          <label>Session Name</label>
-          <input type="text" id="sess-name-inp" placeholder="e.g. Bordeaux Evening, Club Night #12…">
+          <label for="sess-name-inp">Tasting name</label>
+          <input type="text" id="sess-name-inp" placeholder="e.g. Friday Reds">
         </div>
         <input type="hidden" id="sess-host-inp" value="">
         <div class="field full">
-          <label>Host password</label>
+          <label for="sess-pass-inp">Host password</label>
           <div style="position:relative;">
-            <input type="password" id="sess-pass-inp" placeholder="Choose a password…" style="padding-right:2.8rem;">
+            <input type="password" id="sess-pass-inp" placeholder="Choose a password" style="padding-right:2.8rem;">
             <button onclick="togglePassVis('sess-pass-inp','sess-pass-eye')" style="position:absolute;right:.6rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--smoke);font-size:1rem;padding:0;" id="sess-pass-eye"><svg class="ico"><use href="#ico-reveal"/></svg></button>
           </div>
+          <div class="field-hint">Only people with the password can manage this tasting.</div>
         </div>
       </div>
-      <div class="btn-row">
-        <button class="btn btn-primary" onclick="createSession()"><svg class="ico"><use href="#ico-session"/></svg> Create Session</button>
-      </div>
+      <button class="btn btn-primary hp-cta" onclick="createSession()">Create tasting</button>
       <div id="host-alert" class="alert"></div>
     </div>
     <div id="prev-sess-section" class="hidden">
-      <div class="divider">Your sessions</div>
-      <div class="wine-list" id="prev-sess-list"></div>
+      <div class="section-lbl">Your tastings</div>
+      <div id="prev-sess-list"></div>
     </div>
   </div>
 
   <div id="host-overview" class="hidden">
-    <div class="sess-header">
+    <button class="btn-back ts-back" onclick="closeSession()">‹ Your tastings</button>
+    <h3 class="ts-title page-title-proxy" id="ov-name" data-bar="">—</h3>
+    <div class="ts-meta">Hosted by <span id="ov-host">—</span> · <span id="ov-count">0 wines</span></div>
+
+    <div class="hp-share">
       <div>
-        <div class="sess-name" id="ov-name">—</div>
-        <div style="font-family:'Schibsted Grotesk',sans-serif;font-size:.76rem;letter-spacing:.01em;text-transform:uppercase;color:var(--smoke);margin-top:.18rem;">Host: <span id="ov-host" style="color:var(--pale-gold);">—</span></div>
+        <div class="hp-share-lbl">Tasting code</div>
+        <div class="hp-code" id="ov-code">——</div>
       </div>
-      <div style="display:flex;gap:.45rem;align-items:center;flex-wrap:wrap;">
-        <div style="display:flex;align-items:center;gap:.45rem;background:rgba(226,194,125,.08);border:1px solid rgba(226,194,125,.35);border-radius:10px;padding:.35rem .8rem .35rem .6rem;">
-          <span style="font-family:'Schibsted Grotesk',sans-serif;font-size:.76rem;letter-spacing:.01em;text-transform:uppercase;color:var(--smoke);">Code</span>
-          <span id="ov-code" style="font-family:'Schibsted Grotesk',sans-serif;font-size:1.7rem;font-weight:700;letter-spacing:.01em;color:var(--gold);text-shadow:0 0 20px rgba(226,194,125,.4);">——</span>
-          <button class="btn btn-outline btn-sm" onclick="copyCode()" style="padding:.3rem .6rem;min-height:36px;"><svg class="ico"><use href="#ico-copy"/></svg></button>
-        </div>
+      <div class="hp-share-btns">
+        <button class="btn btn-outline btn-sm" onclick="copyCode()"><svg class="ico"><use href="#ico-copy"/></svg> Copy</button>
         <button class="btn btn-outline btn-sm" onclick="toggleQR()"><svg class="ico"><use href="#ico-qr"/></svg> QR</button>
-        <button class="btn-back" onclick="closeSession()">‹ Sessions</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteSession()"><svg class="ico"><use href="#ico-trash"/></svg></button>
       </div>
     </div>
     <div id="qr-area" class="hidden" style="text-align:center;margin-bottom:1rem;">
@@ -2158,30 +2230,35 @@ header.show-title h1{opacity:1;transform:none;}
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-title" style="flex-wrap:wrap;gap:.4rem;">
-        <svg class="ico"><use href="#ico-bottle-red"/></svg> Wine lineup
 
-      </div>
-      <div class="wine-list" id="wine-list-host"></div>
-      <p id="no-wines" style="text-align:center;color:var(--smoke);padding:.7rem;font-style:italic;font-size:.93rem;">No wines yet. Add your first wine below.</p>
-      <div id="bulk-controls" class="hidden" style="display:none;margin-top:.55rem;padding-top:.55rem;border-top:1px solid var(--gb);">
-        <button class="btn btn-reveal btn-reveal-next" id="reveal-next-btn" onclick="revealNext()"><svg class="ico"><use href="#ico-reveal"/></svg> <span id="reveal-next-lbl">Reveal next</span></button>
-        <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
-          <button class="btn btn-reveal btn-sm" style="flex:1;" onclick="bulkReveal(true)"><svg class="ico"><use href="#ico-reveal"/></svg> Reveal All</button>
-          <button class="btn btn-hide btn-sm" style="flex:1;" onclick="bulkReveal(false)"><svg class="ico"><use href="#ico-blind"/></svg> Hide All</button>
-          <button class="btn btn-outline btn-sm" style="flex:1;" onclick="archiveSession()"><svg class="ico"><use href="#ico-archive"/></svg> Archive</button>
-        </div>
+    <div id="bulk-controls" class="hidden" style="display:none;">
+      <button class="btn btn-primary hp-cta" id="reveal-next-btn" onclick="revealNext()"><svg class="ico"><use href="#ico-reveal"/></svg> <span id="reveal-next-lbl">Reveal next</span></button>
+      <div class="hp-row2">
+        <button class="btn btn-outline btn-sm" onclick="bulkReveal(true)"><svg class="ico"><use href="#ico-reveal"/></svg> Reveal all</button>
+        <button class="btn btn-outline btn-sm" onclick="bulkReveal(false)"><svg class="ico"><use href="#ico-blind"/></svg> Hide all</button>
       </div>
     </div>
-    <div class="add-wine-wrap card">
-      <div class="card-title"><svg class="ico"><use href="#ico-bottle-red"/></svg> Add Wine</div>
+
+    <div class="section-lbl hp-sec">Wine lineup</div>
+    <div class="wine-list" id="wine-list-host"></div>
+    <p id="no-wines" class="empty-note" style="display:none;">No wines yet. Add the first one below.</p>
+
+    <button class="btn btn-outline hp-wide" id="add-wine-toggle" onclick="toggleAddWine()">+ Add wine</button>
+    <div class="add-wine-wrap card hidden" id="add-wine-card">
+      <div class="card-title">Add wine</div>
       <div id="wine-form"></div>
       <div id="wf-alert" class="alert"></div>
       <div class="btn-row">
-        <button class="btn btn-primary" onclick="addWine()">➕ Add to Session</button>
-        <button class="btn btn-outline" onclick="clearWineForm()">Clear</button>
+        <button class="btn btn-primary" onclick="addWine()">Add to lineup</button>
+        <button class="btn btn-outline" onclick="clearWineForm();toggleAddWine(false)">Cancel</button>
       </div>
+    </div>
+
+    <div class="hp-danger">
+      <div class="section-lbl">Tasting</div>
+      <button class="btn btn-outline hp-wide" onclick="archiveSession()"><svg class="ico"><use href="#ico-archive"/></svg> Archive tasting</button>
+      <div class="field-hint" style="margin:.45rem 0 0;">Archiving ends the tasting and moves it to History.</div>
+      <button class="hp-del" onclick="deleteSession()">Delete tasting</button>
     </div>
   </div>
 </div>
@@ -2994,7 +3071,9 @@ function enforceLookup(inp, kind) {
   inp.setAttribute('autocomplete', 'off'); inp.setAttribute('autocorrect', 'off');
   inp.setAttribute('autocapitalize', 'off'); inp.setAttribute('spellcheck', 'false');
   // Delay so a tap on a dropdown item is applied before we validate
-  inp.addEventListener('blur', () => setTimeout(() => checkLookupField(inp), 200));
+  inp.addEventListener('blur', () => setTimeout(() => {
+    if (!checkLookupField(inp) && document.activeElement !== inp) showToast(lkMessage(inp), 'error');
+  }, 200));
   inp.addEventListener('input', () => inp.classList.remove('lk-invalid'));
 }
 function checkLookupField(inp) {
@@ -3007,6 +3086,46 @@ function checkLookupField(inp) {
   return false;
 }
 const LOOKUP_LABELS = { country:'Country', region:'Region', appellation:'Appellation', grape:'Grape' };
+
+// Edit distance (small strings only)
+function _lev(a, b) {
+  if (a === b) return 0;
+  var m = a.length, n = b.length; if (!m) return n; if (!n) return m;
+  var prev = [], cur = [], i, j;
+  for (j = 0; j <= n; j++) prev[j] = j;
+  for (i = 1; i <= m; i++) {
+    cur[0] = i;
+    for (j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a.charCodeAt(i - 1) === b.charCodeAt(j - 1) ? 0 : 1));
+    var t = prev; prev = cur; cur = t;
+  }
+  return prev[n];
+}
+// Closest list entries for something that isn't in the list ("Pauilac" → "Pauillac AOC")
+function lkSuggest(kind, v, max) {
+  var n = _normLk(v); if (!n) return [];
+  var list = lookupList(kind), out = [];
+  var strip = function(s){ return _normLk(s).replace(/\b(aoc|aop|doc|docg|doca|do|dop|igt|igp|ava|pdo|pgi|gi|vqa|wo|dac|qba)\b/g, ' ').replace(/\s+/g, ' ').trim(); };
+  list.forEach(function(x) {
+    var nx = strip(x);
+    var d = Math.min(_lev(n, nx), _lev(n, nx.slice(0, n.length)) + 1);     // typing a start of a name counts too
+    var r = d / Math.max(n.length, 3);
+    if (r <= .4) out.push({ x: x, r: r });
+  });
+  if (!out.length) {                                                         // fall back to shared words ("Western Australia")
+    var words = n.split(' ').filter(function(w){ return w.length >= 4; });
+    list.forEach(function(x){ var nx = _normLk(x); if (words.some(function(w){ return nx.indexOf(w) >= 0; })) out.push({ x: x, r: .5 }); });
+  }
+  out.sort(function(a, b){ return a.r - b.r || a.x.length - b.x.length; });
+  return out.slice(0, max || 3).map(function(o){ return o.x; });
+}
+// The one message used when a value isn't from the list (on leaving the field and on submit)
+function lkMessage(inp) {
+  var kind = inp.dataset.lookup, label = LOOKUP_LABELS[kind] || 'value', v = inp.value.trim();
+  if (!v) return 'Choose a ' + label + ' — pick one from the dropdown list.';
+  var n = _normLk(v), several = lookupList(kind).filter(function(x){ return _normLk(x).indexOf(n) >= 0; }).length > 1;
+  return several ? '"' + v + '" matches several ' + label + 's — pick one from the dropdown list.'
+                 : '"' + v + '" isn\'t a recognised ' + label + ' — pick one from the dropdown list.';
+}
 // Validates fields; returns true if all OK. With clearInvalid, bad values are wiped instead of blocking.
 function validateLookups(ids, clearInvalid) {
   let firstBad = null;
@@ -3017,9 +3136,7 @@ function validateLookups(ids, clearInvalid) {
     else if (!firstBad) firstBad = el;
   });
   if (firstBad) {
-    const label = LOOKUP_LABELS[firstBad.dataset.lookup] || 'value';
-    const bad = firstBad.value.trim();
-    showToast((bad ? '"' + bad + '" isn\'t a recognised ' + label : 'Choose a ' + label) + ' — pick one from the dropdown list.', 'error');
+    showToast(lkMessage(firstBad), 'error');
     firstBad.focus();
     return false;
   }
@@ -3043,9 +3160,20 @@ function makeAC(inp, getList, onPick) {
       if (el) { el.classList.add('hi'); el.scrollIntoView({block: 'nearest'}); }
     }
   };
+  const showInfo = () => {
+    const kind = inp.dataset.lookup, v = inp.value.trim();
+    if (!kind || !v) { drop.classList.remove('open'); return; }
+    const sugg = lkSuggest(kind, v, 3), label = LOOKUP_LABELS[kind] || 'value';
+    cur = sugg; hi = -1;
+    drop.innerHTML = '<div class="ac-info" role="status"><b>No ' + label + ' matches “' + escHtml(v) + '”</b><span>'
+      + (sugg.length ? 'Did you mean:' : 'Pick one from the list. Keep typing to search.') + '</span></div>'
+      + sugg.map((it, i) => `<div class="ac-item" data-i="${i}">${escHtml(it)}</div>`).join('');
+    drop.classList.add('open');
+    drop.querySelectorAll('.ac-item').forEach(el => el.addEventListener('mousedown', e => { e.preventDefault(); pick(+el.dataset.i); }));
+  };
   const show = list => {
     cur = list; hi = -1;
-    if (!list.length) { drop.classList.remove('open'); return; }
+    if (!list.length) { showInfo(); return; }
     const q = inp.value.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const re = new RegExp(`(${q})`, 'gi');
     drop.innerHTML = list.slice(0, 40).map((it, i) =>
@@ -3094,7 +3222,7 @@ const filt = (list, q) => {
 function wineFormHTML() {
   return `<div class="form-grid">
     <div class="field full">
-      <label>Wine Label Photo <span style="color:var(--smoke);font-weight:300;text-transform:none;font-size:.76rem;">— any size, uploaded to Cloudinary</span></label>
+      <label>Label photo</label>
       <div class="wine-img-upload">
         <div class="wine-img-placeholder" id="wf-img-placeholder"><svg class="ico"><use href="#ico-camera"/></svg></div>
         <img id="wf-img-preview" class="wine-img-thumb" src="" alt="Wine label">
@@ -3112,17 +3240,17 @@ function wineFormHTML() {
       </div>
       <input type="hidden" id="wf-img-data" value="">
     </div>
-    <div class="field full"><label>Navn / Producent *</label><input type="text" id="wf-name" placeholder="e.g. Château Margaux"></div>
-    <div class="field"><label>Årgang</label><input type="number" id="wf-vintage" placeholder="2019" min="1900" max="2030"></div>
-    <div class="field"><label>Vintype</label><select id="wf-type"><option value="">Select…</option>${WINE_TYPES.map(t => `<option value="${t}">${t}</option>`).join('')}</select></div>
-    <div class="field"><label>Land</label><input type="text" id="wf-country" placeholder="Start typing…" autocomplete="off" data-ac-enforce="true"></div>
+    <div class="field full"><label>Name / producer *</label><input type="text" id="wf-name" placeholder="e.g. Château Margaux"></div>
+    <div class="field"><label>Vintage</label><input type="number" id="wf-vintage" placeholder="2019" min="1900" max="2030"></div>
+    <div class="field"><label>Type</label><select id="wf-type"><option value="">Select…</option>${WINE_TYPES.map(t => `<option value="${t}">${t}</option>`).join('')}</select></div>
+    <div class="field"><label>Country</label><input type="text" id="wf-country" placeholder="Start typing…" autocomplete="off" data-ac-enforce="true"></div>
     <div class="field"><label>Region</label><input type="text" id="wf-region" placeholder="Start typing…" autocomplete="off" data-ac-enforce="true"></div>
-    <div class="field full"><label>Appellation / AOC / DOC / AVA</label><input type="text" id="wf-appel" placeholder="Start typing…" autocomplete="off" data-ac-enforce="true" onblur="inferAndSetType()"></div>
-    <div class="field full"><label>Classification / Quality Level <span style="color:var(--smoke);font-weight:300;text-transform:none;font-size:.76rem;">— e.g. Grand Cru, Reserva, GG, Kabinett</span></label><input type="text" id="wf-classification" placeholder="Start typing or select…" autocomplete="off"></div>
-    <div class="field full"><label>Primær druesort</label><input type="text" id="wf-grapes" placeholder="Start typing…" autocomplete="off" data-ac-enforce="true" onblur="inferAndSetType()"></div>
-    <div class="field"><label>Alkohol (%)</label><input type="number" id="wf-abv" placeholder="e.g. 13.5"></div>
-    <div class="field"><label>Pris (DKK)</label><input type="number" id="wf-price" placeholder="e.g. 250.00" min="0" step="0.01"></div>
-    <div class="field full"><label>Host Noter (revealed after tasting)</label><textarea id="wf-notes" placeholder="Winemaker story, food pairing, impressions…"></textarea></div>
+    <div class="field full"><label>Appellation</label><input type="text" id="wf-appel" placeholder="Start typing…" autocomplete="off" data-ac-enforce="true" onblur="inferAndSetType()"></div>
+    <div class="field full"><label>Classification</label><input type="text" id="wf-classification" placeholder="Start typing or select…" autocomplete="off"></div>
+    <div class="field full"><label>Primary grape</label><input type="text" id="wf-grapes" placeholder="Start typing…" autocomplete="off" data-ac-enforce="true" onblur="inferAndSetType()"></div>
+    <div class="field"><label>Alcohol (%)</label><input type="number" id="wf-abv" placeholder="e.g. 13.5"></div>
+    <div class="field"><label>Price (DKK)</label><input type="number" id="wf-price" placeholder="e.g. 250.00" min="0" step="0.01"></div>
+    <div class="field full"><label>Host notes <span class="lbl-sub">shown after the reveal</span></label><textarea id="wf-notes" placeholder="Winemaker story, food pairing, impressions…"></textarea></div>
   </div>`;
 }
 
@@ -3343,17 +3471,15 @@ async function renderHostPanel() {
   const pl = document.getElementById('prev-sess-list');
   if (codes.length) {
     ps.classList.remove('hidden');
-    pl.innerHTML = codes.map(c => `
-      <div class="wine-row" style="cursor:pointer;" onclick="openSess('${c}')">
-        <div class="wine-row-top">
-          <div class="wnum">${sessions[c].wines ? sessions[c].wines.length : 0}</div>
-          <div style="flex:1;min-width:0;">
-            <div class="wrow-name">${sessions[c].passwordHash ? '<svg class="ico"><use href="#ico-lock"/></svg> ' : ''}${sessions[c].name}</div>
-            <div class="wrow-meta">Code ${c} · ${sessions[c].created}${sessions[c].host ? ' · ' + sessions[c].host : ''}</div>
-          </div>
-          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openSess('${c}')">Open</button>
-        </div>
-      </div>`).join('');
+    pl.innerHTML = codes.map(c => {
+      const s0 = sessions[c], n = (s0.wines || []).length;
+      const meta = [n + ' wine' + (n !== 1 ? 's' : ''), s0.created ? _niceDate(s0.created) : '', s0.host || ''].filter(Boolean).join(' · ');
+      return `<button class="sess-chip" onclick="openSess('${c}')">
+        <div style="min-width:0;flex:1;"><div class="sess-chip-name">${escHtml(s0.name || 'Tasting')}</div>
+          <div class="sess-chip-meta">${escHtml(meta)}</div></div>
+        <div class="hp-chip-end">${s0.passwordHash ? '<svg class="ico" aria-label="Password protected"><use href="#ico-lock"/></svg>' : ''}<span class="sess-chip-code">${c}</span><span class="hist-chev">›</span></div>
+      </button>`;
+    }).join('');
   } else {
     ps.classList.add('hidden');
   }
@@ -3421,8 +3547,8 @@ function closeSession() {
 function timerRowHTML(w, i) {
   if (!w.guessTimer) {
     return '<div class="timer-row"><label class="timer-toggle-label">'
-      + '<input type="checkbox" onchange="toggleWineTimer(' + i + ', this.checked)" style="accent-color:#9090ff;">'
-      + ' Blind Guess Timer</label></div>';
+      + '<input type="checkbox" class="hp-switch" onchange="toggleWineTimer(' + i + ', this.checked)">'
+      + ' Guess timer</label></div>';
   }
   var isRunning = w.guessTimerStart && (Date.now() - w.guessTimerStart < w.guessTimer * 1000);
   var isExpired = w.guessTimerStart && (Date.now() - w.guessTimerStart >= w.guessTimer * 1000);
@@ -3437,8 +3563,8 @@ function timerRowHTML(w, i) {
   var disabledAttr = isRunning ? ' disabled' : '';
   return '<div class="timer-row">'
     + '<label class="timer-toggle-label">'
-      + '<input type="checkbox" checked onchange="toggleWineTimer(' + i + ', this.checked)" style="accent-color:#9090ff;">'
-      + ' Blind Guess Timer'
+      + '<input type="checkbox" class="hp-switch" checked onchange="toggleWineTimer(' + i + ', this.checked)">'
+      + ' Timer'
     + '</label>'
     + '<div class="timer-config">'
       + '<input type="number" class="timer-input" id="timer-inp-' + i + '" min="0.5" max="60" step="0.5" value="' + Math.round(w.guessTimer/60*10)/10 + '" placeholder="min"' + disabledAttr + '>'
@@ -3448,8 +3574,20 @@ function timerRowHTML(w, i) {
   + '</div>';
 }
 
+function toggleAddWine(force) {
+  var card = document.getElementById('add-wine-card'), btn = document.getElementById('add-wine-toggle'); if (!card) return;
+  var open = force === undefined ? card.classList.contains('hidden') : !!force;
+  card.classList.toggle('hidden', !open);
+  if (btn) btn.style.display = open ? 'none' : '';
+  if (open && force === undefined) setTimeout(function(){ var n = document.getElementById('wf-name'); if (n) n.focus(); card.scrollIntoView && card.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+}
+
 function renderOverview(s) {
   document.getElementById('ov-name').textContent = s.name;
+  document.getElementById('ov-name').dataset.bar = s.name || 'Host';
+  var _nw = (s.wines || []).length, _oc = document.getElementById('ov-count');
+  if (_oc) _oc.textContent = _nw + ' wine' + (_nw !== 1 ? 's' : '');
+  if (!_nw) toggleAddWine(true);
   document.getElementById('ov-code').textContent = activeCode;
   const ovHost = document.getElementById('ov-host');
   if (ovHost) ovHost.textContent = s.host || '—';
@@ -3476,24 +3614,29 @@ function renderOverview(s) {
       const revBtn = w.revealed
         ? `<button class="wbtn wbtn-hide" onclick="toggleReveal(${i},false)" title="Hide"><svg class="ico"><use href="#ico-blind"/></svg></button>`
         : `<button class="wbtn wbtn-reveal" onclick="toggleReveal(${i},true)" title="Reveal"><svg class="ico"><use href="#ico-reveal"/></svg></button>`;
-      return `<div class="wine-row ${w.revealed ? 'revealed-row' : ''}" id="wine-row-${i}">
-        <div class="wine-row-top">
-          <div class="wnum" onclick="openEditWine(${i})" title="Edit wine" style="cursor:pointer;">${i + 1}</div>
-          <div onclick="openEditWine(${i})" title="Edit wine" style="cursor:pointer;flex-shrink:0;line-height:1;">${thumb}</div>
-          <div class="wrow-body">
-            <div class="wrow-name">${w.name}${w.vintage ? ' ' + w.vintage : ''}</div>
-            ${meta ? `<div class="wrow-meta">${meta}</div>` : ''}
+      const where = [w.type, w.appellation || w.region, w.country].filter(Boolean).map(escHtml).join(' · ');
+      const media = w.image ? `<img class="hrow-thumb" src="${w.image}" alt="">` : '';
+      return `<div class="wine-row hrow ${w.revealed ? 'is-rev' : ''}" id="wine-row-${i}">
+        <div class="hrow-main" onclick="openEditWine(${i})" role="button" tabindex="0" aria-label="Edit ${escHtml(w.name)}">
+          <div class="hrow-num">${i + 1}</div>
+          ${media}
+          <div class="hrow-body">
+            <div class="hrow-name">${escHtml(w.name)}${w.vintage ? ' ' + escHtml(w.vintage) : ''}</div>
+            ${where ? `<div class="hrow-meta">${where}</div>` : ''}
             <div class="wrow-prog" id="wine-prog-${i}">${wineProgressHTML(w, sessionTasters(s))}</div>
-            </div>
-          <span class="status-dot ${w.revealed ? 'revealed' : 'blind'}"></span>
-          <div class="wine-row-actions">
-            ${revBtn}
-            <button class="wbtn wbtn-edit" onclick="openEditWine(${i})" title="Edit"><svg class="ico"><use href="#ico-edit"/></svg></button>
-            <button class="wbtn wbtn-del" onclick="removeWine(${i})" title="Remove"><svg class="ico"><use href="#ico-delete"/></svg></button>
+          </div>
+          <span class="hrow-pill ${w.revealed ? 'rev' : 'blind'}">${w.revealed ? 'Revealed' : 'Blind'}</span>
+        </div>
+        <div class="hrow-actions">
+          ${timerRowHTML(w, i)}
+          <div class="hrow-btns">
+            ${w.revealed
+              ? `<button class="btn btn-outline btn-sm" onclick="toggleReveal(${i},false)"><svg class="ico"><use href="#ico-blind"/></svg> Hide</button>`
+              : `<button class="btn btn-outline btn-sm hrow-reveal" onclick="toggleReveal(${i},true)"><svg class="ico"><use href="#ico-reveal"/></svg> Reveal</button>`}
+            <button class="wbtn" onclick="openEditWine(${i})" aria-label="Edit"><svg class="ico"><use href="#ico-edit"/></svg></button>
           </div>
         </div>
         <div id="edit-inline-${i}" style="display:none;"></div>
-        ${timerRowHTML(w, i)}
       </div>`;
     }).join('');
   }
@@ -5154,13 +5297,13 @@ async function openEditWine(idx) {
   el.innerHTML = `<div class="edit-form-wrap">
     <div class="card-title"><svg class="ico"><use href="#ico-edit"/></svg> Editing Wine #${idx + 1}</div>
     <div class="form-grid">
-      <div class="field full"><label>Wine Name / Producer *</label>
+      <div class="field full"><label>Name / producer *</label>
         <input type="text" id="ew-name" value="" autocomplete="off">
       </div>
       <div class="field"><label>Vintage</label>
         <input type="number" id="ew-vintage" min="1900" max="2030">
       </div>
-      <div class="field"><label>Wine Type</label>
+      <div class="field"><label>Type</label>
         <select id="ew-type"><option value="">Select…</option>${WINE_TYPES.map(t => `<option>${t}</option>`).join('')}</select>
       </div>
       <div class="field"><label>Country</label>
@@ -5172,23 +5315,23 @@ async function openEditWine(idx) {
       <div class="field full"><label>Appellation</label>
         <input type="text" id="ew-appel" autocomplete="off">
       </div>
-      <div class="field full"><label>Classification / Quality Level</label>
+      <div class="field full"><label>Classification</label>
         <input type="text" id="ew-classification" autocomplete="off" placeholder="e.g. Grand Cru, Reserva, GG…">
       </div>
-      <div class="field full"><label>Grape Variety / Blend</label>
+      <div class="field full"><label>Primary grape</label>
         <input type="text" id="ew-grapes" autocomplete="off">
       </div>
       <div class="field"><label>Alcohol (%)</label>
         <input type="text" id="ew-abv">
       </div>
-      <div class="field"><label>Price Range</label>
-        <select id="ew-price"><option value="">Hidden</option><option>Under €15</option><option>€15–€30</option><option>€30–€60</option><option>€60–€120</option><option>€120–€300</option><option>€300+</option></select>
+      <div class="field"><label>Price (DKK)</label>
+        <input type="number" id="ew-price" placeholder="e.g. 250" min="0" step="0.01">
       </div>
-      <div class="field full"><label>Host Notes</label>
+      <div class="field full"><label>Host notes <span class="lbl-sub">shown after the reveal</span></label>
         <textarea id="ew-notes" style="min-height:65px;"></textarea>
       </div>
       <div class="field full">
-        <label>Wine Label Photo <span style="color:var(--smoke);font-weight:300;text-transform:none;font-size:.76rem;">— any size, uploaded to Cloudinary</span></label>
+        <label>Label photo</label>
         <div class="wine-img-upload">
           <div class="wine-img-placeholder" id="ew-img-placeholder"><svg class="ico"><use href="#ico-camera"/></svg></div>
           <img id="ew-img-preview" class="wine-img-thumb" src="" alt="Wine label">
@@ -5204,9 +5347,10 @@ async function openEditWine(idx) {
     </div>
     <div id="ew-alert" class="alert"></div>
     <div class="btn-row">
-      <button class="btn btn-gold" onclick="saveEditWine(${idx})"><svg class="ico"><use href="#ico-export"/></svg> Save Changes</button>
+      <button class="btn btn-primary" onclick="saveEditWine(${idx})">Save changes</button>
       <button class="btn btn-outline" onclick="closeEditWine(${idx})">Cancel</button>
     </div>
+    <button class="hp-del" onclick="removeWine(${idx})">Remove wine from lineup</button>
   </div>`;
 
   // Populate values after DOM update
