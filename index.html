@@ -1835,7 +1835,7 @@ header.show-title h1{opacity:1;transform:none;}
 .wl-row.static{cursor:default;} .wl-row.static:active{background:none;}
 /* Photo pinned to the row's left edge, top to bottom — independent of flex stretching (iOS Safari keeps
    images at their own proportions in flex rows, which left dead space under the photo) */
-.wl-row{position:relative;}
+.wl-row{position:relative;margin:0;touch-action:manipulation;}
 .wl-row.has-img{padding-left:calc(84px + 1rem);min-height:96px;}
 /* frame pinned to the row's full height; the photo is its background, so no image sizing quirks (iOS Safari) */
 .wl-imgbox{position:absolute;left:0;top:0;bottom:0;width:84px;background-color:var(--barrel);background-size:cover;background-position:center;background-repeat:no-repeat;}
@@ -1853,7 +1853,7 @@ header.show-title h1{opacity:1;transform:none;}
 .wl-bname{color:var(--lav);font-weight:600;font-size:.95rem;display:flex;align-items:center;gap:.35rem;}
 .wl-bname .ico{width:14px;height:14px;}
 .wl-tap{color:var(--claret-lt);} .wl-mine{color:var(--straw);font-weight:600;}
-.wl-end{flex-shrink:0;color:var(--smoke);font-size:1.15rem;line-height:1;}
+.wl-end{flex-shrink:0;width:14px;text-align:center;color:var(--smoke);font-size:1.15rem;line-height:1;}   /* same width for ✓ and › so both pages wrap text identically */
 .wl-end.ok{color:var(--straw);font-weight:700;font-size:1rem;}
 #wine-selector .wl-group{margin-top:.2rem;}
 /* Score panel A */
@@ -4181,7 +4181,7 @@ function wineListRow(w, i, mode, x) {
   var click = tasteMode ? 'openRating(' + i + ')' : (w.revealed ? 'showWineModal(_resWines[' + i + '], false, _resCtx(' + i + '))' : '');
   var end = tasteMode ? (mine ? '<span class="wl-end ok" aria-label="Rated">✓</span>' : '<span class="wl-end">›</span>') : (w.revealed ? '<span class="wl-end">›</span>' : '');
   var tag = 'div', act = click ? ' role="button" tabindex="0" onclick="' + click + '" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();this.click();}"' : '';
-  var cls = 'wl-row' + (w.revealed ? ' is-rev' : ' is-blind') + (tasteMode ? '' : (w.revealed ? ' res-wine-img-btn' : ' static'));
+  var cls = 'wl-row' + (w.revealed ? ' is-rev' : ' is-blind') + (tasteMode || w.revealed ? '' : ' static');   // identical rows on both pages
   if (!w.revealed) {
     var info = tasteMode
       ? (mine ? 'your rating <span class="wl-mine">' + mine.score + '</span>' : '<span class="wl-tap">tap to rate</span>')
