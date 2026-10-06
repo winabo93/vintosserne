@@ -1835,8 +1835,10 @@ header.show-title h1{opacity:1;transform:none;}
 .wl-row.static{cursor:default;} .wl-row.static:active{background:none;}
 /* Photo pinned to the row's left edge, top to bottom — independent of flex stretching (iOS Safari keeps
    images at their own proportions in flex rows, which left dead space under the photo) */
-.wl-row.has-img{position:relative;padding-left:calc(84px + 1rem);min-height:96px;}
-.wl-img{position:absolute;left:0;top:0;bottom:0;width:84px;height:100%;object-fit:cover;object-position:center;display:block;background:var(--barrel);}
+.wl-row{position:relative;}
+.wl-row.has-img{padding-left:calc(84px + 1rem);min-height:96px;}
+/* frame pinned to the row's full height; the photo is its background, so no image sizing quirks (iOS Safari) */
+.wl-imgbox{position:absolute;left:0;top:0;bottom:0;width:84px;background-color:var(--barrel);background-size:cover;background-position:center;background-repeat:no-repeat;}
 .wl-body{flex:1;min-width:0;}
 .wl-num{color:var(--smoke);font-size:.76rem;}
 .wl-name{font-family:var(--f-label);font-weight:500;font-size:1.05rem;line-height:1.25;color:var(--pale-gold);margin-top:.05rem;}
@@ -1854,6 +1856,34 @@ header.show-title h1{opacity:1;transform:none;}
 .wl-end{flex-shrink:0;color:var(--smoke);font-size:1.15rem;line-height:1;}
 .wl-end.ok{color:var(--straw);font-weight:700;font-size:1rem;}
 #wine-selector .wl-group{margin-top:.2rem;}
+/* Score panel A */
+.score-card{background:var(--oak);border:1px solid var(--gb);border-radius:18px;padding:1rem 1.1rem;margin-top:1.2rem;}
+.sc-top{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;}
+.sc-lbl{color:var(--smoke);font:500 .8rem var(--f-ui);}
+.sc-q{font:600 1rem var(--f-ui);margin-top:.2rem;min-height:1.3em;}
+.sc-numwrap{white-space:nowrap;}
+.sc-num{font:700 2.6rem/1 var(--f-ui);color:var(--straw);font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
+.sc-of{font:500 .95rem var(--f-ui);color:var(--smoke);margin-left:.15rem;}
+.sc-bar{height:6px;border-radius:3px;background:var(--barrel);margin-top:.9rem;overflow:hidden;}
+.sc-bar i{display:block;height:100%;width:0;background:var(--straw);border-radius:3px;transition:width .25s ease;}
+/* Live indicator */
+.live-meta{display:flex;align-items:center;gap:.45rem;}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#e3788f;flex-shrink:0;box-shadow:0 0 0 0 rgba(227,120,143,.6);animation:livePulse 2s ease-out infinite;}
+.live-dot.ping{animation:livePing .6s ease-out, livePulse 2s ease-out .6s infinite;}
+@keyframes livePulse{0%{box-shadow:0 0 0 0 rgba(227,120,143,.55)}70%{box-shadow:0 0 0 7px rgba(227,120,143,0)}100%{box-shadow:0 0 0 0 rgba(227,120,143,0)}}
+@keyframes livePing{0%{transform:scale(1.8)}100%{transform:scale(1)}}
+.live-off{display:none;}
+body.is-offline .live-dot{background:var(--smoke);animation:none;box-shadow:none;}
+body.is-offline .live-on{display:none;} body.is-offline .live-off{display:inline;}
+@media (prefers-reduced-motion:reduce){.live-dot,.live-dot.ping{animation:none;}}
+/* Host · hidden/open status */
+.hp-status{margin:-.4rem 0 1rem;}
+.hp-status-txt{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;color:var(--smoke);font-size:.86rem;line-height:1.45;}
+.hp-status .hp-cta{margin-top:.7rem;}
+.hp-status .hp-hide{margin-top:.6rem;min-height:38px;}
+.hp-pill{font:600 .72rem var(--f-ui);padding:.2rem .55rem;border-radius:999px;}
+.hp-pill.hid{background:rgba(185,173,245,.14);color:var(--lav);}
+.hp-pill.open{background:rgba(125,255,176,.12);color:#8fe3b0;}
 /* ═══════════ /V2 ═══════════ */
 </style>
 </head>
@@ -2277,6 +2307,7 @@ header.show-title h1{opacity:1;transform:none;}
     <button class="btn-back ts-back" onclick="closeSession()">‹ Your tastings</button>
     <h3 class="ts-title page-title-proxy" id="ov-name" data-bar="">—</h3>
     <div class="ts-meta">Hosted by <span id="ov-host">—</span> · <span id="ov-count">0 wines</span></div>
+    <div class="hp-status" id="hp-status"></div>
 
     <div class="hp-share">
       <div>
@@ -2382,10 +2413,12 @@ header.show-title h1{opacity:1;transform:none;}
       <div id="wine-reveal-area" style="margin-bottom:1.3rem;"></div>
       <div class="sys-tabs" style="display:none;"><button class="sys-tab active" id="sys-100"></button></div>
       <div class="crit-grid" id="crit-grid"></div>
-      <div class="total-row">
-        <div><div class="total-lbl">Total Score</div><div style="font-size:.76rem;color:var(--smoke);margin-top:.12rem;" id="sys-lbl">100-point scale</div></div>
-        <div class="total-num" id="total-num">—</div>
-        <div id="badge-area"></div>
+      <div class="score-card" aria-live="polite">
+        <div class="sc-top">
+          <div><div class="sc-lbl">Total score</div><div class="sc-q" id="badge-area"></div><div id="sys-lbl" hidden>100-point scale</div></div>
+          <div class="sc-numwrap"><span class="sc-num" id="total-num">—</span><span class="sc-of" id="sc-of">/100</span></div>
+        </div>
+        <div class="sc-bar"><i id="sc-fill"></i></div>
       </div>
       <div class="field" style="margin-top:1rem;">
         <label>Tasting notes <span class="lbl-sub">optional</span></label>
@@ -2471,7 +2504,7 @@ header.show-title h1{opacity:1;transform:none;}
       <div class="res-head">
         <button class="btn-back ts-back" onclick="resultsBack()">‹ Back</button>
         <h3 class="ts-title page-title-proxy" id="res-sess-name" data-bar="Live results">—</h3>
-        <div class="ts-meta">Live results · updates as people rate</div>
+        <div class="ts-meta live-meta"><span class="live-dot" aria-hidden="true"></span><span class="live-on">Live · updates as people rate</span><span class="live-off">Offline · showing the last update</span></div>
         <div style="display:none;">
           <!-- <button class="btn btn-primary btn-sm" onclick="exportResults()"><svg class="ico"><use href="#ico-export"/></svg> Export</button> -->
           <!-- <button class="btn btn-outline btn-sm" onclick="exportJSON()"><svg class="ico"><use href="#ico-export"/></svg> JSON Backup</button> -->
@@ -2957,6 +2990,7 @@ async function fbSet(path, val) {
 async function fbGet(path) {
   const r = await fetch(`${FB_URL}/${path}.json`);
   if (!r.ok) throw new Error('fbGet ' + r.status);
+  if (document.body && document.body.classList.contains('is-offline')) document.body.classList.remove('is-offline');
   return normalizeData(await r.json());
 }
 
@@ -3202,6 +3236,7 @@ function dbListen(path, cb) {
 
 // ── Connection bar ──
 function setConnBar(mode) {
+  if (document.body) document.body.classList.toggle('is-offline', mode === 'offline');
   const bar = document.getElementById('conn-bar');
   if (!bar) return;  // bar removed from UI
   bar.className = mode;
@@ -3629,12 +3664,13 @@ async function createSession() {
     wines:      [],
     created:    schemaDate(),
     archived:   false,
+    hidden:     true,          // new tastings start hidden so the host can prepare them
     archivedAt: null
   };
   await dbSet('sessions/' + code, sess);
   activeCode = code;
   sessionStorage.setItem('host_auth_' + code, '1');
-  showAlert('host-alert', 'success', `Session "${name}" created! Code: ${code}`);
+  showToast('Tasting created — hidden until you open it');
   document.getElementById('sess-pass-inp').value = '';
   document.getElementById('sess-host-inp').value = localStorage.getItem('vino_member_name') || host;
   renderHostPanel();
@@ -3652,7 +3688,7 @@ async function renderHostPanel() {
     ps.classList.remove('hidden');
     pl.innerHTML = codes.map(c => {
       const s0 = sessions[c], n = (s0.wines || []).length;
-      const meta = [n + ' wine' + (n !== 1 ? 's' : ''), s0.created ? _niceDate(s0.created) : '', s0.host || ''].filter(Boolean).join(' · ');
+      const meta = [s0.hidden ? 'Hidden' : '', n + ' wine' + (n !== 1 ? 's' : ''), s0.created ? _niceDate(s0.created) : '', s0.host || ''].filter(Boolean).join(' · ');
       return `<button class="sess-chip" onclick="openSess('${c}')">
         <div style="min-width:0;flex:1;"><div class="sess-chip-name">${escHtml(s0.name || 'Tasting')}</div>
           <div class="sess-chip-meta">${escHtml(meta)}</div></div>
@@ -3753,6 +3789,13 @@ function timerRowHTML(w, i) {
   + '</div>';
 }
 
+async function setTastingOpen(open) {
+  if (!activeCode) return;
+  await dbPatch('sessions/' + activeCode, { hidden: !open });
+  showToast(open ? 'Tasting is open — tasters can join now' : 'Tasting hidden — tasters can no longer see it');
+  renderOverview(await dbGet('sessions/' + activeCode));
+}
+
 function toggleAddWine(force) {
   var card = document.getElementById('add-wine-card'), btn = document.getElementById('add-wine-toggle'); if (!card) return;
   var open = force === undefined ? card.classList.contains('hidden') : !!force;
@@ -3764,6 +3807,12 @@ function toggleAddWine(force) {
 function renderOverview(s) {
   document.getElementById('ov-name').textContent = s.name;
   document.getElementById('ov-name').dataset.bar = s.name || 'Host';
+  var _st = document.getElementById('hp-status');
+  if (_st) _st.innerHTML = s.hidden
+    ? '<div class="hp-status-txt"><span class="hp-pill hid">Hidden</span>Only you can see it. Add the wines, then open it.</div>'
+      + '<button class="btn btn-primary hp-cta" onclick="setTastingOpen(true)"><svg class="ico"><use href="#ico-reveal"/></svg> Open to tasters</button>'
+    : '<div class="hp-status-txt"><span class="hp-pill open">Open</span>Tasters can find and join this tasting.</div>'
+      + '<button class="btn btn-outline btn-sm hp-hide" onclick="setTastingOpen(false)"><svg class="ico"><use href="#ico-blind"/></svg> Hide</button>';
   var _nw = (s.wines || []).length, _oc = document.getElementById('ov-count');
   if (_oc) _oc.textContent = _nw + ' wine' + (_nw !== 1 ? 's' : '');
   if (!_nw) toggleAddWine(true);
@@ -4022,6 +4071,7 @@ async function unlockSession() {
   const sess = await dbGet('sessions/' + c);
   if (!sess) { showAlert('unlock-alert', 'error', 'Invalid code. Please check and try again.'); return; }
   if (sess.archived) { showAlert('unlock-alert', 'error', 'This session has been archived and is now read-only. Find it in History.'); return; }
+  if (sess.hidden) { showAlert('unlock-alert', 'error', 'This tasting isn\'t open yet — ask the host to open it.'); return; }
   if (!(sess.wines || []).length) { showAlert('unlock-alert', 'error', 'No wines in this session yet.'); return; }
   if (tasteCode !== c) _closeWineView();             // a different tasting never inherits an open wine
   tasteCode = c;
@@ -4035,6 +4085,9 @@ async function unlockSession() {
   window._prevRevealed = null;
   tasteListener = dbListen('sessions/' + c, data => {
     if (!data) return;
+    if (data.hidden && !data.archived) {                        // host hid it again: leave politely
+      resetTaste(); renderTasteHome(); showToast('The host has hidden this tasting for now', 'error'); return;
+    }
     window._tasteData = data;
     if (tasteWineIdx !== null && tasteWineRef) {
       var _ni = wineIndexOf(data.wines, tasteWineRef);
@@ -4127,7 +4180,7 @@ function wineListRow(w, i, mode, x) {
   var tasteMode = mode === 'taste';
   var click = tasteMode ? 'openRating(' + i + ')' : (w.revealed ? 'showWineModal(_resWines[' + i + '], false, _resCtx(' + i + '))' : '');
   var end = tasteMode ? (mine ? '<span class="wl-end ok" aria-label="Rated">✓</span>' : '<span class="wl-end">›</span>') : (w.revealed ? '<span class="wl-end">›</span>' : '');
-  var tag = click ? 'button' : 'div', act = click ? ' onclick="' + click + '"' : '';
+  var tag = 'div', act = click ? ' role="button" tabindex="0" onclick="' + click + '" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();this.click();}"' : '';
   var cls = 'wl-row' + (w.revealed ? ' is-rev' : ' is-blind') + (tasteMode ? '' : (w.revealed ? ' res-wine-img-btn' : ' static'));
   if (!w.revealed) {
     var info = tasteMode
@@ -4141,9 +4194,9 @@ function wineListRow(w, i, mode, x) {
   var score = tasteMode
     ? (mine ? '<div class="wl-score"><b>' + mine.score + '</b><span>/100 your rating</span></div>' : '<div class="wl-todo">Not rated yet · tap to rate</div>')
     : (x.avg !== null && x.avg !== undefined ? '<div class="wl-score"><b>' + x.avg + '</b><span>/100 avg</span></div>' : '<div class="wl-sub">No ratings yet</div>');
-  var hint = !tasteMode && (x.n || x.g) ? '<div class="wl-hint">' + [x.n ? x.n + ' rating' + (x.n !== 1 ? 's' : '') : '', x.g ? x.g + ' blind guess' + (x.g !== 1 ? 'es' : '') : ''].filter(Boolean).join(' · ') + '</div>' : '';
+  var hint = '';   // ratings/guesses counts live in the wine's detail sheet
   return '<' + tag + ' class="' + cls + (w.image ? ' has-img' : '') + '"' + act + '>'
-    + (w.image ? '<span class="wl-imgbox"><img class="wl-img" src="' + escHtml(w.image) + '" alt="" loading="lazy"></span>' : '')
+    + (w.image ? '<span class="wl-imgbox" aria-hidden="true" style="background-image:url(&quot;' + escHtml(String(w.image).replace(/["'()\\]/g, encodeURIComponent)) + '&quot;)"></span>' : '')
     + '<div class="wl-body"><div class="wl-num">Wine #' + (i + 1) + '</div>'
     + '<div class="wl-name">' + escHtml(w.name) + (w.vintage ? ' ' + escHtml(w.vintage) : '') + '</div>'
     + (sub ? '<div class="wl-sub">' + sub + '</div>' : '') + score + hint + '</div>' + end + '</' + tag + '>';
@@ -4752,8 +4805,14 @@ function updScores() {
   const d = Math.round((tot + sys.base) * 10) / 10;
   document.getElementById('total-num').textContent = curSys === '5star' ? d.toFixed(1) + ' ★' : d;
   const b = getBadge(curSys, d);
-  document.getElementById('badge-area').innerHTML =
-    `<span class="sbadge" style="background:${b.c}22;border:1px solid ${b.c};color:${b.c}">${b.l}</span>`;
+  // Quality word coloured by level (top bands Straw, middle Chalk, lower Cork) + bar from lowest to highest possible score
+  const bi = SYS[curSys].badges.indexOf(b);
+  const qcol = bi <= 1 ? 'var(--straw)' : bi <= 3 ? 'var(--cream)' : 'var(--smoke)';
+  const ql = b.l.replace(/(\s)([A-Z])/g, function(m, s, ch){ return s + ch.toLowerCase(); });   // sentence case: "Very good"
+  document.getElementById('badge-area').innerHTML = '<span style="color:' + qcol + '">' + ql + '</span>';
+  const lo = sys.base + sys.crit.reduce((s, c) => s + (+c.min || 0), 0), hi = sys.base + sys.crit.reduce((s, c) => s + (+c.max || 0), 0);
+  const fill = document.getElementById('sc-fill'); if (fill) fill.style.width = Math.max(0, Math.min(100, (d - lo) / ((hi - lo) || 1) * 100)) + '%';
+  const of = document.getElementById('sc-of'); if (of) of.textContent = curSys === '5star' ? '' : '/' + hi;
 }
 
 function getBadge(s, sc) {
@@ -4865,6 +4924,7 @@ function renderResults(c, sess) {
     });
     return Object.assign({}, w, {ratings: sorted});
   });
+  var _ld = document.querySelector('.live-dot'); if (_ld) { _ld.classList.remove('ping'); void _ld.offsetWidth; _ld.classList.add('ping'); }   // flash on every update
   document.getElementById('res-by-wine').innerHTML = '<div class="wl-group" role="list">' + _resWines.map(function(w, i) {
     var r = w.ratings || [];
     if (r.length) hasAny = true;
@@ -7792,6 +7852,7 @@ async function _loadAllSessions() {
   const [arch, live] = await Promise.all([dbGet('archive'), dbGet('sessions')]);
   const all = Object.assign({}, live || {});
   Object.keys(arch || {}).forEach(k => { all[k] = arch[k]; });   // archived copy is the final one
+  Object.keys(all).forEach(k => { if (all[k] && all[k].hidden && !all[k].archived) delete all[k]; });   // hidden tastings stay private
   _histArchive = Object.assign({}, _histArchive, all);            // wine rows below can open via openHistWine
   return all;
 }
@@ -7891,7 +7952,7 @@ async function renderSessionPicker(targetId, mode) {
   if (!el) return;
   var sessions = await dbGet('sessions') || {};
   var codes = Object.keys(sessions).filter(function(k) {
-    var s = sessions[k]; return s && !s.archived && (s.wines || []).length;
+    var s = sessions[k]; return !(sessions[k] && sessions[k].hidden) && s && !s.archived && (s.wines || []).length;
   });
   if (!codes.length) {
     el.innerHTML = '<div class="empty-note">No tastings are running right now.<br>'
@@ -8114,7 +8175,7 @@ async function renderTasteHome() {
   var el = document.getElementById('taste-picker'); if (!el) return;
   var all = await _loadAllSessions();
   var me = getTaster();
-  var live = Object.keys(all).filter(function(k){ var s = all[k]; return s && !s.archived && (s.wines || []).length; });
+  var live = Object.keys(all).filter(function(k){ var s = all[k]; return s && !s.archived && !s.hidden && (s.wines || []).length; });
   _homeCache = computeClubFacts(all, me);
   renderHomeMap(_homeCache.pins);
   showHomeFact();
