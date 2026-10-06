@@ -1833,7 +1833,10 @@ header.show-title h1{opacity:1;transform:none;}
 .wl-row:first-child{border-top:0;}
 .wl-row:active{background:rgba(243,236,229,.04);}
 .wl-row.static{cursor:default;} .wl-row.static:active{background:none;}
-.wl-thumb{width:44px;height:44px;border-radius:10px;object-fit:cover;flex-shrink:0;}
+.wl-row.has-img{padding:0 1rem 0 0;align-items:stretch;}
+.wl-row.has-img .wl-body{padding:.85rem 0;align-self:center;}
+.wl-row.has-img .wl-end{align-self:center;}
+.wl-img{width:84px;min-height:96px;flex-shrink:0;object-fit:cover;display:block;background:var(--barrel);}
 .wl-body{flex:1;min-width:0;}
 .wl-num{color:var(--smoke);font-size:.76rem;}
 .wl-name{font-family:var(--f-label);font-weight:500;font-size:1.05rem;line-height:1.25;color:var(--pale-gold);margin-top:.05rem;}
@@ -4139,8 +4142,8 @@ function wineListRow(w, i, mode, x) {
     ? (mine ? '<div class="wl-score"><b>' + mine.score + '</b><span>/100 your rating</span></div>' : '<div class="wl-todo">Not rated yet · tap to rate</div>')
     : (x.avg !== null && x.avg !== undefined ? '<div class="wl-score"><b>' + x.avg + '</b><span>/100 avg</span></div>' : '<div class="wl-sub">No ratings yet</div>');
   var hint = !tasteMode && (x.n || x.g) ? '<div class="wl-hint">' + [x.n ? x.n + ' rating' + (x.n !== 1 ? 's' : '') : '', x.g ? x.g + ' blind guess' + (x.g !== 1 ? 'es' : '') : ''].filter(Boolean).join(' · ') + '</div>' : '';
-  return '<' + tag + ' class="' + cls + '"' + act + '>'
-    + (w.image ? '<img class="wl-thumb" src="' + escHtml(w.image) + '" alt="">' : '')
+  return '<' + tag + ' class="' + cls + (w.image ? ' has-img' : '') + '"' + act + '>'
+    + (w.image ? '<img class="wl-img" src="' + escHtml(w.image) + '" alt="" loading="lazy">' : '')
     + '<div class="wl-body"><div class="wl-num">Wine #' + (i + 1) + '</div>'
     + '<div class="wl-name">' + escHtml(w.name) + (w.vintage ? ' ' + escHtml(w.vintage) : '') + '</div>'
     + (sub ? '<div class="wl-sub">' + sub + '</div>' : '') + score + hint + '</div>' + end + '</' + tag + '>';
