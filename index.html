@@ -3194,8 +3194,9 @@ async function dbDelete(path) {
 // ── Polling-based real-time listener (2s, works everywhere) ──
 const _pollListeners = {};
 
-function dbListen(path, cb) {
-  if (!_pollListeners[path]) _pollListeners[path] = { callbacks: [], timer: null, lastSer: undefined };
+function dbListen(path, cb, opts) {
+  opts = opts || {};      // { every: ms between polls (default 2000), pauseHidden: stop polling while the app is in the background }
+  if (!_pollListeners[path]) _pollListeners[path] = { callbacks: [], timer: null, lastSer: undefined, pauseHidden: !!opts.pauseHidden };
   const slot = _pollListeners[path];
   slot.callbacks.push(cb);
 
@@ -3206,6 +3207,7 @@ function dbListen(path, cb) {
   }
 
   const poll = async () => {
+    if (slot.pauseHidden && document.hidden) return;
     try {
       let v = useCloud ? await fbGet(path) : getLocal(path);
       if (useCloud && v !== null) { setLocal(path, v); saveLocal(); }
@@ -3226,13 +3228,20 @@ function dbListen(path, cb) {
       }
     }
   };
+  slot.poll = poll;
   poll();
-  if (!slot.timer) slot.timer = setInterval(poll, 2000);
+  if (!slot.timer) slot.timer = setInterval(poll, opts.every || 2000);
   return () => {
     slot.callbacks = slot.callbacks.filter(fn => fn !== cb);
     if (!slot.callbacks.length) { clearInterval(slot.timer); delete _pollListeners[path]; }
   };
 }
+
+// Coming back to the app: refresh the paused listeners straight away
+document.addEventListener('visibilitychange', function() {
+  if (document.hidden) return;
+  Object.keys(_pollListeners).forEach(function(k) { var s = _pollListeners[k]; if (s.pauseHidden && s.poll) s.poll(); });
+});
 
 // ── Connection bar ──
 function setConnBar(mode) {
@@ -3523,6 +3532,8 @@ var _lastNonHostTab = 'taste';
 
 var _resReturn = 'taste';
 function showTab(n, direction) {
+  if (n !== 'taste') stopTasteHomeLive();
+  else if (!tasteCode) setTimeout(function(){ if (_homeVisible()) startTasteHomeLive(); }, 0);
   if (n === 'results') {
     var _cur = document.querySelector('.panel.active');
     var _cid = _cur ? _cur.id.replace('tab-', '') : 'taste';
@@ -4074,6 +4085,7 @@ async function unlockSession() {
   if (sess.hidden) { showAlert('unlock-alert', 'error', 'This tasting isn\'t open yet — ask the host to open it.'); return; }
   if (!(sess.wines || []).length) { showAlert('unlock-alert', 'error', 'No wines in this session yet.'); return; }
   if (tasteCode !== c) _closeWineView();             // a different tasting never inherits an open wine
+  stopTasteHomeLive();                                // inside a tasting the home feed is not needed
   tasteCode = c;
   localStorage.setItem('vino_last_res_code', c);  // propagate to Results tab
   document.getElementById('taste-sess-name').textContent = sess.name;
@@ -8171,14 +8183,41 @@ function _niceDate(d) {
 }
 function _parseDMY(d) { var p = String(d || '').split('/'); return p.length === 3 ? new Date(+p[2], +p[1] - 1, +p[0]).getTime() : 0; }
 
+var _homeAll = {};          // everything loaded by the last full render (live + archive)
+var _homeUnsub = null;      // live feed of the open tastings
+var _homeLastHTML = '';
+
+function _homeVisible() {
+  var tab = document.getElementById('tab-taste'), un = document.getElementById('unlock-screen');
+  return !!(tab && tab.classList.contains('active') && un && !un.classList.contains('hidden') && !document.hidden);
+}
+// Live feed: re-reads only the live tastings (never the archive) every 3 s while the home is on screen
+function startTasteHomeLive() {
+  if (_homeUnsub) return;
+  _homeUnsub = dbListen('sessions', function(s) { if (_homeVisible()) renderTasteList(s || {}); }, { every: 3000, pauseHidden: true });
+}
+function stopTasteHomeLive() { if (_homeUnsub) { _homeUnsub(); _homeUnsub = null; } }
+
 async function renderTasteHome() {
   var el = document.getElementById('taste-picker'); if (!el) return;
   var all = await _loadAllSessions();
-  var me = getTaster();
-  var live = Object.keys(all).filter(function(k){ var s = all[k]; return s && !s.archived && !s.hidden && (s.wines || []).length; });
-  _homeCache = computeClubFacts(all, me);
+  _homeAll = all;
+  _homeCache = computeClubFacts(all, getTaster());
   renderHomeMap(_homeCache.pins);
   showHomeFact();
+  _homeLastHTML = '';
+  renderTasteList(all);
+  if (_homeVisible() || !tasteCode) startTasteHomeLive();
+}
+
+// The list part of the home (Now tasting / empty state). Pure: draws from the sessions it is given.
+function renderTasteList(liveNow) {
+  var el = document.getElementById('taste-picker'); if (!el) return;
+  var me = getTaster(), all = {};
+  Object.keys(liveNow || {}).forEach(function(k) { all[k] = liveNow[k]; });
+  Object.keys(_homeAll || {}).forEach(function(k) { if (_homeAll[k] && _homeAll[k].archived) all[k] = _homeAll[k]; });   // archived copy is final
+  var live = Object.keys(all).filter(function(k){ var s = all[k]; return s && !s.archived && !s.hidden && (s.wines || []).length; });
+  var html = '';
   if (live.length) {
     // "Now tasting" = the one you're already in, else the newest
     live.sort(function(a, b) {
@@ -8191,7 +8230,7 @@ async function renderTasteHome() {
       return '<button class="sess-chip" onclick="pickTasteSession(\'' + c + '\')"><div style="min-width:0;"><div class="sess-chip-name">' + escHtml(o.name || 'Tasting') + '</div>'
         + '<div class="sess-chip-meta">' + (o.host ? escHtml(o.host) + ' · ' : '') + n + ' wine' + (n !== 1 ? 's' : '') + '</div></div><span class="hist-chev">›</span></button>';
     }).join('');
-    el.innerHTML = '<div class="section-lbl" style="margin-top:0;">Now tasting</div>'
+    html = '<div class="section-lbl" style="margin-top:0;">Now tasting</div>'
       + '<div class="now-card"><div class="now-name">' + escHtml(s.name || 'Tasting') + '</div>'
       + '<div class="now-meta">' + (s.host ? 'Hosted by ' + escHtml(s.host) + ' · ' : '') + pr.n + ' wine' + (pr.n !== 1 ? 's' : '') + '</div>'
       + '<div class="now-prog"><span>' + (pr.rated ? 'You’ve rated <b>' + pr.rated + ' of ' + pr.n + '</b>' : 'You haven’t rated yet') + '</span>'
@@ -8203,11 +8242,15 @@ async function renderTasteHome() {
     var arch = Object.keys(all).filter(function(k){ return all[k] && all[k].archived; })
       .sort(function(a, b){ return _parseDMY(all[b].created) - _parseDMY(all[a].created); });
     var last = arch[0] ? all[arch[0]] : null;
-    el.innerHTML = '<div class="home-empty">No tasting tonight.</div>'
+    html = '<div class="home-empty">No tasting tonight.</div>'
       + '<button class="btn btn-primary" onclick="toggleHost()">New tasting</button>'
       + (last ? '<button class="home-last" onclick="openHistSession(\'' + arch[0] + '\')">Last tasting: <b>' + escHtml(last.name || 'Tasting') + '</b>' + (last.created ? ', ' + _niceDate(last.created) : '') + ' ›</button>' : '');
   }
-  updateTopBar();
+  if (html !== _homeLastHTML) {            // redraw only when something changed (no flicker, taps are never swallowed)
+    _homeLastHTML = html;
+    el.innerHTML = html;
+    updateTopBar();
+  }
 }
 
 function pickTasteSession(code) {
