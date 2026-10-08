@@ -1880,10 +1880,37 @@ body.is-offline .live-on{display:none;} body.is-offline .live-off{display:inline
 .hp-status{margin:-.4rem 0 1rem;}
 .hp-status-txt{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;color:var(--smoke);font-size:.86rem;line-height:1.45;}
 .hp-status .hp-cta{margin-top:.7rem;}
-.hp-status .hp-hide{margin-top:.6rem;min-height:38px;}
+.hp-status .hp-hide{margin-top:.7rem;min-height:48px;border-color:var(--gb);color:var(--cream);}
 .hp-pill{font:600 .72rem var(--f-ui);padding:.2rem .55rem;border-radius:999px;}
 .hp-pill.hid{background:rgba(185,173,245,.14);color:var(--lav);}
 .hp-pill.open{background:rgba(125,255,176,.12);color:#8fe3b0;}
+/* ═══ Host lineup in the Taste-table design ═══ */
+.hl-cell{position:relative;border-top:1px solid var(--gb);}
+.hl-cell:first-child{border-top:0;}
+.hl-cell .wl-row{border-top:0;}
+.hl-state{font:600 .7rem var(--f-ui);padding:.12rem .45rem;border-radius:999px;margin-left:.4rem;vertical-align:1px;}
+.hl-state.rev{background:rgba(226,194,125,.14);color:var(--straw);}
+.hl-state.blind{background:rgba(185,173,245,.14);color:var(--lav);}
+.hl-num-blind{color:var(--lav);}
+.hl-prog{color:var(--smoke);font-size:.8rem;margin-top:.3rem;}
+.hl-prog b{color:var(--straw);font-weight:600;}
+.hl-actions{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-left:1rem;padding:.55rem 1rem .65rem 0;border-top:1px solid var(--gb);}
+.hl-actions .tlwrap{display:flex;align-items:center;gap:.45rem;min-width:0;}
+.hl-actions .tl{display:flex;align-items:center;gap:.45rem;white-space:nowrap;font:500 .8rem var(--f-ui);color:var(--smoke);cursor:pointer;}
+.hl-actions .timer-sel{-webkit-appearance:none;appearance:none;width:auto;min-height:32px;padding:.2rem 1.5rem .2rem .55rem;border-radius:8px;border:1px solid transparent;
+  color:var(--cream);font:500 .8rem var(--f-ui);background:var(--barrel) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23a99a9e' fill='none' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right .5rem center;}
+.hl-actions .timer-btn-start,.hl-actions .timer-btn-stop{min-height:32px;padding:0 .7rem;border-radius:8px;font:600 .78rem var(--f-ui);cursor:pointer;background:transparent;border:1px solid rgba(227,120,143,.55);color:var(--cream);}
+.hl-actions .timer-btn-stop{border-color:var(--gb);color:var(--smoke);}
+.hl-actions .timer-status{font:600 .8rem var(--f-ui);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.hl-actions .timer-status.running{color:var(--straw);} .hl-actions .timer-status.expired{color:var(--smoke);}
+.hl-actions .btns{display:flex;align-items:center;gap:.4rem;flex-shrink:0;}
+.hl-actions .btns .btn{min-height:36px;padding:0 .8rem;}
+@media (max-width:374px){   /* small phones: tighter controls so every timer state stays on one line */
+  .hl-actions{gap:.35rem;} .hl-actions .tlwrap{gap:.35rem;}
+  .hl-actions .btns .btn{padding:0 .6rem;}
+  .hl-actions .timer-sel{padding-right:1.3rem;background-position:right .4rem center;}
+  .hl-actions .timer-btn-start,.hl-actions .timer-btn-stop{padding:0 .55rem;}
+}
 /* ═══════════ /V2 ═══════════ */
 </style>
 </head>
@@ -3772,32 +3799,22 @@ function closeSession() {
 
 function timerRowHTML(w, i) {
   if (!w.guessTimer) {
-    return '<div class="timer-row"><label class="timer-toggle-label">'
-      + '<input type="checkbox" class="hp-switch" onchange="toggleWineTimer(' + i + ', this.checked)">'
-      + ' Guess timer</label></div>';
+    return '<label class="tl"><input type="checkbox" class="hp-switch" onchange="toggleWineTimer(' + i + ', this.checked)"> Timer</label>';
   }
   var isRunning = w.guessTimerStart && (Date.now() - w.guessTimerStart < w.guessTimer * 1000);
+  if (isRunning) {
+    var r = Math.max(0, w.guessTimer - Math.floor((Date.now() - w.guessTimerStart) / 1000)), m = Math.floor(r / 60), sec = r % 60;
+    return '<span class="timer-status running" id="host-timer-status-' + i + '">● ' + m + ':' + (sec < 10 ? '0' : '') + sec + ' left</span>'
+      + '<button class="timer-btn-stop" onclick="stopWineTimer(' + i + ')">Stop</button>';
+  }
   var isExpired = w.guessTimerStart && (Date.now() - w.guessTimerStart >= w.guessTimer * 1000);
-  var remaining = w.guessTimerStart ? Math.max(0, w.guessTimer - Math.floor((Date.now() - w.guessTimerStart) / 1000)) : null;
-  var actionHtml = isRunning
-    ? '<button class="timer-btn-stop" onclick="stopWineTimer(' + i + ')">Stop</button>'
-      + (function(r){var m=Math.floor(r/60),s=r%60;return '<span class="timer-status running" id="host-timer-status-'+i+'">● '+m+':'+(s<10?'0':'')+s+' left</span>';})(remaining)
-    : isExpired
-      ? '<button class="timer-btn-start" onclick="startWineTimer(' + i + ')">Restart</button>'
-        + '<span class="timer-status expired">Expired</span>'
-      : '<button class="timer-btn-start" onclick="startWineTimer(' + i + ')">Start</button>';
-  var disabledAttr = isRunning ? ' disabled' : '';
-  return '<div class="timer-row">'
-    + '<label class="timer-toggle-label">'
-      + '<input type="checkbox" class="hp-switch" checked onchange="toggleWineTimer(' + i + ', this.checked)">'
-      + ' Timer'
-    + '</label>'
-    + '<div class="timer-config">'
-      + '<input type="number" class="timer-input" id="timer-inp-' + i + '" min="0.5" max="60" step="0.5" value="' + Math.round(w.guessTimer/60*10)/10 + '" placeholder="min"' + disabledAttr + '>'
-      + '<span style="font-family:Schibsted Grotesk,sans-serif;font-size:.76rem;color:var(--smoke);">min</span>'
-      + actionHtml
-    + '</div>'
-  + '</div>';
+  var cur = Math.round(w.guessTimer / 60 * 10) / 10, opts = [1, 2, 3, 5, 10, 15, 20];
+  if (opts.indexOf(cur) < 0) { opts.push(cur); opts.sort(function(a, b){ return a - b; }); }   // keep an unusual saved duration
+  return '<label class="tl"><input type="checkbox" class="hp-switch" checked aria-label="Guess timer" onchange="toggleWineTimer(' + i + ', this.checked)"></label>'
+    + '<select class="timer-sel" id="timer-inp-' + i + '" aria-label="Minutes">'
+    + opts.map(function(o){ return '<option value="' + o + '"' + (o === cur ? ' selected' : '') + '>' + o + ' min</option>'; }).join('')
+    + '</select>'
+    + '<button class="timer-btn-start" onclick="startWineTimer(' + i + ')">' + (isExpired ? 'Restart' : 'Start') + '</button>';
 }
 
 async function setTastingOpen(open) {
@@ -3823,7 +3840,7 @@ function renderOverview(s) {
     ? '<div class="hp-status-txt"><span class="hp-pill hid">Hidden</span>Only you can see it. Add the wines, then open it.</div>'
       + '<button class="btn btn-primary hp-cta" onclick="setTastingOpen(true)"><svg class="ico"><use href="#ico-reveal"/></svg> Open to tasters</button>'
     : '<div class="hp-status-txt"><span class="hp-pill open">Open</span>Tasters can find and join this tasting.</div>'
-      + '<button class="btn btn-outline btn-sm hp-hide" onclick="setTastingOpen(false)"><svg class="ico"><use href="#ico-blind"/></svg> Hide</button>';
+      + '<button class="btn btn-outline hp-cta hp-hide" onclick="setTastingOpen(false)"><svg class="ico"><use href="#ico-blind"/></svg> Hide from tasters</button>';
   var _nw = (s.wines || []).length, _oc = document.getElementById('ov-count');
   if (_oc) _oc.textContent = _nw + ' wine' + (_nw !== 1 ? 's' : '');
   if (!_nw) toggleAddWine(true);
@@ -3845,7 +3862,7 @@ function renderOverview(s) {
   } else {
     nm.style.display = 'none';
     bc.classList.remove('hidden'); bc.style.display = 'block';
-    wl.innerHTML = wines.map((w, i) => {
+    wl.innerHTML = '<div class="wl-group" role="list">' + wines.map((w, i) => {
       const thumb = w.image
         ? `<img src="${w.image}" style="width:36px;height:36px;border-radius:8px;object-fit:cover;border:1px solid var(--gold);flex-shrink:0;">`
         : `<div style="font-size:1.4rem;flex-shrink:0;line-height:1;">${TE[w.type] || '<svg class="ico"><use href="#ico-bottle-red"/></svg>'}</div>`;
@@ -3854,30 +3871,28 @@ function renderOverview(s) {
         ? `<button class="wbtn wbtn-hide" onclick="toggleReveal(${i},false)" title="Hide"><svg class="ico"><use href="#ico-blind"/></svg></button>`
         : `<button class="wbtn wbtn-reveal" onclick="toggleReveal(${i},true)" title="Reveal"><svg class="ico"><use href="#ico-reveal"/></svg></button>`;
       const where = [w.type, w.appellation || w.region, w.country].filter(Boolean).map(escHtml).join(' · ');
-      const media = w.image ? `<img class="hrow-thumb" src="${w.image}" alt="">` : '';
-      return `<div class="wine-row hrow ${w.revealed ? 'is-rev' : ''}" id="wine-row-${i}">
-        <div class="hrow-main" onclick="openEditWine(${i})" role="button" tabindex="0" aria-label="Edit ${escHtml(w.name)}">
-          <div class="hrow-num">${i + 1}</div>
-          ${media}
-          <div class="hrow-body">
-            <div class="hrow-name">${escHtml(w.name)}${w.vintage ? ' ' + escHtml(w.vintage) : ''}</div>
-            ${where ? `<div class="hrow-meta">${where}</div>` : ''}
-            <div class="wrow-prog" id="wine-prog-${i}">${wineProgressHTML(w, sessionTasterNames(s))}</div>
+      const img = w.image ? `<span class="wl-imgbox" aria-hidden="true" style="background-image:url(&quot;${escHtml(String(w.image).replace(/["'()\\]/g, encodeURIComponent))}&quot;)"></span>` : '';
+      return `<div class="hl-cell ${w.revealed ? 'is-rev' : 'is-blind'}" id="wine-row-${i}">
+        <div class="wl-row${w.image ? ' has-img' : ''}" role="button" tabindex="0" onclick="openEditWine(${i})"
+             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}" aria-label="Edit ${escHtml(w.name)}">
+          ${img}
+          <div class="wl-body">
+            <div class="wl-num${w.revealed ? '' : ' hl-num-blind'}">Wine #${i + 1}<span class="hl-state ${w.revealed ? 'rev' : 'blind'}">${w.revealed ? 'Revealed' : 'Blind'}</span></div>
+            <div class="wl-name">${escHtml(w.name)}${w.vintage ? ' ' + escHtml(w.vintage) : ''}</div>
+            ${where ? `<div class="wl-sub">${where}</div>` : ''}
+            <div class="wrow-prog hl-prog" id="wine-prog-${i}">${wineProgressHTML(w, sessionTasterNames(s))}</div>
           </div>
-          <span class="hrow-pill ${w.revealed ? 'rev' : 'blind'}">${w.revealed ? 'Revealed' : 'Blind'}</span>
+          <span class="wl-end">›</span>
         </div>
-        <div class="hrow-actions">
-          ${timerRowHTML(w, i)}
-          <div class="hrow-btns">
-            ${w.revealed
-              ? `<button class="btn btn-outline btn-sm" onclick="toggleReveal(${i},false)"><svg class="ico"><use href="#ico-blind"/></svg> Hide</button>`
-              : `<button class="btn btn-outline btn-sm hrow-reveal" onclick="toggleReveal(${i},true)"><svg class="ico"><use href="#ico-reveal"/></svg> Reveal</button>`}
-            <button class="wbtn" onclick="openEditWine(${i})" aria-label="Edit"><svg class="ico"><use href="#ico-edit"/></svg></button>
-          </div>
+        <div class="hl-actions">
+          <div class="tlwrap">${timerRowHTML(w, i)}</div>
+          <div class="btns">${w.revealed
+            ? `<button class="btn btn-outline btn-sm" onclick="toggleReveal(${i},false)"><svg class="ico"><use href="#ico-blind"/></svg> Hide</button>`
+            : `<button class="btn btn-outline btn-sm hrow-reveal" onclick="toggleReveal(${i},true)"><svg class="ico"><use href="#ico-reveal"/></svg> Reveal</button>`}</div>
         </div>
         <div id="edit-inline-${i}" style="display:none;"></div>
       </div>`;
-    }).join('');
+    }).join('') + '</div>';
   }
   const fa = document.getElementById('wine-form');
   fa.innerHTML = wineFormHTML();
