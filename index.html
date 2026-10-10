@@ -1795,7 +1795,7 @@ header.show-title h1{opacity:1;transform:none;}
 .rate-save{width:100%;min-height:48px;border-radius:14px;font-size:.95rem;margin-top:.9rem;}
 .rate-mine{margin-top:.9rem;color:var(--smoke);font-size:.86rem;}
 .rate-mine b{color:var(--straw);font-weight:600;}
-#blind-game-section{margin-top:1.6rem;}
+#blind-game-section{margin:0 0 1.6rem;}   /* now sits above the rating */
 .game-lock-btn{border-color:rgba(185,173,245,.5) !important;color:var(--lav) !important;min-height:46px;}
 .lock-confirm{background:var(--oak);border:1px solid rgba(185,173,245,.35);border-radius:14px;padding:.85rem;}
 .lock-confirm-txt{color:var(--cream);font-size:.9rem;line-height:1.45;margin-bottom:.7rem;}
@@ -2438,22 +2438,6 @@ body.is-offline .live-on{display:none;} body.is-offline .live-off{display:inline
         <button id="rate-next" onclick="rateNav(1)" aria-label="Next wine">Next ›</button>
       </div>
       <div id="wine-reveal-area" style="margin-bottom:1.3rem;"></div>
-      <div class="sys-tabs" style="display:none;"><button class="sys-tab active" id="sys-100"></button></div>
-      <div class="crit-grid" id="crit-grid"></div>
-      <div class="score-card" aria-live="polite">
-        <div class="sc-top">
-          <div><div class="sc-lbl">Total score</div><div class="sc-q" id="badge-area"></div><div id="sys-lbl" hidden>100-point scale</div></div>
-          <div class="sc-numwrap"><span class="sc-num" id="total-num">—</span><span class="sc-of" id="sc-of">/100</span></div>
-        </div>
-        <div class="sc-bar"><i id="sc-fill"></i></div>
-      </div>
-      <div class="field" style="margin-top:1rem;">
-        <label>Tasting notes <span class="lbl-sub">optional</span></label>
-        <textarea id="taste-notes" placeholder="Aromas, palate impressions, finish…" style="min-height:82px;"></textarea>
-      </div>
-      <div id="rate-alert" class="alert"></div>
-      <div class="rate-mine" id="rate-mine" style="display:none;"></div>
-      <button class="btn btn-primary rate-save" onclick="submitRating()">Save rating</button>
       <!-- Blind guessing game — only shown when wine is not yet revealed -->
       <div id="blind-game-section" class="hidden">
         <div class="game-card">
@@ -2506,6 +2490,22 @@ body.is-offline .live-on{display:none;} body.is-offline .live-off{display:inline
         </div>
       </div>
 
+      <div class="sys-tabs" style="display:none;"><button class="sys-tab active" id="sys-100"></button></div>
+      <div class="crit-grid" id="crit-grid"></div>
+      <div class="score-card" aria-live="polite">
+        <div class="sc-top">
+          <div><div class="sc-lbl">Total score</div><div class="sc-q" id="badge-area"></div><div id="sys-lbl" hidden>100-point scale</div></div>
+          <div class="sc-numwrap"><span class="sc-num" id="total-num">—</span><span class="sc-of" id="sc-of">/100</span></div>
+        </div>
+        <div class="sc-bar"><i id="sc-fill"></i></div>
+      </div>
+      <div class="field" style="margin-top:1rem;">
+        <label>Tasting notes <span class="lbl-sub">optional</span></label>
+        <textarea id="taste-notes" placeholder="Aromas, palate impressions, finish…" style="min-height:82px;"></textarea>
+      </div>
+      <div id="rate-alert" class="alert"></div>
+      <div class="rate-mine" id="rate-mine" style="display:none;"></div>
+      <button class="btn btn-primary rate-save" onclick="submitRating()">Save rating</button>
       <div id="rate-next-block"></div>
     </div>
   </div>
@@ -2567,7 +2567,7 @@ body.is-offline .live-on{display:none;} body.is-offline .live-off{display:inline
   <div class="vmap-sub" id="vmap-sub">&nbsp;</div>
   <div class="vmap-wrap">
     <div id="vmap"></div>
-    <div class="vmap-chips"><button class="vchip on" id="vchip-apps" aria-pressed="true" onclick="vmToggleApps()"><span class="sw"></span>Appellations</button></div>
+    <div class="vmap-chips"><button class="vchip" id="vchip-apps" aria-pressed="false" onclick="vmToggleApps()"><span class="sw"></span>Appellations</button></div>
     <div class="vmap-msg" id="vmap-msg" style="display:none;"></div>
   </div>
 </div>
@@ -6403,7 +6403,7 @@ function renderAIMarkdown(md) {
 //  Data: WineRegions (CC0) + Natural Earth, embedded as #vmap-data (polyline-encoded)
 //  Every area is drawn in one style; every tasted wine is a dot on the top layer.
 // ═══════════════════════════════════════
-var _vm = { map: null, data: null, regs: null, apps: null, dots: null, idx: null, showApps: true, info: {}, byKey: {} };
+var _vm = { map: null, data: null, regs: null, apps: null, dots: null, idx: null, showApps: false, info: {}, byKey: {} };   // appellations are opt-in: the map opens at region level
 
 function _vmLoadLeaflet() {
   if (window.L && window.L.map) return Promise.resolve();
