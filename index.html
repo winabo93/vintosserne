@@ -1258,6 +1258,8 @@ button,.tab-btn,.sess-chip,.member-btn,.res-wine-img-btn{touch-action:manipulati
 .sess-chip-name{font-family:'Newsreader',serif;font-size:.98rem;}
 .sess-chip-meta{font-family:'Schibsted Grotesk',sans-serif;font-size:.76rem;letter-spacing:.01em;
   text-transform:uppercase;color:var(--smoke);margin-top:.15rem;}
+.sess-chip-masked .sess-chip-name{font-style:italic;color:var(--smoke);}
+.sess-chip-masked .hp-chip-end .ico{color:var(--lav);}
 .sess-chip-code{font-family:'Schibsted Grotesk',sans-serif;font-size:.8rem;letter-spacing:.01em;color:var(--gold);}
 .member-avatar{position:absolute;top:50%;left:.85rem;transform:translateY(-50%);
   width:34px;height:34px;border-radius:50%;padding:0;cursor:pointer;
@@ -3708,11 +3710,17 @@ async function createSession() {
   await dbSet('sessions/' + code, sess);
   activeCode = code;
   sessionStorage.setItem('host_auth_' + code, '1');
+  _rememberHosted(code);
   showToast('Tasting created — hidden until you open it');
   document.getElementById('sess-pass-inp').value = '';
   document.getElementById('sess-host-inp').value = localStorage.getItem('vino_member_name') || host;
   renderHostPanel();
 }
+
+// Tastings this device has created or unlocked with the host password (details are shown only for these when hidden)
+function _myHosted() { try { return JSON.parse(localStorage.getItem('vino_my_hosted') || '[]'); } catch (e) { return []; } }
+function _rememberHosted(c) { try { const l = _myHosted(); if (l.indexOf(c) < 0) { l.push(c); localStorage.setItem('vino_my_hosted', JSON.stringify(l.slice(-50))); } } catch (e) {} }
+function _isMyHosted(c) { return !!sessionStorage.getItem('host_auth_' + c) || _myHosted().indexOf(c) >= 0; }
 
 async function renderHostPanel() {
   const plEarly = document.getElementById('prev-sess-list');
@@ -3726,6 +3734,15 @@ async function renderHostPanel() {
     ps.classList.remove('hidden');
     pl.innerHTML = codes.map(c => {
       const s0 = sessions[c], n = (s0.wines || []).length;
+      if (s0.hidden && !_isMyHosted(c)) {
+        // Hidden and not yet unlocked on this device: show nothing about it but the date
+        const metaH = ['Being prepared', s0.created ? _niceDate(s0.created) : ''].filter(Boolean).join(' · ');
+        return `<button class="sess-chip sess-chip-masked" onclick="openSess('${c}')">
+          <div style="min-width:0;flex:1;"><div class="sess-chip-name">Hidden tasting</div>
+            <div class="sess-chip-meta">${escHtml(metaH)}</div></div>
+          <div class="hp-chip-end"><svg class="ico" aria-label="Hidden"><use href="#ico-blind"/></svg><span class="hist-chev">›</span></div>
+        </button>`;
+      }
       const meta = [s0.hidden ? 'Hidden' : '', n + ' wine' + (n !== 1 ? 's' : ''), s0.created ? _niceDate(s0.created) : '', s0.host || ''].filter(Boolean).join(' · ');
       return `<button class="sess-chip" onclick="openSess('${c}')">
         <div style="min-width:0;flex:1;"><div class="sess-chip-name">${escHtml(s0.name || 'Tasting')}</div>
@@ -3758,9 +3775,9 @@ function openSess(c) {
   // Show password prompt
   _pendingAuthCode = c;
   const sessName = document.getElementById('prev-sess-list')
-    .querySelector(`[onclick="openSess('${c}')"] .wrow-name`);
+    .querySelector(`[onclick="openSess('${c}')"] .sess-chip-name`);
   document.getElementById('host-auth-sess-name').textContent =
-    sessName ? sessName.textContent : 'Session ' + c;
+    sessName ? sessName.textContent : 'Tasting';
   document.getElementById('host-auth-pass').value = '';
   document.getElementById('host-auth-alert').className = 'alert';
   document.getElementById('host-auth-overlay').style.display = 'flex';
@@ -3780,6 +3797,7 @@ async function submitHostAuth() {
   }
   // Auth success
   sessionStorage.setItem('host_auth_' + _pendingAuthCode, '1');
+  _rememberHosted(_pendingAuthCode);
   document.getElementById('host-auth-overlay').style.display = 'none';
   activeCode = _pendingAuthCode;
   _pendingAuthCode = null;
