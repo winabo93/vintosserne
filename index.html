@@ -3736,9 +3736,10 @@ async function renderHostPanel() {
       const s0 = sessions[c], n = (s0.wines || []).length;
       if (s0.hidden && !_isMyHosted(c)) {
         // Hidden and not yet unlocked on this device: show nothing about it but the date
-        const metaH = ['Being prepared', s0.created ? _niceDate(s0.created) : ''].filter(Boolean).join(' · ');
+        const metaH = ['Hidden', 'being prepared', s0.created ? _niceDate(s0.created) : ''].filter(Boolean).join(' · ');
+        const titleH = s0.host ? 'Hosted by ' + s0.host : 'Hidden tasting';
         return `<button class="sess-chip sess-chip-masked" onclick="openSess('${c}')">
-          <div style="min-width:0;flex:1;"><div class="sess-chip-name">Hidden tasting</div>
+          <div style="min-width:0;flex:1;"><div class="sess-chip-name">${escHtml(titleH)}</div>
             <div class="sess-chip-meta">${escHtml(metaH)}</div></div>
           <div class="hp-chip-end"><svg class="ico" aria-label="Hidden"><use href="#ico-blind"/></svg><span class="hist-chev">›</span></div>
         </button>`;
