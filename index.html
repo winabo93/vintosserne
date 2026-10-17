@@ -3628,7 +3628,7 @@ function showTab(n, direction) {
   var fabEl = document.getElementById('host-fab');
   if (fabEl) fabEl.classList.toggle('active', n === 'host');
   var fabLbl = document.getElementById('host-fab-lbl');
-  if (fabLbl) fabLbl.textContent = (n === 'host') ? 'Close' : 'New tasting';
+  if (fabLbl) fabLbl.textContent = (n === 'host') ? 'Close' : (_hasMyLive ? 'My tasting' : 'New tasting');
   window.scrollTo({ top: 0, behavior: 'auto' });
   if (n === 'history') loadHistory();
   if (n === 'map')     loadMapTab();
@@ -3722,12 +3722,23 @@ function _myHosted() { try { return JSON.parse(localStorage.getItem('vino_my_hos
 function _rememberHosted(c) { try { const l = _myHosted(); if (l.indexOf(c) < 0) { l.push(c); localStorage.setItem('vino_my_hosted', JSON.stringify(l.slice(-50))); } } catch (e) {} }
 function _isMyHosted(c) { return !!sessionStorage.getItem('host_auth_' + c) || _myHosted().indexOf(c) >= 0; }
 
+// Header button: "My tasting" while this device hosts a live (non-archived) tasting, otherwise "New tasting"
+var _hasMyLive = false;
+try { _hasMyLive = localStorage.getItem('vino_has_live') === '1'; } catch (e) {}
+function _hostFabText() {
+  var onHost = document.querySelector('#tab-host.active, #tab-host.panel.active');
+  return onHost ? 'Close' : (_hasMyLive ? 'My tasting' : 'New tasting');
+}
+function _refreshHostFab() { var l = document.getElementById('host-fab-lbl'); if (l) l.textContent = _hostFabText(); }
+function _setHasMyLive(v) { _hasMyLive = !!v; try { localStorage.setItem('vino_has_live', v ? '1' : '0'); } catch (e) {} _refreshHostFab(); }
+
 async function renderHostPanel() {
   const plEarly = document.getElementById('prev-sess-list');
   if (plEarly) plEarly.innerHTML = spinnerHTML('Loading sessions…');
   let sessions = await dbGet('sessions');
   if (!sessions) sessions = {};
   const codes = Object.keys(sessions).filter(c => !sessions[c].archived);
+  _setHasMyLive(!!activeCode && !!sessions[activeCode] && !sessions[activeCode].archived || codes.some(_isMyHosted));
   const ps = document.getElementById('prev-sess-section');
   const pl = document.getElementById('prev-sess-list');
   if (codes.length) {
@@ -8377,6 +8388,7 @@ function exitHost() {
 FB_URL = 'https://vintosserv2-default-rtdb.europe-west1.firebasedatabase.app';
 useCloud = true;
 // setConnBar('online');
+_refreshHostFab();
 renderHostPanel();
 
 // Member selection — show overlay or restore saved name
