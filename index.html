@@ -3720,6 +3720,8 @@ async function createSession() {
 // Tastings this device has created or unlocked with the host password (details are shown only for these when hidden)
 function _myHosted() { try { return JSON.parse(localStorage.getItem('vino_my_hosted') || '[]'); } catch (e) { return []; } }
 function _rememberHosted(c) { try { const l = _myHosted(); if (l.indexOf(c) < 0) { l.push(c); localStorage.setItem('vino_my_hosted', JSON.stringify(l.slice(-50))); } } catch (e) {} }
+function _nameKey(x) { return String(x || '').trim().toLowerCase(); }
+function _hostNameMatches(sess) { var me = _nameKey(localStorage.getItem('vino_member_name')); return !!me && me === _nameKey(sess && sess.host); }
 function _isMyHosted(c) { return !!sessionStorage.getItem('host_auth_' + c) || _myHosted().indexOf(c) >= 0; }
 
 // Header button: "My tasting" while this device hosts a live (non-archived) tasting, otherwise "New tasting"
@@ -3738,7 +3740,7 @@ async function renderHostPanel() {
   let sessions = await dbGet('sessions');
   if (!sessions) sessions = {};
   const codes = Object.keys(sessions).filter(c => !sessions[c].archived);
-  _setHasMyLive(!!activeCode && !!sessions[activeCode] && !sessions[activeCode].archived || codes.some(_isMyHosted));
+  _setHasMyLive(!!activeCode && !!sessions[activeCode] && !sessions[activeCode].archived || codes.some(c => _isMyHosted(c) || _hostNameMatches(sessions[c])));
   const ps = document.getElementById('prev-sess-section');
   const pl = document.getElementById('prev-sess-list');
   if (codes.length) {
@@ -7306,6 +7308,8 @@ function selectMember(name) {
 
 function applyMemberName(name) {
   if (!name) return;
+  if (window._fabName !== undefined && window._fabName !== name) { try { renderHostPanel(); } catch (e) {} }
+  window._fabName = name;
   updateMemberAvatar(name);
   // Set hidden taster field
   var tn = document.getElementById('taster-name');
