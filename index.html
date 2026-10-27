@@ -3990,6 +3990,7 @@ function toggleAddWine(force) {
 }
 
 function renderOverview(s) {
+  try { healUnscored(activeCode, s); } catch (e) {}
   document.getElementById('ov-name').textContent = s.name;
   document.getElementById('ov-name').dataset.bar = s.name || 'Host';
   var _st = document.getElementById('hp-status');
@@ -4125,9 +4126,26 @@ function stopHostTimerTick() {
 }
 
 // Build the update that reveals/hides wine i; on reveal, score every locked-in guess (B2)
+// Self-repair: a revealed wine must never keep an unscored guess (scoring is deterministic, so any phone can safely do it)
+var _healBusy = false;
+async function healUnscored(code, data) {
+  if (_healBusy || !code || !data || data.archived || !Array.isArray(data.wines)) return;
+  var upd = {};
+  data.wines.forEach(function(w, i) {
+    if (!w || !w.revealed || !w.guesses) return;
+    Object.values(w.guesses).forEach(function(g) {
+      if (g && g.taster && !g.scored) upd['wines/' + i + '/guesses/' + fbKey(g.taster)] = scoreGuess(g, w);
+    });
+  });
+  if (!Object.keys(upd).length) return;
+  _healBusy = true;
+  try { await dbPatch('sessions/' + code, upd); } catch (e) {} finally { _healBusy = false; }
+}
+
 function revealUpdates(wine, i, val, updates) {
   updates['wines/' + i + '/revealed'] = val;
   if (val) {
+    updates['wines/' + i + '/guessTimerStart'] = null;   // revealing ends the blind-guess countdown
     (wine.guesses || []).forEach(g => {
       if (g && !g.scored) updates['wines/' + i + '/guesses/' + fbKey(g.taster)] = scoreGuess(g, wine);
     });
@@ -4273,6 +4291,7 @@ async function unlockSession() {
       resetTaste(); renderTasteHome(); showToast('The host has hidden this tasting for now', 'error'); return;
     }
     window._tasteData = data;
+    healUnscored(c, data);
     if (tasteWineIdx !== null && tasteWineRef) {
       var _ni = wineIndexOf(data.wines, tasteWineRef);
       if (_ni < 0) { backToSelector(); showToast('The host removed the wine you had open', 'error'); }
@@ -4435,7 +4454,8 @@ function startCountdown(wine) {
         // Auto-lock if not already submitted
         var gameSection = document.getElementById('blind-game-section');
         var guessInputs = document.getElementById('guess-inputs');
-        if (guessInputs && guessInputs.style.display !== 'none') {
+        var _gc = document.getElementById('g-country');
+        if (guessInputs && guessInputs.style.display !== 'none' && _gc && !_gc.disabled) {
           submitGuess(true);
         }
       } else if (remaining <= 10) {
@@ -7062,6 +7082,10 @@ async function submitGuess(force) {
   tasteWineIdx = _gi;
   const wine = s.wines[_gi];
   if (!wine) return;
+  // A locked guess is final, and a revealed wine takes no more guesses (a late timer must never wipe a scored guess)
+  const _prev = (wine.guesses && (wine.guesses[fbKey(taster)] || (Array.isArray(wine.guesses) ? wine.guesses.find(g => g && g.taster === taster) : null))) || null;
+  if (_prev && (_prev.scored || force || wine.revealed)) { if (_prev) { populateGuessUI(_prev, wine); } return; }
+  if (wine.revealed) { showAlert('game-alert', 'error', 'This wine has already been revealed — guesses are closed.'); return; }
 
   const guess = {
     taster,
